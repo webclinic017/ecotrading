@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stock</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.17/dist/sweetalert2.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.17/dist/sweetalert2.min.css">
+</head>
+<body>
+    <h1>Tài khoản {{account.name}}</h1>
+    <button id="get_stock_button">Cập nhật giá chứng khoán</button>
+    <h3>Cập nhật gần nhất vào lúc {{time}}</h3>
+
+    Tổng tiền nạp vào {{net_cash_flow}}  <br>
+    Tổng giá trị chứng khoán {{market_value}} <br>
+    Tổng khả dụng {{net_cash_available}} <br>
+    Tổng lời/lỗ: {{total_profit}} <br>
+    Tổng lợi nhuận đã đóng: {{total_profit_close}} <br>
+    Tổng lợi nhuận đang mở: {{total_profit_open}}
+
+    <h1 class="duy"> Danh mục hiện tại</h1>
+<table class="table" style="border: 1px solid rgb(239, 221, 221); border-top-color:rgb(234, 228, 228);">
+    <thead>
+      <tr>
+        <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Cổ phiếu</th>
+        <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Tổng số lượng</th>
+        <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Đã về</th>
+        <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Chờ về</th>
+        <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Đang đặt bán</th>
+        <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Giá trung bình</th>
+        <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Giá thị trường</th>
+        <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Lợi nhuận</th>
+        <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">tỷ suất lợi nhuận</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for x in port %}
+      <tr>
+        <td style="border: 1px solid rgb(234, 228, 228);">{{x.stock }}</td>
+        <td style="border: 1px solid rgb(234, 228, 228);">{{ x.qty_total }}</td>
+        <td style="border: 1px solid rgb(234, 228, 228);">{{ x.qty_sellable }}</td>
+        <td style="border: 1px solid rgb(234, 228, 228);">{{ x.qty_receiving }}</td>
+        <td style="border: 1px solid rgb(234, 228, 228);">{{ x.qty_sell_pending }}</td>
+        <td style="border: 1px solid rgb(234, 228, 228);">{{ x.avg_price }}</td>
+        <td style="border: 1px solid rgb(234, 228, 228);">{{ x.market_price }}</td>
+        <td style="border: 1px solid rgb(234, 228, 228);">{{ x.profit }}</td>
+        <td style="border: 1px solid rgb(234, 228, 228);">{{ x.ratio_profit }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h1 class="duy"> Lệnh đã đóng</h1>
+  <table class="table" style="border: 1px solid rgb(239, 221, 221); border-top-color:rgb(234, 228, 228);">
+      <thead>
+        <tr>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Cổ phiếu</th>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Ngày</th>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Số lượng</th>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Giá khớp</th>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Giá vốn</th>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Lợi nhuận</th>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Tỷ suất lợi nhuận</th>        
+        </tr>
+      </thead>
+      <tbody>
+        {% for x in close_deal %}
+        <tr>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{x.stock }}</td>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{ x.date }}</td>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{ x.qty }}</td>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{ x.price }}</td>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{ x.avg_price }}</td>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{ x.profit }}</td>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{ x.ratio_profit }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  <h1 class="duy"> Sổ lệnh</h1>
+  <table class="table" style="border: 1px solid rgb(239, 221, 221); border-top-color:rgb(234, 228, 228);">
+      <thead>
+        <tr>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Cổ phiếu</th>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Số lượng</th>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Mua/Bán</th>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Giá khớp</th>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Thời gian khớp</th>
+          <th style="border: 1px solid rgb(234, 228, 228); background-color: #e9f9ee;">Tổng giá trị</th>        
+        </tr>
+      </thead>
+      <tbody>
+        {% for x in order_list %}
+        <tr>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{x.stock }}</td>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{ x.qty }}</td>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{ x.position }}</td>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{ x.price }}</td>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{ x.time_matched }}</td>
+          <td style="border: 1px solid rgb(234, 228, 228);">{{ x.str_total_value }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <script>
+      $(document).ready(function() {
+          $('#get_stock_button').click(function() {
+              // Hiển thị popup "Đang lấy giá"
+              Swal.fire({
+                  title: 'Đang lấy giá',
+                  allowOutsideClick: false,
+                  onBeforeOpen: () => {
+                      Swal.showLoading();
+                  }
+              });
+  
+              $.post('{% url "portfolio:account" pk=pk %}', {csrfmiddlewaretoken: '{{ csrf_token }}'}, function(data) {
+                  // Ẩn popup khi post request thành công
+                  Swal.close();
+                  // Thực hiện hành động khi post thành công
+                  Swal.fire('Thành công', 'Lấy dữ liệu thành công', 'success').then(() => {
+                      location.reload();
+                  });
+              }).fail(function(xhr, status, error) {
+                  // Ẩn popup khi post request thất bại và hiển thị popup lỗi
+                  Swal.close();
+                  Swal.fire({
+                      title: 'Có lỗi xảy ra',
+                      text: 'Lỗi: ' + error,
+                      icon: 'error'
+                  });
+              });
+          });
+      });
+  </script>
+  
+</body>
+</html>

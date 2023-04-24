@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Transactions</title>
+</head>
+<body>
+    <h1>Transactions</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Account</th>
+                <th>Stock</th>
+                <th>Position</th>
+                <th>Price</th>
+                <th>Qty</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions %}
+                <tr>
+                    <td>{{ transaction.account }}</td>
+                    <td>{{ transaction.stock }}</td>
+                    <td>{{ transaction.position }}</td>
+                    <td>{{ transaction.price }}</td>
+                    <td>{{ transaction.qty }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <form method="post" action="{% url 'test' %}">
+        {% csrf_token %}
+        <input type="text
