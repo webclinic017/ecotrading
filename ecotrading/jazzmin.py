@@ -1,7 +1,7 @@
 
 JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)
-    "site_title": "Shop Admin",
+    "site_title": "Eco System",
       # Title on the login screen (19 chars max) (defaults to current_admin_site.site_header if absent or None)
     "site_header": "Ecotrading",
      # Title on the brand (19 chars max) (defaults to current_admin_site.site_header if absent or None)
@@ -14,19 +14,19 @@ JAZZMIN_SETTINGS = {
     "site_logo_classes": "img-circle" ,
 
     # Relative path to a favicon for your site, will default to site_logo if absent (ideally 32x32 px)
-    "site_icon": "/bills/img/logo.jpg",
-    "site_logo": "/bills/img/logosmall.jpg",
+    "site_icon": "/portfolio/img/logo.PNG",
+    "site_logo": "/portfolio/img/logo.PNG",
 
 
     # Welcome text on the login screen
-    "welcome_sign": "Welcome to HP -FOODS",
+    "welcome_sign": "Welcome to ECO TEAM",
 
     # Copyright on the footer
-    "copyright": "HP Foods",
+    "copyright": "Ecoteam",
 
     # List of model admins to search from the search bar, search bar omitted if excluded
     # If you want to use a single search field you dont need to use a list, you can use a simple string 
-    "search_model": ["order.Cart", ],
+    "search_model": ["portfolio.Transaction", ],
 
     # Field name on user model that contains avatar ImageField/URLField/Charfield or a callable that receives the user
     "user_avatar": None,

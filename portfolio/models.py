@@ -255,7 +255,8 @@ class BotTelegram (models.Model):
     owner = models.ForeignKey(User,on_delete=models.CASCADE )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
-
+    def __str__(self):
+        return self.name
 
 
 # Create your models here.
@@ -274,9 +275,9 @@ class Account (models.Model):
     
 
 
-    class Meta:
-        verbose_name = 'Tài khoản'
-        verbose_name_plural = 'Tài khoản'
+    # class Meta:
+    #     verbose_name = 'Tài khoản'
+    #     verbose_name_plural = 'Tài khoản'
 
     def __str__(self):
         return self.name
@@ -602,9 +603,9 @@ def send_telegram_group(sender, instance, created, **kwargs):
     if created:
         account = Account.objects.get(pk = instance.account.pk)
         bot_token = account.bot.token
-        group_id = '-870288807'
+        group_id = account.bot.chat_id
         bot = Bot(token=bot_token)
-    if instance.position =='buy':
+    if instance.position =='sell':
         message = 'Hello, group!'
         bot.send_message(chat_id=group_id, text=message)
 #-870288807
