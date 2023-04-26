@@ -54,7 +54,6 @@ def get_info_stock_price():
 
 # tìm thời điểm mốc ban đầu, thời điểm mua lần đầu
 def avg_price(pk,stock,start_date,end_date):
-    end_date = datetime.now()
     start_date = end_date - timedelta(days = 10*365)
     item = Transaction.objects.filter(account_id=pk, stock = stock) 
     total_buy = 0
@@ -230,6 +229,8 @@ def cal_profit_deal_close(pk):
     for i in item:
         if i.status == 'matched':
             new_end_date = i.time_matched -timedelta(minutes=1)
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days = 10*365)
             avgprice = avg_price(pk,i.stock,start_date,new_end_date)
             profit = i.qty*(i.price*1000 -avgprice )
             ratio_profit = (i.price*1000/avgprice-1)*100
@@ -597,18 +598,18 @@ def send_telegram_message(sender, instance, created, **kwargs):
                 text=f"Có lệnh {instance.position} {instance.stock} giá {instance.price}  ")                  
 
 
-from telegram import Bot
-@receiver(post_save, sender=Transaction)
-def send_telegram_group(sender, instance, created, **kwargs):
-    if created:
-        account = Account.objects.get(pk = instance.account.pk)
-        bot_token = account.bot.token
-        group_id = account.bot.chat_id
-        bot = Bot(token=bot_token)
-    if instance.position =='sell':
-        message = 'Hello, group!'
-        bot.send_message(chat_id=group_id, text=message)
-#-870288807
+# from telegram import Bot
+# @receiver(post_save, sender=Transaction)
+# def send_telegram_group(sender, instance, created, **kwargs):
+#     if created:
+#         account = Account.objects.get(pk = instance.account.pk)
+#         bot_token = account.bot.token
+#         group_id = account.bot.chat_id
+#         bot = Bot(token=bot_token)
+#     if instance.position =='sell':
+#         message = 'Hello, group!'
+#         bot.send_message(chat_id=group_id, text=message)
+# #-870288807
 
     
 
