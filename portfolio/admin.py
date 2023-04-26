@@ -12,14 +12,29 @@ class BotTelegramAdmin(admin.ModelAdmin):
 
 class TransactionAdmin(admin.ModelAdmin):
     model = Transaction
-    list_display = ('account','stock','position','price','str_qty','status','created_at','time_matched','time_receive','str_total_value', 'cut_loss_price', 'take_profit_price')
-    fields = ('account','stock','position','price','qty', 'cut_loss_price', 'take_profit_price','str_total_value',)
+    list_display = ('account','stock','position','price','str_qty','status','created_at','time_matched','time_receive','str_total_value', 'cl_price', 'tp_price')
+    fields = ('account', 'stock', 'position', 'price', 'qty', 'cut_loss_price', 'take_profit_price', 'str_total_value')
+
+    def get_fields(self, request, obj=None):
+        # Tùy chỉnh hiển thị field
+        if not obj or obj.status == 'pending':
+            return self.fields
+        else:
+            return ('cut_loss_price', 'take_profit_price')
+    
     list_display_links=('stock',)
     readonly_fields = ('str_total_value',)
     list_filter = ('account_id','stock','position')
+    
     @admin.display(description='qty')
     def str_qty(self, obj):
         return '{:,.0f}'.format(obj.qty)
+    @admin.display(description='TP Price')
+    def tp_price(self, obj):
+        return obj.take_profit_price
+    @admin.display(description='CL Price')
+    def cl_price(self, obj):
+        return obj.cut_loss_price
     
     @admin.display(description='Total value')
     def str_total_value(self, obj):

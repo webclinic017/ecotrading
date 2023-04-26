@@ -18,7 +18,7 @@ from django.dispatch import receiver
 
 
 #lấy giá cổ phiếu
-def get_info_stock_price():
+def get_all_info_stock_price():
     boardname = ['HOSE','HNX','UPCOM']
     linkstocklist='https://price.tpbs.com.vn/api/StockBoardApi/getStockList'
     linkstockquote ='https://price.tpbs.com.vn/api/SymbolApi/getStockQuote'
@@ -51,6 +51,33 @@ def get_info_stock_price():
             'date_time':date_time
                         } )
     return StockPrice.objects.all()
+
+def get_list_stock_price():
+    list_stock = list(Transaction.objects.values_list('stock', flat=True).distinct())
+    number =len(list_stock)
+    linkstockquote ='https://price.tpbs.com.vn/api/SymbolApi/getStockQuote'
+    r = requests.post(linkstockquote,json = {"stocklist" : list_stock })
+    b= json.loads(r.text)
+    a = json.loads(b['content'])
+    date_time = datetime.now()
+    date_time = difine_time_craw_stock_price(date_time)
+    for i in range (0,len(a)):
+        ticker=a[i]['sym']
+        low_price=float(a[i]['low'])
+        high_price = float(a[i]['hig'])
+        match_price=float(round(float(a[i]['mat'])*1000,0))
+        volume=float(a[i]['tmv'].replace(',', '') )*10
+        StockPrice.objects.update_or_create(
+                ticker=ticker,
+                date= date_time.date(),
+            defaults={
+            'low_price': low_price,
+            'high_price': high_price,
+            'match_price': match_price,
+            'volume': volume,
+            'date_time':date_time
+                        } )
+    return StockPrice.objects.all().order_by('-date_time')[:number]
 
 # tìm thời điểm mốc ban đầu, thời điểm mua lần đầu
 def avg_price(pk,stock,start_date,end_date):
@@ -243,6 +270,39 @@ def cal_profit_deal_close(pk):
     return deal_close, str_deal_close
 
 
+def check_status_order(pk):
+        self = Transaction.objects.get(pk=pk)
+        date = define_date(self.created_at, self.modified_at)
+        if self.position == 'buy':
+            stock_price = StockPrice.objects.filter(
+                ticker=self.stock,
+                date_time__gte=date,
+                match_price__lte=self.price*1000,
+                volume__gte=self.qty*5).order_by('date_time')
+            if stock_price:
+                status = 'matched'
+                time = stock_price.first().date_time
+            else:
+                status = 'pending'
+                time = None
+        else:
+            stock_price = StockPrice.objects.filter(
+                ticker=self.stock,
+                date_time__gte=date,
+                match_price__gte=self.price*1000,
+                volume__gte=self.qty*5).order_by('date_time')
+            if stock_price:
+                status = 'matched'
+                time = stock_price.first().date_time
+            else:
+                status = 'pending'
+                time = None
+        if status == 'matched':
+            self.status_raw = status
+            self.time_matched_raw = time
+            self.save()
+        return status, time
+
 # tính giá trung bình danh mục
 
 
@@ -361,64 +421,91 @@ class Transaction (models.Model):
         ('buy', 'Buy'),
         ('sell', 'Sell'),
     ]
-    account = models.ForeignKey(Account,on_delete=models.CASCADE )
+    account = models.ForeignKey(Account,on_delete=models.CASCADE, null=False, blank=False )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
-    stock = models.CharField(max_length=8, choices=LIST_STOCK, null=True, blank=True)
-    position = models.CharField(max_length=4, choices=POSITION_CHOICES, null=True, blank=True)
+    stock = models.CharField(max_length=8, choices=LIST_STOCK, null=False, blank=False)
+    position = models.CharField(max_length=4, choices=POSITION_CHOICES, null=False, blank=False)
     price = models.FloatField()
-    qty = models.IntegerField(default=0)
-    cut_loss_price = models.FloatField(null=False,blank=False, default=0)
+    qty = models.IntegerField(null=True,blank=True)
+    cut_loss_price = models.FloatField(null=True,blank=True)
     buy_code = models.IntegerField(default=0)
-    take_profit_price = models.FloatField(default=0)
+    take_profit_price = models.FloatField(null=True,blank=True)
+    status_raw = models.CharField(max_length=10, null=True,blank=True)
+    time_matched_raw = models.DateTimeField(null=True,blank=True)
+ 
+
     def __str__(self):
         return self.position + str("_") + self.stock
     
     def clean(self):
-        account = self.account
-        port = account.portfolio
-        max_qty = account.net_cash_available/(self.price*1000)
-        max_stock = sum(item['qty_sellable'] - item['qty_sell_pending'] for item in port if item['stock'] == self.stock)
+        if not self.account:
+            raise ValidationError({'account': 'Vui lòng nhập tài khoản'})
+
         if self.position == 'buy':
-            if self.cut_loss_price <= 0 or self.cut_loss_price >= self.price:
-                raise ValidationError({'cut_loss_price': 'Giá cắt lỗ phải lớn hơn 0 và nhỏ hơn giá mua'})
-            elif self.qty > max_qty:
-                raise ValidationError(
-                    {'qty': 'Không đủ sức mua, số lượng tối đa {} cp'.format('{:,.0f}'.format(max_qty))})
+            if not self.cut_loss_price and not self.qty:
+                raise ValidationError({'qty': 'Vui lòng nhập số lượng hoặc giá cắt lỗ'})
+            elif self.cut_loss_price:
+                if self.cut_loss_price < 0 or self.cut_loss_price >= self.price:
+                    raise ValidationError({'cut_loss_price': 'Giá cắt lỗ phải lớn hơn 0 và nhỏ hơn giá mua'})
+                elif self.qty:
+                    max_qty = self.account.net_cash_available / (self.price * 1000)
+                    if self.qty > max_qty:
+                        raise ValidationError({'qty': f'Không đủ sức mua, số lượng tối đa {max_qty:,.0f} cp'})
+            else:
+                if not self.qty:
+                    raise ValidationError({'qty': 'Vui lòng nhập số lượng'})
+
+        elif self.position == 'sell':
+            if not self.qty:
+                raise ValidationError({'qty': 'Vui lòng nhập số lượng'})
+            else:
+                port = self.account.portfolio
+                item = next((item for item in port if item['stock'] == self.stock), None)
+                if not item:
+                    raise ValidationError({'qty': 'Không có cổ phiếu để bán'})
+                max_sellable_qty = item['qty_sellable'] - item['qty_sell_pending']
+                if self.qty > max_sellable_qty:
+                    raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_sellable_qty}'})
         else:
-            if not any(item['stock'] == self.stock for item in port):
-                raise ValidationError({'qty': 'Không có cổ phiếu để bán'})
-            elif self.qty > max_stock:
-                raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_stock}'})
+            raise ValidationError({'position': 'Vui lòng chọn "mua" hoặc "bán"'})
+
+    
 
             
 
     def save(self, *args, **kwargs):
         if self.position == 'buy':
-            if self.cut_loss_price !=0 and self.take_profit_price==0:
-                self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
-            if self.qty == 0:
-                risk = self.account.ratio_risk
-                nav = self.account.net_cash_flow +self.account.total_profit_close
-                R = risk*nav
-                self.qty = R/((self.price -self.cut_loss_price)*1000)
-            else: 
-                self.qty  = self.qty
+            risk = self.account.ratio_risk
+            nav = self.account.net_cash_flow +self.account.total_profit_close
+            R = risk*nav
+            if self.cut_loss_price ==None or self.cut_loss_price <0:
+                cut_loss_price  = self.price - R/(self.qty*1000)
+                if cut_loss_price >0:
+                    self.cut_loss_price = cut_loss_price
+                    self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
+                else:
+                    self.cut_loss_price == None
+            elif self.cut_loss_price and self.cut_loss_price >0:
+                if self.qty == 0 or self.qty ==None:
+                    self.qty = R/((self.price -self.cut_loss_price)*1000)
+                    self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
+        
         try:
             self.full_clean()
         except ValidationError as e:
-            # Xử lý lỗi ở đây
-            max_qty = self.account.net_cash_available/(self.price*1000)
-            max_cutloss_price = self.price - (R/max_qty)/1000 
-            raise ValidationError([
-                    ValidationError('Không đủ sức mua, có thể điều chỉnh số lượng tối đa {} cp'.format('{:,.0f}'.format(max_qty)), code='qty'),
-                    ValidationError('Không đủ sức mua, có thể giảm giá cắt lỗ tối đa {}'.format('{:,.0f}'.format(max_cutloss_price)), code='price')
-                ])
+            max_qty = round(self.account.net_cash_available/(self.price*1000),0)
+            max_cutloss_price = round(self.price - R/(max_qty*1000),2)
+            if max_cutloss_price <= 0:
+                raise ValidationError('Không thể thực hiện giao dịch theo nguyên tắc quản trị vốn, bạn có thể nhập khối lượng để mua')
+            else:
+                raise ValidationError(f'Không đủ sức mua, có thể điều chỉnh số lượng tối đa {max_qty} cp, hoặc có thể giảm giá cắt lỗ nhỏ hơn {max_cutloss_price}'
+                         )
         else:
-        # Lưu đối tượng nếu không có lỗi
+            # Lưu đối tượng nếu không có lỗi
             super(Transaction, self).save(*args, **kwargs)
-    
-    
+        
+        
 
     @property
     def total_value(self):
@@ -439,42 +526,22 @@ class Transaction (models.Model):
         return '{:,.0f}'.format(total)
     
     @property
-    def order_matching(self):
-        date = define_date(self.created_at, self.modified_at)
-        if self.position =='buy':
-            stock_price = StockPrice.objects.filter(
-                ticker = self.stock,
-                date_time__gte =date,
-                match_price__lte = self.price*1000,
-                volume__gte = self.qty*5 ).order_by('date_time')
-            if stock_price:
-                status = 'matched'
-                time = stock_price.first().date_time
-            else:
-                status = 'pending'
-                time = None
-            return status, time
-        else:
-            stock_price = StockPrice.objects.filter(
-                ticker = self.stock,
-                date_time__gte =date,
-                match_price__gte = self.price*1000,
-                volume__gte = self.qty*5 ).order_by('date_time')
-            if stock_price:
-                status = 'matched'
-                time = stock_price.first().date_time
-            else:
-                status = 'pending'
-                time = None
-            return status, time
-
-    
-    @property
     def status(self):
-        return self.order_matching[0]
+        if self.status_raw == 'matched':
+            return self.status_raw
+        else:
+            status = check_status_order(self.pk)[0]
+            return status
+
     @property
     def time_matched(self):
-        return self.order_matching[1]
+        if self.status_raw == 'matched':
+            return self.time_matched_raw
+        else:
+            time = check_status_order(self.pk)[1]
+            return time
+
+
     
     @property
     def date_stock_on_account(self):
