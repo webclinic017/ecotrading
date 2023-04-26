@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-1@%_-7!z=r9nf#$rbge-n10+fs@9x)q8=b2o0qbl&8)n$%#x0x
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['103.176.251.105']
 
 
 # Application definition
@@ -87,7 +87,19 @@ WSGI_APPLICATION = 'ecotrading.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
+DATABASES_LIST = [{
+#server
+      'default': {
+         'ENGINE': 'django.db.backends.postgresql',
+         'NAME': 'ecotrading',                      
+         'USER': 'admin',
+         'PASSWORD': 'Ecotr@ding2023',
+         'HOST': 'localhost',
+         'PORT': '',
+     }
+ }, 
+#localhost
+{
      'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'ecotrading',                      
@@ -95,9 +107,9 @@ DATABASES = {
         'PASSWORD': 'Ecotr@ding2021',
         'HOST': '',
         'PORT': '5432',
-    }}
-
-
+    }
+}]
+DATABASES = DATABASES_LIST[0]
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
