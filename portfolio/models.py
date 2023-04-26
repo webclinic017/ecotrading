@@ -51,8 +51,11 @@ def get_info_stock_price():
             'date_time':date_time
                         } )
     return StockPrice.objects.all()
+
 # tìm thời điểm mốc ban đầu, thời điểm mua lần đầu
 def avg_price(pk,stock,start_date,end_date):
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days = 10*365)
     item = Transaction.objects.filter(account_id=pk, stock = stock) 
     total_buy = 0
     total_sell =0
@@ -102,6 +105,8 @@ def avg_price(pk,stock,start_date,end_date):
 
 #xác định danh mục cổ phiếu đã về
 def qty_stock_available(pk,stock, start_date,end_date):
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days = 10*365)
     item = Transaction.objects.filter(account_id=pk, stock = stock) 
     total_buy = 0
     total_sell =0
@@ -113,48 +118,52 @@ def qty_stock_available(pk,stock, start_date,end_date):
                 total_sell += i.qty
     return total_buy -total_sell
 
-def filter_order_mathched(pk, start_date, end_date):
+def filter_order_mathched(pk):
     item = Transaction.objects.filter(account_id=pk) 
     order_list = Transaction.objects.none()   
     for i in item:
-        if i.status == 'matched' and i.time_matched >=start_date and i.time_matched <= end_date:
+        if i.status == 'matched':
             order_list |= Transaction.objects.filter(pk=i.pk)
     return order_list
 
 #Xác định danh mục cổ phiếu đã mua, bao gồm chờ về
-def qty_stock_on_account(pk, start_date,end_date):
-    order_list = filter_order_mathched(pk, start_date, end_date)
-    new_order = order_list.filter(account_id=pk).values('stock').annotate(
-        total_buy_qty=Coalesce(Sum('qty', filter=Q(position='buy')), 0),
-        total_sell_qty=Coalesce(Sum('qty', filter=Q(position='sell')), 0)
-        ).annotate(
-        qty=F('total_buy_qty') - F('total_sell_qty')
-        ).exclude(qty=0).values('stock', 'qty')
+def qty_stock_on_account(pk):
     port_raw = []
     port_str = []
-    for i in new_order:
-        stock = i['stock']
-        qty_total = i['qty']
-        avgprice = avg_price(pk,stock,start_date,end_date)
-        qty_sellable =qty_stock_available(pk,stock, start_date,end_date)
-        qty_receiving = qty_total -qty_sellable
-        item_sell = Transaction.objects.filter(account_id = pk,position ='sell', stock =stock )
-        qty_sell_pending = sum(i.qty for i in item_sell if i.status =='pending')
-        market_price = StockPrice.objects.filter(ticker = stock).order_by('-date_time').first().match_price     
-        profit = qty_total*(market_price-avgprice)
-        ratio_profit = (market_price/avgprice-1)*100
-        port_raw.append({'stock': stock,'qty_total':qty_total, 'qty_sellable': qty_sellable, 
-                                 'qty_receiving': qty_receiving,'qty_sell_pending':qty_sell_pending,
-                                 'avg_price':avgprice, 'market_price':market_price,
-                                 'profit':profit,'ratio_profit':ratio_profit
-                                 })
-        port_str.append({'stock': stock,'qty_total':'{:,.0f}'.format(qty_total), 
-                                 'qty_sellable': '{:,.0f}'.format(qty_sellable), 
-                                 'qty_receiving': '{:,.0f}'.format(qty_receiving),
-                                 'qty_sell_pending':'{:,.0f}'.format(qty_sell_pending),
-                                 'avg_price':'{:,.0f}'.format(avgprice), 
-                                 'market_price':'{:,.0f}'.format(market_price),
-                                  'profit':'{:,.0f}'.format(profit),'ratio_profit':str(round(ratio_profit,2))+str('%')})
+    order_list = filter_order_mathched(pk)
+    if order_list:
+        new_order = order_list.filter(account_id=pk).values('stock').annotate(
+            total_buy_qty=Coalesce(Sum('qty', filter=Q(position='buy')), 0),
+            total_sell_qty=Coalesce(Sum('qty', filter=Q(position='sell')), 0)
+            ).annotate(
+            qty=F('total_buy_qty') - F('total_sell_qty')
+            ).exclude(qty=0).values('stock', 'qty')
+        
+        for i in new_order:
+                stock = i['stock']
+                qty_total = i['qty']
+                end_date = datetime.now()
+                start_date = end_date - timedelta(days = 10*365)
+                avgprice = avg_price(pk,stock,start_date,end_date)
+                qty_sellable =qty_stock_available(pk,stock, start_date,end_date)
+                qty_receiving = qty_total -qty_sellable
+                item_sell = Transaction.objects.filter(account_id = pk,position ='sell', stock =stock )
+                qty_sell_pending = sum(i.qty for i in item_sell if i.status =='pending')
+                market_price = StockPrice.objects.filter(ticker = stock).order_by('-date_time').first().match_price     
+                profit = qty_total*(market_price-avgprice)
+                ratio_profit = (market_price/avgprice-1)*100
+                port_raw.append({'stock': stock,'qty_total':qty_total, 'qty_sellable': qty_sellable, 
+                                        'qty_receiving': qty_receiving,'qty_sell_pending':qty_sell_pending,
+                                        'avg_price':avgprice, 'market_price':market_price,
+                                        'profit':profit,'ratio_profit':ratio_profit
+                                        })
+                port_str.append({'stock': stock,'qty_total':'{:,.0f}'.format(qty_total), 
+                                        'qty_sellable': '{:,.0f}'.format(qty_sellable), 
+                                        'qty_receiving': '{:,.0f}'.format(qty_receiving),
+                                        'qty_sell_pending':'{:,.0f}'.format(qty_sell_pending),
+                                        'avg_price':'{:,.0f}'.format(avgprice), 
+                                        'market_price':'{:,.0f}'.format(market_price),
+                                        'profit':'{:,.0f}'.format(profit),'ratio_profit':str(round(ratio_profit,2))+str('%')})
     return port_raw, port_str
 
 
@@ -214,12 +223,12 @@ def define_date(date1, date2):
     else:
         return date1
 
-def cal_profit_deal_close(pk, start_date,end_date ):
+def cal_profit_deal_close(pk):
     item = Transaction.objects.filter(account_id=pk,position ='sell' )
     deal_close = []
     str_deal_close = []
     for i in item:
-        if i.status == 'matched' and i.time_matched >=start_date and i.time_matched <= end_date:
+        if i.status == 'matched':
             new_end_date = i.time_matched -timedelta(minutes=1)
             avgprice = avg_price(pk,i.stock,start_date,new_end_date)
             profit = i.qty*(i.price*1000 -avgprice )
@@ -236,8 +245,7 @@ def cal_profit_deal_close(pk, start_date,end_date ):
 # tính giá trung bình danh mục
 
 
-end_date = datetime.now()
-start_date = end_date - timedelta(days = 10*365)
+
     
 class BotTelegram (models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -274,10 +282,10 @@ class Account (models.Model):
         return self.name
     @property
     def portfolio(self):
-        return qty_stock_on_account(self.pk,start_date, end_date)[0]
+        return qty_stock_on_account(self.pk)[0]
     @property
     def str_portfolio(self):
-        return qty_stock_on_account(self.pk,start_date, end_date)[1]
+        return qty_stock_on_account(self.pk)[1]
 
     
     @property
@@ -287,7 +295,7 @@ class Account (models.Model):
         return total
     @property
     def net_cash_available(self):
-        order_list = filter_order_mathched(self.pk, start_date, end_date)
+        order_list = filter_order_mathched(self.pk)
         total_trading = sum(i.total_value for i in order_list)
         # cần cộng thêm giá trị deal mua đang chờ khớp
         item = Transaction.objects.filter(account_id = self.pk,position ='buy')
@@ -304,14 +312,14 @@ class Account (models.Model):
 
     @property
     def total_profit(self):
-        order_list = filter_order_mathched(self.pk, start_date, end_date)
+        order_list = filter_order_mathched(self.pk)
         total_trading = sum(i.total_value for i in order_list)
         net_cash_available = self.net_cash_flow - total_trading
         total = net_cash_available+ self.market_value -self.net_cash_flow 
         return total
     @property
     def close_deal(self):
-        close_deal= cal_profit_deal_close(self.pk, start_date,end_date )
+        close_deal= cal_profit_deal_close(self.pk )
         return close_deal
     @property
     def total_profit_close(self):
@@ -588,6 +596,18 @@ def send_telegram_message(sender, instance, created, **kwargs):
                 text=f"Có lệnh {instance.position} {instance.stock} giá {instance.price}  ")                  
 
 
+from telegram import Bot
+@receiver(post_save, sender=Transaction)
+def send_telegram_group(sender, instance, created, **kwargs):
+    if created:
+        account = Account.objects.get(pk = instance.account.pk)
+        bot_token = account.bot.token
+        group_id = '-870288807'
+        bot = Bot(token=bot_token)
+    if instance.position =='buy':
+        message = 'Hello, group!'
+        bot.send_message(chat_id=group_id, text=message)
+#-870288807
 
     
 
