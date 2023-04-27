@@ -242,40 +242,36 @@ def cal_profit_deal_close(pk):
 
 
 def check_status_order(pk):
-        self = Transaction.objects.get(pk=pk)
-        date = define_date(self.created_at, self.modified_at)
+        item = Transaction.objects.get(pk=pk)
+        date = define_date(item.created_at, item.modified_at)
+        status = 'pending'
         time = None
-        time_received_stock =None
-        if self.position == 'buy':
+        time_received_stock = None
+        if item.position == 'buy':
             stock_price = StockPrice.objects.filter(
-                ticker=self.stock,
+                ticker=item.stock,
                 date_time__gte=date,
-                match_price__lte=self.price*1000,
-                volume__gte=self.qty*5).order_by('date_time')
+                match_price__lte=item.price*1000,
+                volume__gte=item.qty*5).order_by('date_time')
             if stock_price:
                 status = 'matched'
                 time = stock_price.first().date_time
                 time_received_stock = difine_date_stock_on_account(time)
-            else:
-                status = 'pending'
         else:
             stock_price = StockPrice.objects.filter(
-                ticker=self.stock,
+                ticker=item.stock,
                 date_time__gte=date,
-                match_price__gte=self.price*1000,
-                volume__gte=self.qty*5).order_by('date_time')
+                match_price__gte=item.price*1000,
+                volume__gte=item.qty*5).order_by('date_time')
             if stock_price:
                 status = 'matched'
                 time = stock_price.first().date_time
-                time_received_stock = time
-            else:
-                status = 'pending'
-                
+                time_received_stock = time  
         if status == 'matched':
-            self.status_raw = status
-            self.time_matched_raw = time
-            self.time_received_stock = time_received_stock
-            self.save()
+            item.status_raw = status
+            item.time_matched_raw = time
+            item.time_received_stock = time_received_stock
+            item.save()
         return status, time, time_received_stock
 
 # tính giá trung bình danh mục
@@ -502,11 +498,11 @@ class Transaction (models.Model):
     
     @property
     def status(self):
-        if self.status_raw == 'matched':
-            return self.status_raw
+        if self.status_raw:
+            status = 'matched'
         else:
             status = check_status_order(self.pk)[0]
-            return status
+        return status
 
     @property
     def time_matched(self):
