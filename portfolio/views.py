@@ -27,7 +27,7 @@ def account(request,pk):
     #Khả dụng
     net_cash_available = account.net_cash_available
     total_profit = account.total_profit
-    order_list = filter_order_mathched(pk).order_by('-modified_at')
+    order_list = Transaction.objects.filter(account_id =pk,status_raw = 'matched' ).order_by('-modified_at')
     str_close_deal = account.close_deal[1]
     total_profit_close = account.total_profit_close
     total_profit_open = account.total_profit_open
