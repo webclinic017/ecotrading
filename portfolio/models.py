@@ -219,7 +219,6 @@ def difine_time_craw_stock_price(date_time):
 
 #Tính ngày cổ phiếu về tài khoản
 def difine_date_stock_on_account(time_matched):
-    date_item = DateNotTrading.objects.filter(date__gte=time_matched)
     weekday = time_matched.weekday()
     time_matched=time_matched.date()
     new_time = time(12, 00, 0) #thời gian hàng về 
@@ -230,7 +229,7 @@ def difine_date_stock_on_account(time_matched):
         time_matched = time_matched + timedelta(days=2)
         weekday = time_matched.weekday()
     while True: #check có trùng ngày lễ không
-        if weekday == 5 or weekday == 6 or time_matched in date_item :  # Nếu là thứ 7, chủ nhật, lễ
+        if weekday == 5 or weekday == 6 or DateNotTrading.objects.filter(date=time_matched).exists()  :  # Nếu là thứ 7, chủ nhật, lễ
                 time_matched = time_matched + timedelta(days=1)  # cộng 1 ngày
         else:
             break
