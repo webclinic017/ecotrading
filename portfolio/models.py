@@ -404,6 +404,7 @@ class Transaction (models.Model):
     status_raw = models.CharField(max_length=10, null=True,blank=True)
     time_matched_raw = models.DateTimeField(null=True,blank=True)
     time_received_stock = models.DateTimeField(null=True,blank=True)
+    description = models.TextField(max_length=200,null=True,blank=True)
  
 
     def __str__(self):
@@ -412,41 +413,73 @@ class Transaction (models.Model):
     def clean(self):
         if not self.account:
             raise ValidationError({'account': 'Vui lòng nhập tài khoản'})
-
-        if self.position == 'buy':
-            if not self.cut_loss_price and not self.qty:
-                raise ValidationError({'qty': 'Vui lòng nhập số lượng hoặc giá cắt lỗ'})
-            elif self.cut_loss_price:
-                if self.cut_loss_price < 0 or self.cut_loss_price >= self.price:
-                    raise ValidationError({'cut_loss_price': 'Giá cắt lỗ phải lớn hơn 0 và nhỏ hơn giá mua'})
-                elif self.qty:
-                    max_qty = self.account.net_cash_available / (self.price * 1000)
-                    if self.qty > max_qty:
-                        raise ValidationError({'qty': f'Không đủ sức mua, số lượng tối đa {max_qty:,.0f} cp'})
-            else:
+        if self.cut_loss_price:
+            if self.cut_loss_price < 0 or self.cut_loss_price >= self.price:
+                raise ValidationError({'cut_loss_price': 'Giá cắt lỗ phải lớn hơn 0 và nhỏ hơn giá mua'})
+        if self.take_profit_price:
+            if self.cut_loss_price < 0 or self.take_profit_price <= self.price:
+                raise ValidationError({'take_profit_price': 'Giá chốt lời phải lớn hơn 0 và lớn hơn giá mua'})                        
+        # if not self.pk:  # đây là lần tạo mới record
+        if self.position:
+            if self.position == 'buy':
+                if self.qty:
+                    item = Transaction.objects.filter(account_id=self.account.pk).exclude(pk=self.pk)
+                    total_trading = sum(i.total_value for i in item if i.status_raw == 'matched')
+                    # cần cộng thêm giá trị deal mua đang chờ khớp
+                    pending = sum(i.total_value for i in item if i.status_raw != 'matched' and i.position =='buy')
+                    net_cash_available = self.account.net_cash_flow - total_trading -pending
+                    if self.total_value > net_cash_available :
+                        raise ValidationError({'qty': f'Không đủ sức mua, số lượng tối đa {net_cash_available:,.0f} cp'})
+                else:
+                    if not self.qty:
+                        raise ValidationError({'qty': 'Vui lòng nhập số lượng hoặc giá cắt lỗ'})      
+            elif self.position == 'sell':
                 if not self.qty:
                     raise ValidationError({'qty': 'Vui lòng nhập số lượng'})
-
-        elif self.position == 'sell':
-            if not self.qty:
-                raise ValidationError({'qty': 'Vui lòng nhập số lượng'})
-            else:
-                port = self.account.portfolio
-                item = next((item for item in port if item['stock'] == self.stock), None)
-                if not item:
-                    raise ValidationError({'qty': 'Không có cổ phiếu để bán'})
-                max_sellable_qty = item['qty_sellable'] - item['qty_sell_pending']
-                if self.qty > max_sellable_qty:
-                    raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_sellable_qty}'})
+                else:
+                    port = self.account.portfolio
+                    qty_sell_pending = Transaction.objects.filter(account_id=self.account.pk,
+                            status_raw = 'pending', position = 'sell').exclude(pk=self.pk).aggregate(Sum('qty'))['qty__sum'] or 0
+                    item = next((item for item in port if item['stock'] == self.stock), None)
+                    if not item:
+                        raise ValidationError({'qty': 'Không có cổ phiếu để bán'})
+                    max_sellable_qty = item['qty_sellable'] - qty_sell_pending
+                    if self.qty > max_sellable_qty:
+                        raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_sellable_qty}'})
         else:
-            raise ValidationError({'position': 'Vui lòng chọn "mua" hoặc "bán"'})
+                raise ValidationError({'position': 'Vui lòng chọn "mua" hoặc "bán"'})
+        
+        
+        # else:  # đây là lần chỉnh sửa record
+        #     if self.position == 'buy':
+        #         if self.qty:
+        #             item = Transaction.objects.filter(account_id=self.account.pk).exclude(pk=self.pk)
+        #             total_trading = sum(i.total_value for i in item if i.status_raw == 'matched')
+        #             # cần cộng thêm giá trị deal mua đang chờ khớp
+        #             pending = sum(i.total_value for i in item if i.status_raw != 'matched' and i.position =='buy')
+        #             net_cash_available = self.account.net_cash_flow - total_trading -pending
+        #             if self.total_value > net_cash_available :
+        #                 raise ValidationError({'qty': f'Không đủ sức mua, số lượng tối đa {net_cash_available:,.0f} cp'})
+        #         else:
+        #             if not self.qty:
+        #                 raise ValidationError({'qty': 'Vui lòng nhập số lượng hoặc giá cắt lỗ'})      
+        #     else:
+        #         if not self.qty:
+        #             raise ValidationError({'qty': 'Vui lòng nhập số lượng'})
+        #         else:
+        #             port = self.account.portfolio
+        #             item = next((item for item in port if item['stock'] == self.stock), None)
+        #             if not item:
+        #                 raise ValidationError({'qty': 'Không có cổ phiếu để bán'})
+        #             max_sellable_qty = item['qty_sellable'] - item['qty_sell_pending']
+        #             if self.qty > max_sellable_qty:
+        #                 raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_sellable_qty}'})
 
     
 
             
 
     def save(self, *args, **kwargs):
-        if self.time_matched_raw is None:
             if self.position == 'buy':
                 risk = self.account.ratio_risk
                 nav = self.account.net_cash_flow +self.account.total_profit_close

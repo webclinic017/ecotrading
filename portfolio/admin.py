@@ -20,7 +20,10 @@ class TransactionAdmin(admin.ModelAdmin):
         if not obj or obj.status == 'pending':
             return self.fields
         else:
-            return ('cut_loss_price', 'take_profit_price')
+            if obj.position =='buy':
+                return ('cut_loss_price', 'take_profit_price','description')
+            else:
+                return ('description',)
     
     list_display_links=('stock',)
     readonly_fields = ('str_total_value',)
