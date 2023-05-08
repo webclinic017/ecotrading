@@ -557,105 +557,105 @@ class Transaction (models.Model):
         
 
 
-@receiver(post_save, sender=StockPrice)
-def create_sell_transaction(sender, instance, created, **kwargs):
-    if not created:
-        # Get the latest buy Transactions for this stock
-        buys_cutloss = Transaction.objects.filter(
-            stock=instance.ticker, 
-            position='buy', 
-            cut_loss_price__gte=instance.match_price/10000,   
-        )
-        buys_take_profit = Transaction.objects.filter(
-             stock=instance.ticker, 
-             position='buy', 
-             take_profit_price__lte =instance.match_price/10000,  
-             take_profit_price__gt=0 
-        )
-        sells = Transaction.objects.filter(stock=instance.ticker, position='sell').values_list('buy_code', flat=True)
-        # Check if the cut_loss_price is greater than the match_price
-        if buys_cutloss: 
-            for buy in buys_cutloss:
-                account = Account.objects.get(pk=buy.account.pk)
-                port = account.portfolio
-                for item in port:
-                    if item['stock'] == buy.stock:
-                        new_qty_saleable = item['qty_sellable'] - item['qty_sell_pending']
-                        if buy.time_matched and buy.date_stock_on_account <= instance.date_time and buy.qty <=new_qty_saleable and buy.pk not in sells:
-                            sell = Transaction.objects.create(
-                                account=buy.account,
-                                stock=buy.stock,
-                                position='sell',
-                                price=buy.cut_loss_price,
-                                qty=buy.qty,
-                                cut_loss_price=0,
-                                buy_code=buy.pk)
-        elif buys_take_profit:
-            for buy in buys_take_profit:
-                account = Account.objects.get(pk=buy.account.pk)
-                port = account.portfolio
-                for item in port:
-                    if item['stock'] == buy.stock:
-                        new_qty_saleable = item['qty_sellable'] - item['qty_sell_pending']
-                        if buy.time_matched and buy.date_stock_on_account <= instance.date_time and buy.qty <= new_qty_saleable and buy.pk not in sells:
-                            sell = Transaction.objects.create(
-                                account=buy.account,
-                                stock=buy.stock,
-                                position='sell',
-                                price=buy.take_profit_price,
-                                qty=buy.qty,
-                                buy_code=buy.pk)
-  
-
 # @receiver(post_save, sender=StockPrice)
 # def create_sell_transaction(sender, instance, created, **kwargs):
-#     if created:
-#         return
-#     buys_cutloss =None
-#     buys_take_profit = None
-    
-#     buys_cutloss = Transaction.objects.filter(
-#         stock=instance.ticker, 
-#         position='buy', 
-#         status_raw = 'matched',
-#         cut_loss_price__gte = instance.match_price/10000, 
-#     )
-
-#     buys_take_profit = Transaction.objects.filter(
-#         stock=instance.ticker, 
-#         position='buy',
-#         status_raw = 'matched', 
-#         take_profit_price__lte = instance.match_price/10000,   
-#         take_profit_price__gt=0
-#     )
-
-#     sells = Transaction.objects.filter(stock=instance.ticker, position='sell').values_list('buy_code', flat=True)
-
-#     for buy in buys_cutloss | buys_take_profit:
-#         if buy.pk in sells:
-#             continue
-
-#         account = Account.objects.get(pk=buy.account.pk)
-#         port = account.portfolio
-#         item = next((i for i in port if i['stock'] == buy.stock), None)
-
-#         if not item:
-#             continue
-
-#         new_qty_saleable = item['qty_sellable'] - item['qty_sell_pending']
-  
-#         if not buy.time_matched_raw or buy.date_stock_on_account > instance.date_time or buy.qty > new_qty_saleable:
-#             continue
-
-#         sell = Transaction.objects.create(
-#             account=buy.account,
-#             stock=buy.stock,
-#             position='sell',
-#             price=buy.cut_loss_price if buy.position == 'buy' else buy.take_profit_price,
-#             qty=buy.qty,
-#             cut_loss_price=0 if buy.position == 'buy' else buy.cut_loss_price,
-#             buy_code=buy.pk
+#     if not created:
+#         # Get the latest buy Transactions for this stock
+#         buys_cutloss = Transaction.objects.filter(
+#             stock=instance.ticker, 
+#             position='buy', 
+#             cut_loss_price__gte=instance.match_price/10000,   
 #         )
+#         buys_take_profit = Transaction.objects.filter(
+#              stock=instance.ticker, 
+#              position='buy', 
+#              take_profit_price__lte =instance.match_price/10000,  
+#              take_profit_price__gt=0 
+#         )
+#         sells = Transaction.objects.filter(stock=instance.ticker, position='sell').values_list('buy_code', flat=True)
+#         # Check if the cut_loss_price is greater than the match_price
+#         if buys_cutloss: 
+#             for buy in buys_cutloss:
+#                 account = Account.objects.get(pk=buy.account.pk)
+#                 port = account.portfolio
+#                 for item in port:
+#                     if item['stock'] == buy.stock:
+#                         new_qty_saleable = item['qty_sellable'] - item['qty_sell_pending']
+#                         if buy.time_matched and buy.time_received_stock <= instance.date_time and buy.qty <=new_qty_saleable and buy.pk not in sells:
+#                             sell = Transaction.objects.create(
+#                                 account=buy.account,
+#                                 stock=buy.stock,
+#                                 position='sell',
+#                                 price=buy.cut_loss_price,
+#                                 qty=buy.qty,
+#                                 cut_loss_price=0,
+#                                 buy_code=buy.pk)
+#         elif buys_take_profit:
+#             for buy in buys_take_profit:
+#                 account = Account.objects.get(pk=buy.account.pk)
+#                 port = account.portfolio
+#                 for item in port:
+#                     if item['stock'] == buy.stock:
+#                         new_qty_saleable = item['qty_sellable'] - item['qty_sell_pending']
+#                         if buy.time_matched and buy.time_received_stock <= instance.date_time and buy.qty <= new_qty_saleable and buy.pk not in sells:
+#                             sell = Transaction.objects.create(
+#                                 account=buy.account,
+#                                 stock=buy.stock,
+#                                 position='sell',
+#                                 price=buy.take_profit_price,
+#                                 qty=buy.qty,
+#                                 buy_code=buy.pk)
+  
+
+@receiver(post_save, sender=StockPrice)
+def create_sell_transaction(sender, instance, created, **kwargs):
+    if created:
+        return
+    buys_cutloss =None
+    buys_take_profit = None
+    
+    buys_cutloss = Transaction.objects.filter(
+        stock=instance.ticker, 
+        position='buy', 
+        status_raw = 'matched',
+        cut_loss_price__gte = instance.match_price/10000, 
+    )
+
+    buys_take_profit = Transaction.objects.filter(
+        stock=instance.ticker, 
+        position='buy',
+        status_raw = 'matched', 
+        take_profit_price__lte = instance.match_price/10000,   
+        take_profit_price__gt=0
+    )
+
+    sells = Transaction.objects.filter(stock=instance.ticker, position='sell').values_list('buy_code', flat=True)
+
+    for buy in buys_cutloss | buys_take_profit:
+        if buy.pk in sells:
+            continue
+
+        account = Account.objects.get(pk=buy.account.pk)
+        port = account.portfolio
+        item = next((i for i in port if i['stock'] == buy.stock), None)
+
+        if not item:
+            continue
+
+        new_qty_saleable = item['qty_sellable'] - item['qty_sell_pending']
+  
+        if not buy.time_matched_raw or buy.time_received_stock > instance.date_time or buy.qty > new_qty_saleable:
+            continue
+
+        sell = Transaction.objects.create(
+            account=buy.account,
+            stock=buy.stock,
+            position='sell',
+            price=buy.cut_loss_price if buy.position == 'buy' else buy.take_profit_price,
+            qty=buy.qty,
+            cut_loss_price=0 if buy.position == 'buy' else buy.cut_loss_price,
+            buy_code=buy.pk
+        )
 
             
 from telegram import Bot
