@@ -480,14 +480,14 @@ class Transaction (models.Model):
             
 
     def save(self, *args, **kwargs):
-            if self.position == 'buy':
+        if self.position == 'buy':
                 risk = self.account.ratio_risk
                 nav = self.account.net_cash_flow +self.account.total_profit_close
                 R = risk*nav
                 if self.cut_loss_price ==None or self.cut_loss_price <0:
                     cut_loss_price  = self.price - R/(self.qty*1000)
                     if cut_loss_price >0:
-                        self.cut_loss_price = cut_loss_price
+                        self.cut_loss_price = round(cut_loss_price,0)
                         self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
                     else:
                         self.cut_loss_price == None
@@ -509,6 +509,9 @@ class Transaction (models.Model):
                 else:
                     # Lưu đối tượng nếu không có lỗi
                     super(Transaction, self).save(*args, **kwargs)
+        else:
+            # Lưu đối tượng nếu không có lỗi
+            super(Transaction, self).save(*args, **kwargs)
         
         
 
@@ -612,21 +615,21 @@ class Transaction (models.Model):
 def create_sell_transaction(sender, instance, created, **kwargs):
     if created:
         return
-    buys_cutloss =None
+    buys_cutloss = None
     buys_take_profit = None
     
     buys_cutloss = Transaction.objects.filter(
         stock=instance.ticker, 
         position='buy', 
         status_raw = 'matched',
-        cut_loss_price__gte = instance.match_price/10000, 
+        cut_loss_price__gte = instance.match_price/1000, 
     )
 
     buys_take_profit = Transaction.objects.filter(
         stock=instance.ticker, 
         position='buy',
         status_raw = 'matched', 
-        take_profit_price__lte = instance.match_price/10000,   
+        take_profit_price__lte = instance.match_price/1000,   
         take_profit_price__gt=0
     )
 
