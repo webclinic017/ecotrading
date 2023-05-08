@@ -495,19 +495,20 @@ class Transaction (models.Model):
                     if self.qty == 0 or self.qty ==None:
                         self.qty = R/((self.price -self.cut_loss_price)*1000)
                         self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
-            try:
-                self.full_clean()
-            except ValidationError as e:
-                max_qty = round(self.account.net_cash_available/(self.price*1000),0)
-                max_cutloss_price = round(self.price - R/(max_qty*1000),2)
-                if max_cutloss_price <= 0:
-                    raise ValidationError('Không thể thực hiện giao dịch theo nguyên tắc quản trị vốn, bạn có thể nhập khối lượng để mua')
+                #chỉ check save khi buy
+                try:
+                    self.full_clean()
+                except ValidationError as e:
+                    max_qty = round(self.account.net_cash_available/(self.price*1000),0)
+                    max_cutloss_price = round(self.price - R/(max_qty*1000),2)
+                    if max_cutloss_price <= 0:
+                        raise ValidationError('Không thể thực hiện giao dịch theo nguyên tắc quản trị vốn, bạn có thể nhập khối lượng để mua')
+                    else:
+                        raise ValidationError(f'Không đủ sức mua, có thể điều chỉnh số lượng tối đa {max_qty} cp, hoặc có thể giảm giá cắt lỗ nhỏ hơn {max_cutloss_price}'
+                                )
                 else:
-                    raise ValidationError(f'Không đủ sức mua, có thể điều chỉnh số lượng tối đa {max_qty} cp, hoặc có thể giảm giá cắt lỗ nhỏ hơn {max_cutloss_price}'
-                            )
-            else:
-                # Lưu đối tượng nếu không có lỗi
-                super(Transaction, self).save(*args, **kwargs)
+                    # Lưu đối tượng nếu không có lỗi
+                    super(Transaction, self).save(*args, **kwargs)
         
         
 
