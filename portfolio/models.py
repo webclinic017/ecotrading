@@ -650,12 +650,18 @@ def create_sell_transaction(sender, instance, created, **kwargs):
   
         if not buy.time_matched_raw or buy.time_received_stock > instance.date_time or buy.qty > new_qty_saleable:
             continue
+        
+        if buys_cutloss:
+            price_sell =buy.cut_loss_price
+        elif buys_take_profit:
+            price_sell = buy.take_profit_price
+
 
         sell = Transaction.objects.create(
             account=buy.account,
             stock=buy.stock,
             position='sell',
-            price=buy.cut_loss_price if buy.position == 'buy' else buy.take_profit_price,
+            price=price_sell,
             qty=buy.qty,
             cut_loss_price=0 if buy.position == 'buy' else buy.cut_loss_price,
             buy_code=buy.pk
