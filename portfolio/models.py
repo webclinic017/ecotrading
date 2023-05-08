@@ -410,44 +410,44 @@ class Transaction (models.Model):
     def __str__(self):
         return self.position + str("_") + self.stock
     
-    def clean(self):
-        if not self.account:
-            raise ValidationError({'account': 'Vui lòng nhập tài khoản'})
-        if self.cut_loss_price:
-            if self.cut_loss_price < 0 or self.cut_loss_price >= self.price:
-                raise ValidationError({'cut_loss_price': 'Giá cắt lỗ phải lớn hơn 0 và nhỏ hơn giá mua'})
-        if self.take_profit_price:
-            if self.cut_loss_price < 0 or self.take_profit_price <= self.price:
-                raise ValidationError({'take_profit_price': 'Giá chốt lời phải lớn hơn 0 và lớn hơn giá mua'})                        
-        # if not self.pk:  # đây là lần tạo mới record
-        if self.position:
-            if self.position == 'buy':
-                if self.qty:
-                    item = Transaction.objects.filter(account_id=self.account.pk).exclude(pk=self.pk)
-                    total_trading = sum(i.total_value for i in item if i.status_raw == 'matched')
-                    # cần cộng thêm giá trị deal mua đang chờ khớp
-                    pending = sum(i.total_value for i in item if i.status_raw != 'matched' and i.position =='buy')
-                    net_cash_available = self.account.net_cash_flow - total_trading -pending
-                    if self.total_value > net_cash_available :
-                        raise ValidationError({'qty': f'Không đủ sức mua, số lượng tối đa {net_cash_available:,.0f} cp'})
-                else:
-                    if not self.qty:
-                        raise ValidationError({'qty': 'Vui lòng nhập số lượng hoặc giá cắt lỗ'})      
-            elif self.position == 'sell':
-                if not self.qty:
-                    raise ValidationError({'qty': 'Vui lòng nhập số lượng'})
-                else:
-                    port = self.account.portfolio
-                    qty_sell_pending = Transaction.objects.filter(account_id=self.account.pk,
-                            status_raw = 'pending', position = 'sell').exclude(pk=self.pk).aggregate(Sum('qty'))['qty__sum'] or 0
-                    item = next((item for item in port if item['stock'] == self.stock), None)
-                    if not item:
-                        raise ValidationError({'qty': 'Không có cổ phiếu để bán'})
-                    max_sellable_qty = item['qty_sellable'] - qty_sell_pending
-                    if self.qty > max_sellable_qty:
-                        raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_sellable_qty}'})
-        else:
-                raise ValidationError({'position': 'Vui lòng chọn "mua" hoặc "bán"'})
+    # def clean(self):
+    #     if not self.account:
+    #         raise ValidationError({'account': 'Vui lòng nhập tài khoản'})
+    #     if self.cut_loss_price:
+    #         if self.cut_loss_price < 0 or self.cut_loss_price >= self.price:
+    #             raise ValidationError({'cut_loss_price': 'Giá cắt lỗ phải lớn hơn 0 và nhỏ hơn giá mua'})
+    #     if self.take_profit_price:
+    #         if self.cut_loss_price < 0 or self.take_profit_price <= self.price:
+    #             raise ValidationError({'take_profit_price': 'Giá chốt lời phải lớn hơn 0 và lớn hơn giá mua'})                        
+    #     # if not self.pk:  # đây là lần tạo mới record
+    #     if self.position:
+    #         if self.position == 'buy':
+    #             if self.qty:
+    #                 item = Transaction.objects.filter(account_id=self.account.pk).exclude(pk=self.pk)
+    #                 total_trading = sum(i.total_value for i in item if i.status_raw == 'matched')
+    #                 # cần cộng thêm giá trị deal mua đang chờ khớp
+    #                 pending = sum(i.total_value for i in item if i.status_raw != 'matched' and i.position =='buy')
+    #                 net_cash_available = self.account.net_cash_flow - total_trading -pending
+    #                 if self.total_value > net_cash_available :
+    #                     raise ValidationError({'qty': f'Không đủ sức mua, số lượng tối đa {net_cash_available:,.0f} cp'})
+    #             else:
+    #                 if not self.qty:
+    #                     raise ValidationError({'qty': 'Vui lòng nhập số lượng hoặc giá cắt lỗ'})      
+    #         elif self.position == 'sell':
+    #             if not self.qty:
+    #                 raise ValidationError({'qty': 'Vui lòng nhập số lượng'})
+    #             else:
+    #                 port = self.account.portfolio
+    #                 qty_sell_pending = Transaction.objects.filter(account_id=self.account.pk,
+    #                         status_raw = 'pending', position = 'sell').exclude(pk=self.pk).aggregate(Sum('qty'))['qty__sum'] or 0
+    #                 item = next((item for item in port if item['stock'] == self.stock), None)
+    #                 if not item:
+    #                     raise ValidationError({'qty': 'Không có cổ phiếu để bán'})
+    #                 max_sellable_qty = item['qty_sellable'] - qty_sell_pending
+    #                 if self.qty > max_sellable_qty:
+    #                     raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_sellable_qty}'})
+    #     else:
+    #             raise ValidationError({'position': 'Vui lòng chọn "mua" hoặc "bán"'})
         
         
         # else:  # đây là lần chỉnh sửa record
@@ -479,35 +479,35 @@ class Transaction (models.Model):
 
             
 
-    def save(self, *args, **kwargs):
-            if self.position == 'buy':
-                risk = self.account.ratio_risk
-                nav = self.account.net_cash_flow +self.account.total_profit_close
-                R = risk*nav
-                if self.cut_loss_price ==None or self.cut_loss_price <0:
-                    cut_loss_price  = self.price - R/(self.qty*1000)
-                    if cut_loss_price >0:
-                        self.cut_loss_price = cut_loss_price
-                        self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
-                    else:
-                        self.cut_loss_price == None
-                elif self.cut_loss_price and self.cut_loss_price >0:
-                    if self.qty == 0 or self.qty ==None:
-                        self.qty = R/((self.price -self.cut_loss_price)*1000)
-                        self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
-            try:
-                self.full_clean()
-            except ValidationError as e:
-                max_qty = round(self.account.net_cash_available/(self.price*1000),0)
-                max_cutloss_price = round(self.price - R/(max_qty*1000),2)
-                if max_cutloss_price <= 0:
-                    raise ValidationError('Không thể thực hiện giao dịch theo nguyên tắc quản trị vốn, bạn có thể nhập khối lượng để mua')
-                else:
-                    raise ValidationError(f'Không đủ sức mua, có thể điều chỉnh số lượng tối đa {max_qty} cp, hoặc có thể giảm giá cắt lỗ nhỏ hơn {max_cutloss_price}'
-                            )
-            else:
-                # Lưu đối tượng nếu không có lỗi
-                super(Transaction, self).save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #         if self.position == 'buy':
+    #             risk = self.account.ratio_risk
+    #             nav = self.account.net_cash_flow +self.account.total_profit_close
+    #             R = risk*nav
+    #             if self.cut_loss_price ==None or self.cut_loss_price <0:
+    #                 cut_loss_price  = self.price - R/(self.qty*1000)
+    #                 if cut_loss_price >0:
+    #                     self.cut_loss_price = cut_loss_price
+    #                     self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
+    #                 else:
+    #                     self.cut_loss_price == None
+    #             elif self.cut_loss_price and self.cut_loss_price >0:
+    #                 if self.qty == 0 or self.qty ==None:
+    #                     self.qty = R/((self.price -self.cut_loss_price)*1000)
+    #                     self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
+    #         try:
+    #             self.full_clean()
+    #         except ValidationError as e:
+    #             max_qty = round(self.account.net_cash_available/(self.price*1000),0)
+    #             max_cutloss_price = round(self.price - R/(max_qty*1000),2)
+    #             if max_cutloss_price <= 0:
+    #                 raise ValidationError('Không thể thực hiện giao dịch theo nguyên tắc quản trị vốn, bạn có thể nhập khối lượng để mua')
+    #             else:
+    #                 raise ValidationError(f'Không đủ sức mua, có thể điều chỉnh số lượng tối đa {max_qty} cp, hoặc có thể giảm giá cắt lỗ nhỏ hơn {max_cutloss_price}'
+    #                         )
+    #         else:
+    #             # Lưu đối tượng nếu không có lỗi
+    #             super(Transaction, self).save(*args, **kwargs)
         
         
 
@@ -557,102 +557,105 @@ class Transaction (models.Model):
         
 
 
-# @receiver(post_save, sender=StockPrice)
-# def create_sell_transaction(sender, instance, created, **kwargs):
-#     if not created:
-#         # Get the latest buy Transactions for this stock
-#         buys_cutloss = Transaction.objects.filter(
-#             stock=instance.ticker, 
-#             position='buy', 
-#             cut_loss_price__gte=instance.match_price/10000,   
-#         )
-#         buys_take_profit = Transaction.objects.filter(
-#              stock=instance.ticker, 
-#              position='buy', 
-#              take_profit_price__lte =instance.match_price/10000,  
-#              take_profit_price__gt=0 
-#         )
-#         sells = Transaction.objects.filter(stock=instance.ticker, position='sell').values_list('buy_code', flat=True)
-#         # Check if the cut_loss_price is greater than the match_price
-#         if buys_cutloss: 
-#             for buy in buys_cutloss:
-#                 account = Account.objects.get(pk=buy.account.pk)
-#                 port = account.portfolio
-#                 for item in port:
-#                     if item['stock'] == buy.stock:
-#                         new_qty_saleable = item['qty_sellable'] - item['qty_sell_pending']
-#                         if buy.time_matched and buy.date_stock_on_account <= instance.date_time and buy.qty <=new_qty_saleable and buy.pk not in sells:
-#                             sell = Transaction.objects.create(
-#                                 account=buy.account,
-#                                 stock=buy.stock,
-#                                 position='sell',
-#                                 price=buy.cut_loss_price,
-#                                 qty=buy.qty,
-#                                 cut_loss_price=0,
-#                                 buy_code=buy.pk)
-#         elif buys_take_profit:
-#             for buy in buys_take_profit:
-#                 account = Account.objects.get(pk=buy.account.pk)
-#                 port = account.portfolio
-#                 for item in port:
-#                     if item['stock'] == buy.stock:
-#                         new_qty_saleable = item['qty_sellable'] - item['qty_sell_pending']
-#                         if buy.time_matched and buy.date_stock_on_account <= instance.date_time and buy.qty <= new_qty_saleable and buy.pk not in sells:
-#                             sell = Transaction.objects.create(
-#                                 account=buy.account,
-#                                 stock=buy.stock,
-#                                 position='sell',
-#                                 price=buy.take_profit_price,
-#                                 qty=buy.qty,
-#                                 buy_code=buy.pk)
-  
-
 @receiver(post_save, sender=StockPrice)
 def create_sell_transaction(sender, instance, created, **kwargs):
-    if created:
-        return
-
-    buys_cutloss = Transaction.objects.filter(
-        stock=instance.ticker, 
-        position='buy', 
-        cut_loss_price__gte=instance.match_price/10000,   
-    )
-
-    buys_take_profit = Transaction.objects.filter(
-        stock=instance.ticker, 
-        position='buy', 
-        take_profit_price__lte=instance.match_price/10000,   
-        take_profit_price__gt=0
-
-    )
-
-    sells = Transaction.objects.filter(stock=instance.ticker, position='sell').values_list('buy_code', flat=True)
-
-    for buy in buys_cutloss | buys_take_profit:
-        if buy.pk in sells:
-            continue
-
-        account = Account.objects.get(pk=buy.account.pk)
-        port = account.portfolio
-        item = next((i for i in port if i['stock'] == buy.stock), None)
-
-        if not item:
-            continue
-
-        new_qty_saleable = item['qty_sellable'] - item['qty_sell_pending']
-  
-        if not buy.time_matched or buy.date_stock_on_account > instance.date_time or buy.qty > new_qty_saleable:
-            continue
-
-        sell = Transaction.objects.create(
-            account=buy.account,
-            stock=buy.stock,
-            position='sell',
-            price=buy.cut_loss_price if buy.position == 'buy' else buy.take_profit_price,
-            qty=buy.qty,
-            cut_loss_price=0 if buy.position == 'buy' else buy.cut_loss_price,
-            buy_code=buy.pk
+    if not created:
+        # Get the latest buy Transactions for this stock
+        buys_cutloss = Transaction.objects.filter(
+            stock=instance.ticker, 
+            position='buy', 
+            cut_loss_price__gte=instance.match_price/10000,   
         )
+        buys_take_profit = Transaction.objects.filter(
+             stock=instance.ticker, 
+             position='buy', 
+             take_profit_price__lte =instance.match_price/10000,  
+             take_profit_price__gt=0 
+        )
+        sells = Transaction.objects.filter(stock=instance.ticker, position='sell').values_list('buy_code', flat=True)
+        # Check if the cut_loss_price is greater than the match_price
+        if buys_cutloss: 
+            for buy in buys_cutloss:
+                account = Account.objects.get(pk=buy.account.pk)
+                port = account.portfolio
+                for item in port:
+                    if item['stock'] == buy.stock:
+                        new_qty_saleable = item['qty_sellable'] - item['qty_sell_pending']
+                        if buy.time_matched and buy.date_stock_on_account <= instance.date_time and buy.qty <=new_qty_saleable and buy.pk not in sells:
+                            sell = Transaction.objects.create(
+                                account=buy.account,
+                                stock=buy.stock,
+                                position='sell',
+                                price=buy.cut_loss_price,
+                                qty=buy.qty,
+                                cut_loss_price=0,
+                                buy_code=buy.pk)
+        elif buys_take_profit:
+            for buy in buys_take_profit:
+                account = Account.objects.get(pk=buy.account.pk)
+                port = account.portfolio
+                for item in port:
+                    if item['stock'] == buy.stock:
+                        new_qty_saleable = item['qty_sellable'] - item['qty_sell_pending']
+                        if buy.time_matched and buy.date_stock_on_account <= instance.date_time and buy.qty <= new_qty_saleable and buy.pk not in sells:
+                            sell = Transaction.objects.create(
+                                account=buy.account,
+                                stock=buy.stock,
+                                position='sell',
+                                price=buy.take_profit_price,
+                                qty=buy.qty,
+                                buy_code=buy.pk)
+  
+
+# @receiver(post_save, sender=StockPrice)
+# def create_sell_transaction(sender, instance, created, **kwargs):
+#     if created:
+#         return
+#     buys_cutloss =None
+#     buys_take_profit = None
+    
+#     buys_cutloss = Transaction.objects.filter(
+#         stock=instance.ticker, 
+#         position='buy', 
+#         status_raw = 'matched',
+#         cut_loss_price__gte = instance.match_price/10000, 
+#     )
+
+#     buys_take_profit = Transaction.objects.filter(
+#         stock=instance.ticker, 
+#         position='buy',
+#         status_raw = 'matched', 
+#         take_profit_price__lte = instance.match_price/10000,   
+#         take_profit_price__gt=0
+#     )
+
+#     sells = Transaction.objects.filter(stock=instance.ticker, position='sell').values_list('buy_code', flat=True)
+
+#     for buy in buys_cutloss | buys_take_profit:
+#         if buy.pk in sells:
+#             continue
+
+#         account = Account.objects.get(pk=buy.account.pk)
+#         port = account.portfolio
+#         item = next((i for i in port if i['stock'] == buy.stock), None)
+
+#         if not item:
+#             continue
+
+#         new_qty_saleable = item['qty_sellable'] - item['qty_sell_pending']
+  
+#         if not buy.time_matched_raw or buy.date_stock_on_account > instance.date_time or buy.qty > new_qty_saleable:
+#             continue
+
+#         sell = Transaction.objects.create(
+#             account=buy.account,
+#             stock=buy.stock,
+#             position='sell',
+#             price=buy.cut_loss_price if buy.position == 'buy' else buy.take_profit_price,
+#             qty=buy.qty,
+#             cut_loss_price=0 if buy.position == 'buy' else buy.cut_loss_price,
+#             buy_code=buy.pk
+#         )
 
             
 from telegram import Bot
@@ -665,8 +668,8 @@ def send_telegram_message(sender, instance, created, **kwargs):
         bot = Bot(token=bot_token)
         if instance.position =='sell':
             bot.send_message(
-                chat_id=chat_id, 
-                text=f"Có lệnh {instance.position} {instance.stock} giá {instance.price}  ")                  
+                chat_id='-870288807', 
+                text=f"Tài khoản {instance.account} có lệnh {instance.position} {instance.stock} giá {instance.price}  ")                  
 
 
 # from telegram import Bot
