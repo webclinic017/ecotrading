@@ -38,7 +38,7 @@ def get_all_info_stock_price():
         open=float(a[i]['ope'])
         low_price=float(a[i]['low'])
         high_price = float(a[i]['hig'])
-        close=float(round(float(a[i]['mat']),0))
+        close=float(a[i]['mat'])
         volume=float(a[i]['tmv'].replace(',', '') )*10
         StockPrice.objects.update_or_create(
                 ticker=ticker,
@@ -67,7 +67,7 @@ def get_list_stock_price():
         open=float(a[i]['ope'])
         low_price=float(a[i]['low'])
         high_price = float(a[i]['hig'])
-        close=float(round(float(a[i]['mat']),0))
+        close=float(a[i]['mat'])
         volume=float(a[i]['tmv'].replace(',', '') )*10
         StockPrice.objects.update_or_create(
                 ticker=ticker,
@@ -163,8 +163,8 @@ def qty_stock_on_account(pk):
                                         'qty_sellable': '{:,.0f}'.format(qty_sellable), 
                                         'qty_receiving': '{:,.0f}'.format(qty_receiving),
                                         'qty_sell_pending':'{:,.0f}'.format(qty_sell_pending),
-                                        'avg_price':'{:,.0f}'.format(avgprice), 
-                                        'market_price':'{:,.0f}'.format(market_price),
+                                        'avg_price':round(avgprice,2), 
+                                        'market_price':round(market_price,2),
                                         'profit':'{:,.0f}'.format(profit),'ratio_profit':str(round(ratio_profit,2))+str('%')})
     return port_raw, port_str
 
