@@ -51,7 +51,20 @@ def get_all_info_stock_price():
             'volume': volume,
             'date_time':date_time
                         } )
-    return StockPrice.objects.all()
+        created = StockPriceFilter.objects.update_or_create(
+                ticker=ticker,
+                date= date_time.date(),
+            defaults={
+            'low': low_price,
+            'high': high_price,
+            'open':open,
+            'close': close,
+            'volume': volume,
+                        } )
+        if created:
+            mindate = StockPriceFilter.objects.all().order_by('date').first().date
+            StockPriceFilter.objects.filter(date=mindate).delete()
+        return created
 
 def get_list_stock_price():
     list_stock = list(Transaction.objects.values_list('stock', flat=True).distinct())
@@ -372,6 +385,18 @@ class StockPrice(models.Model):
     
     def __str__(self):
         return str(self.ticker) + str(self.close)
+    
+class StockPriceFilter(models.Model):
+    ticker = models.CharField(max_length=10)
+    date = models.DateField()#auto_now_add=True)
+    open = models.FloatField()
+    high =models.FloatField()
+    low = models.FloatField()
+    close = models.FloatField()
+    volume =models.FloatField()
+    def __str__(self):
+        return str(self.ticker) + str(self.date)
+
 
 #lấy danh sách mã chứng khoán, top 500 thanh khoản
 stock = StockPrice.objects.all().order_by('-date_time','-volume')
