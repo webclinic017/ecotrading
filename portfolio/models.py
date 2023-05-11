@@ -16,7 +16,6 @@ from django.dispatch import receiver
 
 
 
-
 #lấy giá cổ phiếu
 def get_all_info_stock_price():
     boardname = ['HOSE','HNX','UPCOM']
@@ -36,17 +35,19 @@ def get_all_info_stock_price():
     date_time = difine_time_craw_stock_price(date_time)
     for i in range (0,len(a)):
         ticker=a[i]['sym']
+        open=float(a[i]['ope'])
         low_price=float(a[i]['low'])
         high_price = float(a[i]['hig'])
-        match_price=float(round(float(a[i]['mat'])*1000,0))
+        close=float(round(float(a[i]['mat']),0))
         volume=float(a[i]['tmv'].replace(',', '') )*10
         StockPrice.objects.update_or_create(
                 ticker=ticker,
                 date= date_time.date(),
             defaults={
-            'low_price': low_price,
-            'high_price': high_price,
-            'match_price': match_price,
+            'low': low_price,
+            'high': high_price,
+            'open':open,
+            'close': close,
             'volume': volume,
             'date_time':date_time
                         } )
@@ -63,17 +64,19 @@ def get_list_stock_price():
     date_time = difine_time_craw_stock_price(date_time)
     for i in range (0,len(a)):
         ticker=a[i]['sym']
+        open=float(a[i]['ope'])
         low_price=float(a[i]['low'])
         high_price = float(a[i]['hig'])
-        match_price=float(round(float(a[i]['mat'])*1000,0))
+        close=float(round(float(a[i]['mat']),0))
         volume=float(a[i]['tmv'].replace(',', '') )*10
         StockPrice.objects.update_or_create(
                 ticker=ticker,
                 date= date_time.date(),
             defaults={
-            'low_price': low_price,
-            'high_price': high_price,
-            'match_price': match_price,
+           'low': low_price,
+            'high': high_price,
+            'open':open,
+            'close': close,
             'volume': volume,
             'date_time':date_time
                         } )
@@ -110,13 +113,13 @@ def avg_price(pk,stock,end_date):
                 if i.position =='buy':
                     total_buy += i.qty 
                     total_value +=i.total_value
-                    avg_price = total_value/total_buy
+                    avg_price = total_value/total_buy/1000
                     
         else:
-            avg_price = total_value/total_buy
+            avg_price = total_value/total_buy/1000
     # Nếu có mua nhưng chưa bán lệnh nào
     elif total_buy >0:
-        avg_price = total_value/total_buy 
+        avg_price = total_value/total_buy/1000
     return avg_price
 
 #xác định danh mục cổ phiếu đã về
@@ -126,7 +129,6 @@ def qty_stock_available(pk,stock):
     total_buy = item.filter(position='buy').aggregate(Sum('qty'))['qty__sum'] or 0
     total_sell = item.filter(position='sell').aggregate(Sum('qty'))['qty__sum'] or 0
     return total_buy -total_sell
-
 
 #Xác định danh mục cổ phiếu đã mua, bao gồm chờ về
 def qty_stock_on_account(pk):
@@ -149,8 +151,8 @@ def qty_stock_on_account(pk):
                 qty_receiving = qty_total -qty_sellable
                 item_sell = Transaction.objects.filter(account_id = pk,position ='sell', stock =stock )
                 qty_sell_pending = sum(i.qty for i in item_sell if i.status =='pending')
-                market_price = StockPrice.objects.filter(ticker = stock).order_by('-date_time').first().match_price     
-                profit = qty_total*(market_price-avgprice)
+                market_price = StockPrice.objects.filter(ticker = stock).order_by('-date_time').first().close     
+                profit = qty_total*(market_price-avgprice)*1000
                 ratio_profit = (market_price/avgprice-1)*100
                 port_raw.append({'stock': stock,'qty_total':qty_total, 'qty_sellable': qty_sellable, 
                                         'qty_receiving': qty_receiving,'qty_sell_pending':qty_sell_pending,
@@ -165,7 +167,6 @@ def qty_stock_on_account(pk):
                                         'market_price':'{:,.0f}'.format(market_price),
                                         'profit':'{:,.0f}'.format(profit),'ratio_profit':str(round(ratio_profit,2))+str('%')})
     return port_raw, port_str
-
 
 
 #Tính ngày khớp lệnh
@@ -230,16 +231,15 @@ def cal_profit_deal_close(pk):
     for i in item:
             new_end_date = i.time_matched_raw -timedelta(minutes=1)
             avgprice = avg_price(pk,i.stock,new_end_date)
-            profit = i.qty*(i.price*1000 -avgprice )
-            ratio_profit = (i.price*1000/avgprice-1)*100
+            profit = i.qty*(i.price -avgprice )*1000
+            ratio_profit = (i.price/avgprice-1)*100
             deal_close.append({'stock':i.stock,'date':i.time_matched,'qty': i.qty,
-                               'price':i.price*1000,'avg_price':avgprice,
+                               'price':i.price,'avg_price':avgprice,
                                'profit':profit,'ratio_profit':ratio_profit})
             str_deal_close.append({'stock':i.stock,'date':i.time_matched,'qty': '{:,.0f}'.format(i.qty),
-                               'price':'{:,.0f}'.format(i.price*1000),'avg_price':'{:,.0f}'.format(avgprice),
+                               'price':'{:,.0f}'.format(i.price),'avg_price':'{:,.0f}'.format(avgprice),
                                'profit':'{:,.0f}'.format(profit),'ratio_profit':str(round(ratio_profit,2))+str('%')})
     return deal_close, str_deal_close
-
 
 def check_status_order(pk):
         item = Transaction.objects.get(pk=pk)
@@ -251,7 +251,7 @@ def check_status_order(pk):
             stock_price = StockPrice.objects.filter(
                 ticker=item.stock,
                 date_time__gte=date,
-                match_price__lte=item.price*1000,
+                close__lte=item.price,
                 volume__gte=item.qty*5).order_by('date_time')
             if stock_price:
                 status = 'matched'
@@ -261,7 +261,7 @@ def check_status_order(pk):
             stock_price = StockPrice.objects.filter(
                 ticker=item.stock,
                 date_time__gte=date,
-                match_price__gte=item.price*1000,
+                close__gte=item.price,
                 volume__gte=item.qty*5).order_by('date_time')
             if stock_price:
                 status = 'matched'
@@ -277,7 +277,6 @@ def check_status_order(pk):
 # tính giá trung bình danh mục
 
 
-
     
 class BotTelegram (models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -289,7 +288,6 @@ class BotTelegram (models.Model):
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
     def __str__(self):
         return self.name
-
 
 # Create your models here.
 class Account (models.Model):
@@ -305,7 +303,6 @@ class Account (models.Model):
     
 
     
-
 
     # class Meta:
     #     verbose_name = 'Tài khoản'
@@ -365,25 +362,25 @@ class Account (models.Model):
 
 class StockPrice(models.Model):
     ticker = models.CharField(max_length=10)
-    low_price = models.FloatField()
-    high_price =models.FloatField()
-    match_price = models.FloatField()
+    date = models.DateField()#auto_now_add=True)
+    open = models.FloatField()
+    high =models.FloatField()
+    low = models.FloatField()
+    close = models.FloatField()
     volume =models.FloatField()
-    date = models.DateField(auto_now_add=True)
     date_time = models.DateTimeField(default=datetime.now)
+    
     def __str__(self):
-        return str(self.ticker) + str(self.match_price)
-
+        return str(self.ticker) + str(self.close)
 
 #lấy danh sách mã chứng khoán, top 500 thanh khoản
-stock = StockPrice.objects.all().order_by('-date_time','-volume')
+# stock = StockPrice.objects.all().order_by('-date_time','-volume')
 LIST_STOCK = []
-for item in stock[:500]:
-    stock = item.ticker
-    LIST_STOCK.append((stock,stock))
-    LIST_STOCK.sort()
+# for item in stock[:500]:
+#     stock = item.ticker
+#     LIST_STOCK.append((stock,stock))
+#     LIST_STOCK.sort()
 
- 
  
 class Transaction (models.Model):
     
@@ -549,7 +546,6 @@ class Transaction (models.Model):
             time =None
         return time
 
-
     
     @property
     def date_stock_on_account(self):
@@ -560,7 +556,6 @@ class Transaction (models.Model):
         return time
         
 
-
 # @receiver(post_save, sender=StockPrice)
 # def create_sell_transaction(sender, instance, created, **kwargs):
 #     if not created:
@@ -568,16 +563,16 @@ class Transaction (models.Model):
 #         buys_cutloss = Transaction.objects.filter(
 #             stock=instance.ticker, 
 #             position='buy', 
-#             cut_loss_price__gte=instance.match_price/10000,   
+#             cut_loss_price__gte=instance.close,   
 #         )
 #         buys_take_profit = Transaction.objects.filter(
 #              stock=instance.ticker, 
 #              position='buy', 
-#              take_profit_price__lte =instance.match_price/10000,  
+#              take_profit_price__lte =instance.close,  
 #              take_profit_price__gt=0 
 #         )
 #         sells = Transaction.objects.filter(stock=instance.ticker, position='sell').values_list('buy_code', flat=True)
-#         # Check if the cut_loss_price is greater than the match_price
+#         # Check if the cut_loss_price is greater than the close
 #         if buys_cutloss: 
 #             for buy in buys_cutloss:
 #                 account = Account.objects.get(pk=buy.account.pk)
@@ -622,14 +617,14 @@ def create_sell_transaction(sender, instance, created, **kwargs):
         stock=instance.ticker, 
         position='buy', 
         status_raw = 'matched',
-        cut_loss_price__gte = instance.match_price/1000, 
+        cut_loss_price__gte = instance.close, 
     )
 
     buys_take_profit = Transaction.objects.filter(
         stock=instance.ticker, 
         position='buy',
         status_raw = 'matched', 
-        take_profit_price__lte = instance.match_price/1000,   
+        take_profit_price__lte = instance.close,   
         take_profit_price__gt=0
     )
 
@@ -656,7 +651,6 @@ def create_sell_transaction(sender, instance, created, **kwargs):
         elif buys_take_profit:
             price_sell = buy.take_profit_price
 
-
         sell = Transaction.objects.create(
             account=buy.account,
             stock=buy.stock,
@@ -681,7 +675,6 @@ def send_telegram_message(sender, instance, created, **kwargs):
                 chat_id='-870288807', 
                 text=f"Tài khoản {instance.account} có lệnh {instance.position} {instance.stock} giá {instance.price}  ")                  
 
-
 # from telegram import Bot
 # @receiver(post_save, sender=Transaction)
 # def send_telegram_group(sender, instance, created, **kwargs):
@@ -698,13 +691,11 @@ def send_telegram_message(sender, instance, created, **kwargs):
     
 
 
-
                 
         
 
         
         
-
 
 
     
@@ -717,7 +708,6 @@ class CashTrasfer(models.Model):
     description = models.TextField(max_length=255, blank=True)
     def __str__(self):
         return str(self.amount) 
-
 
 
 
