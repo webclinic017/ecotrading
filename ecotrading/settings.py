@@ -36,6 +36,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'django_crontab',
     'jazzmin',
     'rest_framework',
     'debug_toolbar',
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'member',
     'portfolio',
+    'stocklist',
     
 ]
 
@@ -163,3 +165,8 @@ MEDIA_ROOT = Path.joinpath(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 JAZZMIN_SETTINGS = JAZZMIN_SETTINGS
 JAZZMIN_UI_TWEAKS = JAZZMIN_UI_TWEAKS
+
+CRONJOBS = [
+    ('31 11 * * 1-5', 'stocklist.logic.filter_stock_daily'), # Chạy lúc 11:31 từ thứ 2 đến thứ 6
+    ('30 15 * * 1-5', 'stocklist.logic.filter_stock_daily'), # Chạy lúc 15:30 từ thứ 2 đến thứ 6
+]

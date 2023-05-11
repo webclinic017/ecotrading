@@ -1,14 +1,14 @@
 import numpy as np
 import talib
-from datetime import datetime
+from datetime import datetime, timedelta
 import backtrader as bt
 import backtrader.feeds as btfeed
 import pandas as pd
 import matplotlib.pyplot as plt
 import backtrader.analyzers as btanalyzers
-from portfolio.models import StockPrice
+from portfolio.models import StockPrice, get_all_info_stock_price
+from telegram import Bot
 
-date_fiter = datetime.today().strftime('%Y-%m-%d')
 
 def breakout_strategy(df, period):
     df['res'] = talib.MAX(df['close'], timeperiod=period)
@@ -18,33 +18,41 @@ def breakout_strategy(df, period):
     df['tsl'].fillna(method='ffill', inplace=True)
     df['mavol'] = talib.SMA(df['volume'], timeperiod=period)
     return df
+
 def filter_breakout(df, condition):
     df['tsl_cross'] = condition.astype(int)
     df['first_signal'] = (df['tsl_cross'] - df['tsl_cross'].shift(1)).fillna(0).astype(bool)
     filtered_df = df[df['first_signal']]
-    list =[]
+    result =[]
     if len(filtered_df) >0:
-        list = list(filtered_df['Ticker'])
-    return list
+        result = tuple(filtered_df['ticker'])
+    return result
     
-stock_prices = StockPrice.objects.all().order_by('ticker','-date')
-data = list(stock_prices.values())
-df = pd.DataFrame(data)  
-df =    breakout_strategy(df, 20)
+def filter_stock_daily():
+    # get_all_info_stock_price()
+    date_fiter = datetime.today().date()
+    stock_prices = StockPrice.objects.all().order_by('ticker','-date')
+    data = list(stock_prices.values())
+    df = pd.DataFrame(data)  
+    df =    breakout_strategy(df, 20)
+    condition = ((df['date'] == date_fiter) & (df['close'] > df['tsl']) & (df['volume'] > df['mavol']*1.5))
+    result = filter_breakout(df, condition)
+    if len(result)>0:
+        bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
+        bot.send_message(
+                chat_id='-870288807', 
+                text=f"Danh sách cổ phiếu có tín hiệu breakout ngày {date_fiter} là: {'; '.join(result)}")      
+    return result            
 
-condition = ((df['date'] > '2023-04-01') & (df['close'] > df['tsl']) & (df['volume'] > df['mavol']*1.5))
-list = filter_breakout(df, condition)
-print(list)
 
 
 
 
 
+# def custom_date_parser(date_string):
+#      return pd.to_datetime(date_string, format='%Y-%m-%d')
 
-def custom_date_parser(date_string):
-     return pd.to_datetime(date_string, format='%Y-%m-%d')
-
-df = pd.read_csv('test.csv', parse_dates=['date'], date_parser=custom_date_parser)
+# df = pd.read_csv('test.csv', parse_dates=['date'], date_parser=custom_date_parser)
 
 
 
