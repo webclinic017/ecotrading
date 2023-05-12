@@ -20,7 +20,7 @@ def breakout_strategy(df, period, num_raw):
         np.where((df['close'] < df['sup'].shift(1)), df['res'],np.nan))
     df['tsl'].fillna(method='ffill', inplace=True)
     df['mavol'] = df.groupby('ticker')['volume'].rolling(window=period, min_periods=1).mean().values
-    df = df.drop(['res', 'sup', 'date_time'], axis=1)
+    df = df.drop(['res', 'sup'], axis=1)
     condition = ((df['date'] == date_fiter) & (df['close'] > df['tsl']) & (df['volume'] > df['mavol']*2)& (df['mavol']>200000))
     df['buy_breakout'] = condition
     return df
@@ -43,7 +43,7 @@ def filter_stock_daily():
         bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
         bot.send_message(
                 chat_id='-870288807', 
-                text=f"Danh sách cổ phiếu có tín hiệu breakout ngày {date_fiter} là: {'; '.join(result)}")      
+                text=f"Danh sách cổ phiếu có tín hiệu breakout ngày {date_fiter} là: {'; '.join(ticker_list)}")      
     return ticker_list           
 
 
@@ -51,8 +51,8 @@ def filter_stock_daily():
 
 
 
-# def custom_date_parser(date_string):
-#      return pd.to_datetime(date_string, format='%Y-%m-%d')
+def custom_date_parser(date_string):
+      return pd.to_datetime(date_string, format='%Y-%m-%d')
 
 # # df = pd.read_csv('test.csv', parse_dates=['date'], date_parser=custom_date_parser)
 

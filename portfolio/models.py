@@ -33,6 +33,7 @@ def get_all_info_stock_price():
     result = []
     date_time = datetime.now()
     date_time = difine_time_craw_stock_price(date_time)
+    count = 0
     for i in range (0,len(a)):
         ticker=a[i]['sym']
         open=float(a[i]['ope'])
@@ -62,9 +63,15 @@ def get_all_info_stock_price():
             'volume': volume,
                         } )
         if created:
-            mindate = StockPriceFilter.objects.all().order_by('date').first().date
-            StockPriceFilter.objects.filter(date=mindate).delete()
-        return created
+            count = count + 1
+    if count >0:
+        mindate = StockPriceFilter.objects.all().order_by('date').first().date
+        maxdate=  StockPriceFilter.objects.all().order_by('-date').first().date
+        len_date = (maxdate -mindate).days
+        delete = 0
+        if len_date >201:
+            delete = StockPriceFilter.objects.filter(date=mindate).delete()
+    return f"Tạo mới tổng {count} cổ phiếu, và xóa {delete[0]} cổ phiếu cũ " 
 
 def get_list_stock_price():
     list_stock = list(Transaction.objects.values_list('stock', flat=True).distinct())
