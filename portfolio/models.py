@@ -119,16 +119,18 @@ def avg_price(pk,stock,end_date):
         # kiểm tra ngày gần nhất bán hết và mua lại
         for date in date_list: 
             new_item = item.filter(time_received_stock__lte =date)
+            check_total_buy = 0
+            check_total_sell =0
             for i in new_item:
                 if i.position == 'buy':
-                    total_buy += i.qty 
+                    check_total_buy += i.qty 
                 else:
-                    total_sell +=i.qty
-            if total_buy == total_sell:
+                    check_total_sell +=i.qty
+            if check_total_buy == check_total_sell:
                 date_find = i.time_matched
                 break 
         if date_find:
-            cal_item = item.filter(position='buy',time_matched__gt= date_find )
+            cal_item = item.filter(position='buy',time_matched_raw__gt= date_find )
             for i in cal_item:
                 if i.position =='buy':
                     total_buy += i.qty 
@@ -272,7 +274,7 @@ def check_status_order(pk):
                 ticker=item.stock,
                 date_time__gte=date,
                 close__lte=item.price,
-                volume__gte=item.qty*5).order_by('date_time')
+                volume__gte=item.qty*2).order_by('date_time')
             if stock_price:
                 status = 'matched'
                 time = stock_price.first().date_time
@@ -282,7 +284,7 @@ def check_status_order(pk):
                 ticker=item.stock,
                 date_time__gte=date,
                 close__gte=item.price,
-                volume__gte=item.qty*5).order_by('date_time')
+                volume__gte=item.qty*2).order_by('date_time')
             if stock_price:
                 status = 'matched'
                 time = stock_price.first().date_time
