@@ -393,7 +393,7 @@ class StockPrice(models.Model):
     date_time = models.DateTimeField(default=datetime.now)
     
     def __str__(self):
-        return str(self.ticker) + str(self.close)
+        return str(self.ticker) +str("_")+ str(self.date)
     
 class StockPriceFilter(models.Model):
     ticker = models.CharField(max_length=10)
