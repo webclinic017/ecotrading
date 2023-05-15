@@ -772,11 +772,5 @@ class DateNotTrading(models.Model):
     def __str__(self):
         return str(self.date) 
 
-# from datetime import datetime, timedelta, time
-# stock = StockPriceFilter.objects.all()
-# new_time = time(14, 45, 0)
 
-# for i in stock:
-#     i.date_time = datetime.combine(i.date, new_time)
-#     i.save()
 

@@ -17,7 +17,7 @@ def account(request,pk):
     end_date = datetime.now()
     start_date = end_date - timedelta(days = 10*365)
     template = loader.get_template('account/account.html')
-    time_data = StockPrice.objects.all().order_by('-date_time').first().date_time
+    time_data = StockPriceFilter.objects.all().order_by('-date_time').first().date_time
     account = Account.objects.get(pk=pk)
     port = account.str_portfolio
     # giá trị thị trường của tài khoản

@@ -32,8 +32,9 @@ def breakout_strategy(df, period, num_raw=None):
     df['mavol'] = df.groupby('ticker')['volume'].apply(lambda x: x[::-1].rolling(window=period).mean()[::-1]) 
     df = df.groupby('ticker').apply(add_test_value).reset_index(drop=True)
     df['tsi'].fillna(method='ffill', inplace=True)
-    buy =  (df['close'] > df['tsi']) & (df['volume'] > df['mavol']*2) & (df['mavol']>100000  )
-    sell =  (df['close'] < df['tsi']) & (df['volume'] > df['mavol']*2)& (df['mavol']>100000  )
+    df['pre_close'] = df.groupby('ticker')['close'].shift(-1)
+    buy =  (df['close'] > df['tsi']) & (df['volume'] > df['mavol']*2) & (df['mavol']>100000  ) & (df['high']/df['close']-1<0.015) & (df['close']/df['pre_close']-1 >0.03)
+    sell =  (df['close'] < df['tsi']) & (df['volume'] > df['mavol']*2)& (df['mavol']>100000  ) & (df['low']/df['close']-1<0.015) & (df['close']/df['pre_close']-1 <0.03)
     df['signal'] = np.where(buy,'buy',np.where(sell,'sell',np.nan))
     return df
 
@@ -44,11 +45,25 @@ def filter_stock_daily():
     stock_prices = StockPriceFilter.objects.all().values()
     df = pd.DataFrame(stock_prices)  
     df = breakout_strategy(df, 20, 25)
-    df = df.rename(columns={'tsi': 'bottom'})
-    df_signal = df.loc[df['signal'] !='nan', ['ticker', 'date', 'signal','bottom']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
-    df_signal['strategy'] = 'breakout'
-    data = [Signaldaily(**vals) for vals in df_signal.to_dict('records')]
-    Signaldaily.objects.bulk_create(data)
+    df['milestone'] = np.where(df['signal']== 'buy',df['res'],np.where(df['signal']== 'sell',df['sup'],np.nan))
+    df_signal = df.loc[df['signal'] !='nan', ['ticker', 'date', 'signal','milestone']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
+    stocks_to_create = []
+    stocks_to_update = []
+    for index, row in df_signal.iterrows():
+        ticker = row['ticker']
+        date = row['date']
+        signal = row['signal'] 
+        strategy = 'breakout'
+        milestone = row['milestone']
+        stock = Signaldaily.objects.filter(ticker=ticker, date=date,strategy=strategy ).first()
+        if stock is None:
+            stocks_to_create.append(Signaldaily(ticker=ticker, date=date, signal=signal,strategy=strategy,milestone = milestone))
+        else:
+            stock.signal = signal
+            stock.milestone = milestone
+            stocks_to_update.append(stock)
+    Signaldaily.objects.bulk_create(stocks_to_create)
+    Signaldaily.objects.bulk_update(stocks_to_update, ['signal','milestone'])  
     buy_today = df_signal.loc[(df_signal['date']==date_filter)& (df_signal['signal']=='buy')].reset_index(drop=True)
     bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
     group_id = '-967306064'

@@ -5,7 +5,7 @@ from .models import *
 
 class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
-    list_display = ('date','ticker','close','strategy','signal','bottom','distance_bottom')
-    list_filter = ('ticker','signal')
+    list_display = ('date','ticker','close','strategy','signal','milestone','distance')
+    list_filter = ('ticker','signal', 'ticker')
 
 admin.site.register(Signaldaily, SignaldailyAdmin)
