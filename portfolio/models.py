@@ -13,10 +13,7 @@ from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-
-
-
-#lấy giá cổ phiếu
+#lấy toàn bộ giá cổ phiếu
 def get_all_info_stock_price():
     boardname = ['HOSE','HNX','UPCOM']
     linkstocklist='https://price.tpbs.com.vn/api/StockBoardApi/getStockList'
@@ -41,17 +38,42 @@ def get_all_info_stock_price():
         high_price = float(a[i]['hig'])
         close=float(a[i]['mat'])
         volume=float(a[i]['tmv'].replace(',', '') )*10
-        StockPrice.objects.update_or_create(
-                ticker=ticker,
-                date= date_time.date(),
-            defaults={
-            'low': low_price,
-            'high': high_price,
-            'open':open,
-            'close': close,
-            'volume': volume,
-            'date_time':date_time
-                        } )
+        StockPrice.objects.create(
+            icker=ticker,
+            date= date_time.date(),
+            low =  low_price,
+            high = high_price,
+            open = open,
+            close = close,
+            volume= volume,
+            date_time=date_time )
+
+
+#lấy toàn bộ giá cổ phiếu
+def get_info_stock_price_filter():
+    boardname = ['HOSE','HNX','UPCOM']
+    linkstocklist='https://price.tpbs.com.vn/api/StockBoardApi/getStockList'
+    linkstockquote ='https://price.tpbs.com.vn/api/SymbolApi/getStockQuote'
+    stock_list =[]
+    for i in boardname:
+        r1= requests.post(linkstocklist,json =  {"boardName":i})
+        k=json.loads(r1.text)
+        list =json.loads(k['content'])
+        stock_list= stock_list+list
+    r = requests.post(linkstockquote,json = {"stocklist" : stock_list})
+    b= json.loads(r.text)
+    a = json.loads(b['content'])
+    result = []
+    date_time = datetime.now()
+    date_time = difine_time_craw_stock_price(date_time)
+    count = 0
+    for i in range (0,len(a)):
+        ticker=a[i]['sym']
+        open=float(a[i]['ope'])
+        low_price=float(a[i]['low'])
+        high_price = float(a[i]['hig'])
+        close=float(a[i]['mat'])
+        volume=float(a[i]['tmv'].replace(',', '') )*10
         created = StockPriceFilter.objects.update_or_create(
                 ticker=ticker,
                 date= date_time.date(),
@@ -270,7 +292,7 @@ def check_status_order(pk):
         time = None
         time_received_stock = None
         if item.position == 'buy':
-            stock_price = StockPriceFilter.objects.filter(
+            stock_price = StockPrice.objects.filter(
                 ticker=item.stock,
                 date_time__gte=date,
                 close__lte=item.price,
@@ -280,7 +302,7 @@ def check_status_order(pk):
                 time = stock_price.first().date_time
                 time_received_stock = difine_date_stock_on_account(time)
         else:
-            stock_price = StockPriceFilter.objects.filter(
+            stock_price = StockPrice.objects.filter(
                 ticker=item.stock,
                 date_time__gte=date,
                 close__gte=item.price,
@@ -512,41 +534,33 @@ class Transaction (models.Model):
 
             
 
-    def save(self, *args, **kwargs):
-        if self.position == 'buy':
-                risk = self.account.ratio_risk
-                nav = self.account.net_cash_flow +self.account.total_profit_close
-                R = risk*nav
-                if self.cut_loss_price ==None or self.cut_loss_price <0:
-                    cut_loss_price  = self.price - R/(self.qty*1000)
-                    if cut_loss_price >0:
-                        self.cut_loss_price = round(cut_loss_price,0)
-                        self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
-                    else:
-                        self.cut_loss_price == None
-                elif self.cut_loss_price and self.cut_loss_price >0:
-                    if self.qty == 0 or self.qty ==None:
-                        self.qty = R/((self.price -self.cut_loss_price)*1000)
-                        self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
-                #chỉ check save khi buy
-                try:
-                    self.full_clean()
-                except ValidationError as e:
-                    # max_qty = round(self.account.net_cash_available/(self.price*1000),0)
-                    # max_cutloss_price = round(self.price - R/(max_qty*1000),2)
-                    # if max_cutloss_price <= 0:
-                    #     raise ValidationError('Không thể thực hiện giao dịch theo nguyên tắc quản trị vốn, bạn có thể nhập khối lượng để mua')
-                    # elif self.total_value > self.account.net_cash_available:
-                    #     raise ValidationError(f'Không đủ sức mua, có thể điều chỉnh số lượng tối đa {max_qty} cp, hoặc có thể giảm giá cắt lỗ nhỏ hơn {max_cutloss_price}'
-                                # )
-                    # else:
-                    raise ValidationError(f'Có lỗi  {e}')
-                else:
-                    # Lưu đối tượng nếu không có lỗi
-                    super(Transaction, self).save(*args, **kwargs)
-        else:
-            # Lưu đối tượng nếu không có lỗi
-            super(Transaction, self).save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if self.position == 'buy' and self.account.name != "Bot_Breakout":
+    #             risk = self.account.ratio_risk
+    #             nav = self.account.net_cash_flow +self.account.total_profit_close
+    #             R = risk*nav
+    #             if self.cut_loss_price ==None or self.cut_loss_price <0:
+    #                 cut_loss_price  = self.price - R/(self.qty*1000)
+    #                 if cut_loss_price >0:
+    #                     self.cut_loss_price = round(cut_loss_price,0)
+    #                     self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
+    #                 else:
+    #                     self.cut_loss_price == None
+    #             elif self.cut_loss_price and self.cut_loss_price >0:
+    #                 if self.qty == 0 or self.qty ==None:
+    #                     self.qty = R/((self.price -self.cut_loss_price)*1000)
+    #                     self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
+    #             #chỉ check save khi buy
+    #             try:
+    #                 self.full_clean()
+    #             except ValidationError as e:
+    #                 raise ValidationError(f'Có lỗi  {e}')
+    #             else:
+    #                 # Lưu đối tượng nếu không có lỗi
+    #                 super(Transaction, self).save(*args, **kwargs)
+    #     else:
+    #         # Lưu đối tượng nếu không có lỗi
+    #         super(Transaction, self).save(*args, **kwargs)
         
         
 

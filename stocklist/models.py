@@ -14,12 +14,12 @@ class Signaldaily(models.Model):
         return str(self.ticker) + str(self.strategy)
 
 @receiver(post_save, sender=Signaldaily)
-def send_telegram_message(sender, instance, created, **kwargs):
+def create_trasation_auto_bot(sender, instance, created, **kwargs):
     if created:
         account = Account.objects.get(name ='Bot_Breakout')
         close_price = StockPriceFilter.objects.filter(ticker = instance.ticker).order_by('-date').first().close
         try:
-            buy = Transaction.objects.create(
+            Transaction.objects.create(
                 account= account.pk,
                 stock= instance.ticker,
                 position='buy',

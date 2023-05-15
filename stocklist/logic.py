@@ -1,7 +1,7 @@
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
-from portfolio.models import StockPrice,StockPriceFilter, get_all_info_stock_price
+from portfolio.models import *
 from telegram import Bot
 from django.db.models import F
 from stocklist.models import  *
@@ -39,7 +39,7 @@ def breakout_strategy(df, period, num_raw=None):
 
 
 def filter_stock_daily():
-    get_all_info_stock_price()
+    get_info_stock_price_filter()
     date_filter = datetime.today().date()
     stock_prices = StockPriceFilter.objects.all().values()
     df = pd.DataFrame(stock_prices)  
