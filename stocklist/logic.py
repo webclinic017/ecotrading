@@ -34,7 +34,7 @@ def breakout_strategy(df, period, num_raw=None):
     df['tsi'].fillna(method='ffill', inplace=True)
     buy =  (df['close'] > df['tsi']) & (df['volume'] > df['mavol']*2) & (df['mavol']>100000  )
     sell =  (df['close'] < df['tsi']) & (df['volume'] > df['mavol']*2)& (df['mavol']>100000  )
-    df['strategy'] = np.where(buy,'buy',np.where(sell,'sell',np.nan))
+    df['signal'] = np.where(buy,'buy',np.where(sell,'sell',np.nan))
     return df
 
 
@@ -44,21 +44,24 @@ def filter_stock_daily():
     stock_prices = StockPriceFilter.objects.all().values()
     df = pd.DataFrame(stock_prices)  
     df = breakout_strategy(df, 20, 25)
-    df_signal = df.loc[df['strategy'] !='nan', ['ticker', 'date', 'strategy']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
+    df_signal = df.loc[df['signal'] !='nan', ['ticker', 'date', 'signal']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
+    df_signal['strategy'] = 'breakout'
     data = [Signaldaily(**vals) for vals in df_signal.to_dict('records')]
-    buy_today = df_signal.loc[(df_signal['date']==date_filter)& (df_signal['strategy']=='buy')].reset_index(drop=True)
     Signaldaily.objects.bulk_create(data)
+    buy_today = df_signal.loc[(df_signal['date']==date_filter)& (df_signal['signal']=='buy')].reset_index(drop=True)
     bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
+    group_id = '-967306064'
     list_stock = buy_today['ticker'].tolist()
     if list_stock:
         bot.send_message(
-                chat_id='-870288807', 
+                chat_id=group_id, 
                 text=f"Danh sách cổ phiếu có tín hiệu breakout ngày {date_filter} là: {'; '.join(list_stock)}" )  
     else:
         bot.send_message(
-                chat_id='-870288807', 
+                chat_id=group_id, 
                 text=f"Không có cổ phiếu thỏa mãn tiêu chí breakout được lọc trong ngày {date_filter} ")  
     return buy_today           
+
 
 
 
