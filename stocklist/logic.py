@@ -44,7 +44,8 @@ def filter_stock_daily():
     stock_prices = StockPriceFilter.objects.all().values()
     df = pd.DataFrame(stock_prices)  
     df = breakout_strategy(df, 20, 25)
-    df_signal = df.loc[df['signal'] !='nan', ['ticker', 'date', 'signal']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
+    df = df.rename(columns={'tsi': 'bottom'})
+    df_signal = df.loc[df['signal'] !='nan', ['ticker', 'date', 'signal','bottom']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
     df_signal['strategy'] = 'breakout'
     data = [Signaldaily(**vals) for vals in df_signal.to_dict('records')]
     Signaldaily.objects.bulk_create(data)

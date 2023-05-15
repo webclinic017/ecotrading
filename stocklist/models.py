@@ -8,11 +8,21 @@ from portfolio.models import *
 class Signaldaily(models.Model):
     ticker = models.CharField(max_length=10)
     date = models.DateField()#auto_now_add=True)
+    bottom = models.FloatField(default=0)
     signal = models.CharField(max_length=10)
     strategy = models.CharField(max_length=50)
     def __str__(self):
         return str(self.ticker) + str(self.strategy)
-
+    
+    @property
+    def close(self):
+        close = StockPrice.objects.filter(ticker = self.ticker).order_by('-date').first().close
+        return close
+    
+    @property
+    def distance_bottom(self):
+        return round((self.close/self.bottom-1)*100,0)
+    
 @receiver(post_save, sender=Signaldaily)
 def create_trasation_auto_bot(sender, instance, created, **kwargs):
     if created:

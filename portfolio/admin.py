@@ -12,7 +12,7 @@ class BotTelegramAdmin(admin.ModelAdmin):
 
 class TransactionAdmin(admin.ModelAdmin):
     model = Transaction
-    list_display = ('account','stock','position','price','str_qty','status','created_at','time_matched','time_receive','str_total_value', 'cl_price', 'tp_price')
+    list_display = ('account','stock','position','price','matched_price','str_qty','status','created_at','time_matched','time_receive','str_total_value', 'cl_price', 'tp_price')
     fields = ('account', 'stock', 'position', 'price', 'qty', 'cut_loss_price', 'take_profit_price', 'str_total_value')
 
     def get_fields(self, request, obj=None):
