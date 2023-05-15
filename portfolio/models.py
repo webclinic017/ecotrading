@@ -534,33 +534,33 @@ class Transaction (models.Model):
 
             
 
-    # def save(self, *args, **kwargs):
-    #     if self.position == 'buy' and self.account.name != "Bot_Breakout":
-    #             risk = self.account.ratio_risk
-    #             nav = self.account.net_cash_flow +self.account.total_profit_close
-    #             R = risk*nav
-    #             if self.cut_loss_price ==None or self.cut_loss_price <0:
-    #                 cut_loss_price  = self.price - R/(self.qty*1000)
-    #                 if cut_loss_price >0:
-    #                     self.cut_loss_price = round(cut_loss_price,0)
-    #                     self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
-    #                 else:
-    #                     self.cut_loss_price == None
-    #             elif self.cut_loss_price and self.cut_loss_price >0:
-    #                 if self.qty == 0 or self.qty ==None:
-    #                     self.qty = R/((self.price -self.cut_loss_price)*1000)
-    #                     self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
-    #             #chỉ check save khi buy
-    #             try:
-    #                 self.full_clean()
-    #             except ValidationError as e:
-    #                 raise ValidationError(f'Có lỗi  {e}')
-    #             else:
-    #                 # Lưu đối tượng nếu không có lỗi
-    #                 super(Transaction, self).save(*args, **kwargs)
-    #     else:
-    #         # Lưu đối tượng nếu không có lỗi
-    #         super(Transaction, self).save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        if self.position == 'buy' and self.account.name != "Bot_Breakout":
+                risk = self.account.ratio_risk
+                nav = self.account.net_cash_flow +self.account.total_profit_close
+                R = risk*nav
+                if self.cut_loss_price ==None or self.cut_loss_price <0:
+                    cut_loss_price  = self.price - R/(self.qty*1000)
+                    if cut_loss_price >0:
+                        self.cut_loss_price = round(cut_loss_price,0)
+                        self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
+                    else:
+                        self.cut_loss_price == None
+                elif self.cut_loss_price and self.cut_loss_price >0:
+                    if self.qty == 0 or self.qty ==None:
+                        self.qty = R/((self.price -self.cut_loss_price)*1000)
+                        self.take_profit_price = round(self.price + 4*(self.price - self.cut_loss_price),2)
+                #chỉ check save khi buy
+                try:
+                    self.full_clean()
+                except ValidationError as e:
+                    raise ValidationError(f'Có lỗi  {e}')
+                else:
+                    # Lưu đối tượng nếu không có lỗi
+                    super(Transaction, self).save(*args, **kwargs)
+        else:
+            # Lưu đối tượng nếu không có lỗi
+            super(Transaction, self).save(*args, **kwargs)
         
         
 
