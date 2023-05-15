@@ -111,7 +111,7 @@ def get_list_stock_price():
         high_price = float(a[i]['hig'])
         close=float(a[i]['mat'])
         volume=float(a[i]['tmv'].replace(',', '') )*10
-        StockPrice.objects.update_or_create(
+        StockPriceFilter.objects.update_or_create(
                 ticker=ticker,
                 date= date_time.date(),
             defaults={
@@ -122,7 +122,7 @@ def get_list_stock_price():
             'volume': volume,
             'date_time':date_time
                         } )
-    return StockPrice.objects.all().order_by('-date_time')[:number]
+    return StockPriceFilter.objects.all().order_by('-date_time')[:number]
 
 # tìm thời điểm mốc ban đầu, thời điểm mua lần đầu
 def avg_price(pk,stock,end_date):
@@ -195,7 +195,7 @@ def qty_stock_on_account(pk):
                 qty_receiving = qty_total -qty_sellable
                 item_sell = Transaction.objects.filter(account_id = pk,position ='sell', stock =stock )
                 qty_sell_pending = sum(i.qty for i in item_sell if i.status =='pending')
-                market_price = StockPrice.objects.filter(ticker = stock).order_by('-date_time').first().close     
+                market_price = StockPriceFilter.objects.filter(ticker = stock).order_by('-date_time').first().close     
                 profit = qty_total*(market_price-avgprice)*1000
                 ratio_profit = (market_price/avgprice-1)*100
                 port_raw.append({'stock': stock,'qty_total':qty_total, 'qty_sellable': qty_sellable, 
@@ -292,7 +292,7 @@ def check_status_order(pk):
         time = None
         time_received_stock = None
         if item.position == 'buy':
-            stock_price = StockPrice.objects.filter(
+            stock_price = StockPriceFilter.objects.filter(
                 ticker=item.stock,
                 date_time__gte=date,
                 close__lte=item.price,
@@ -302,7 +302,7 @@ def check_status_order(pk):
                 time = stock_price.first().date_time
                 time_received_stock = difine_date_stock_on_account(time)
         else:
-            stock_price = StockPrice.objects.filter(
+            stock_price = StockPriceFilter.objects.filter(
                 ticker=item.stock,
                 date_time__gte=date,
                 close__gte=item.price,
@@ -426,17 +426,18 @@ class StockPriceFilter(models.Model):
     low = models.FloatField()
     close = models.FloatField()
     volume =models.FloatField()
+    date_time = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return str(self.ticker) + str(self.date)
 
 
 #lấy danh sách mã chứng khoán, top 500 thanh khoản
-stock = StockPrice.objects.all().order_by('-date_time','-volume')
+# stock = StockPriceFilter.objects.all().order_by('-date_time','-volume')
 LIST_STOCK = []
-for item in stock[:500]:
-    stock = item.ticker
-    LIST_STOCK.append((stock,stock))
-    LIST_STOCK.sort()
+# for item in stock[:500]:
+#     stock = item.ticker
+#     LIST_STOCK.append((stock,stock))
+#     LIST_STOCK.sort()
 
  
 class Transaction (models.Model):
@@ -658,7 +659,7 @@ class Transaction (models.Model):
 #                                 buy_code=buy.pk)
   
 
-@receiver(post_save, sender=StockPrice)
+@receiver(post_save, sender=StockPriceFilter)
 def create_sell_transaction(sender, instance, created, **kwargs):
     if created:
         return
@@ -771,12 +772,11 @@ class DateNotTrading(models.Model):
     def __str__(self):
         return str(self.date) 
 
+from datetime import datetime, timedelta, time
+stock = StockPriceFilter.objects.all()
+new_time = time(14, 45, 0)
 
-# a = Transaction.objects.all()
-# for i in a:
-#     if i.status_raw == "matched":
-#         i.matched_price = i.price
-#     else:
-#         i.matched_price = None
-#     i.save()
+for i in stock:
+    i.date_time = datetime.combine(i.date, new_time)
+    i.save()
 
