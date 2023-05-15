@@ -293,7 +293,7 @@ def check_status_order(pk):
             item.status_raw = status
             item.time_matched_raw = time
             item.time_received_stock = time_received_stock
-            # item.matched_price = stock_price.first().close
+            item.matched_price = stock_price.first().close
             item.save()
         return status, time, time_received_stock
 
