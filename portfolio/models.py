@@ -270,7 +270,7 @@ def check_status_order(pk):
         time = None
         time_received_stock = None
         if item.position == 'buy':
-            stock_price = StockPrice.objects.filter(
+            stock_price = StockPriceFilter.objects.filter(
                 ticker=item.stock,
                 date_time__gte=date,
                 close__lte=item.price,
@@ -280,7 +280,7 @@ def check_status_order(pk):
                 time = stock_price.first().date_time
                 time_received_stock = difine_date_stock_on_account(time)
         else:
-            stock_price = StockPrice.objects.filter(
+            stock_price = StockPriceFilter.objects.filter(
                 ticker=item.stock,
                 date_time__gte=date,
                 close__gte=item.price,
@@ -293,6 +293,7 @@ def check_status_order(pk):
             item.status_raw = status
             item.time_matched_raw = time
             item.time_received_stock = time_received_stock
+            item.matched_price = stock_price.first().close
             item.save()
         return status, time, time_received_stock
 
@@ -436,6 +437,7 @@ class Transaction (models.Model):
     time_matched_raw = models.DateTimeField(null=True,blank=True)
     time_received_stock = models.DateTimeField(null=True,blank=True)
     description = models.TextField(max_length=200,null=True,blank=True)
+    matched_price = models.FloatField(null=True, blank=True)
  
 
     def __str__(self):
@@ -530,13 +532,15 @@ class Transaction (models.Model):
                 try:
                     self.full_clean()
                 except ValidationError as e:
-                    max_qty = round(self.account.net_cash_available/(self.price*1000),0)
-                    max_cutloss_price = round(self.price - R/(max_qty*1000),2)
-                    if max_cutloss_price <= 0:
-                        raise ValidationError('Không thể thực hiện giao dịch theo nguyên tắc quản trị vốn, bạn có thể nhập khối lượng để mua')
-                    else:
-                        raise ValidationError(f'Không đủ sức mua, có thể điều chỉnh số lượng tối đa {max_qty} cp, hoặc có thể giảm giá cắt lỗ nhỏ hơn {max_cutloss_price}'
-                                )
+                    # max_qty = round(self.account.net_cash_available/(self.price*1000),0)
+                    # max_cutloss_price = round(self.price - R/(max_qty*1000),2)
+                    # if max_cutloss_price <= 0:
+                    #     raise ValidationError('Không thể thực hiện giao dịch theo nguyên tắc quản trị vốn, bạn có thể nhập khối lượng để mua')
+                    # elif self.total_value > self.account.net_cash_available:
+                    #     raise ValidationError(f'Không đủ sức mua, có thể điều chỉnh số lượng tối đa {max_qty} cp, hoặc có thể giảm giá cắt lỗ nhỏ hơn {max_cutloss_price}'
+                                # )
+                    # else:
+                    raise ValidationError(f'Có lỗi  {e}')
                 else:
                     # Lưu đối tượng nếu không có lỗi
                     super(Transaction, self).save(*args, **kwargs)
@@ -752,3 +756,13 @@ class DateNotTrading(models.Model):
     description = models.TextField(max_length=255, blank=True)
     def __str__(self):
         return str(self.date) 
+
+
+a = Transaction.objects.all()
+for i in a:
+    if i.status_raw == "matched":
+        i.matched_price = i.price
+    else:
+        i.matched_price = None
+    i.save()
+
