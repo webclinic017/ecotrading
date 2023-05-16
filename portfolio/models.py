@@ -568,10 +568,14 @@ class Transaction (models.Model):
     @property
     def total_value(self):
         if self.price and self.qty:
-            if self.position =='buy':
-                total = self.price*self.qty*1000*(1+self.account.transaction_fee)
+            if self.matched_price:
+                price = self.matched_price
             else:
-                total = -self.price*self.qty*1000*(1+self.account.transaction_fee +self.account.tax) 
+                price = self.price
+            if self.position =='buy':
+                total = price*self.qty*1000*(1+self.account.transaction_fee)
+            else:
+                total = -price*self.qty*1000*(1+self.account.transaction_fee +self.account.tax) 
         else:
             total =0                                                                                                                                                         
         return total

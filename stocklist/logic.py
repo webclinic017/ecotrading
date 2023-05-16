@@ -46,7 +46,7 @@ def filter_stock_daily():
     df = pd.DataFrame(stock_prices)  
     df = breakout_strategy(df, 20, 25)
     df['milestone'] = np.where(df['signal']== 'buy',df['res'],np.where(df['signal']== 'sell',df['sup'],np.nan))
-    df_signal = df.loc[df['signal'] !='nan', ['ticker', 'date', 'signal','milestone']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
+    df_signal = df.loc[(df['signal'] !='nan')&(df['close']>3), ['ticker', 'date', 'signal','milestone']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
     stocks_to_create = []
     stocks_to_update = []
     for index, row in df_signal.iterrows():
