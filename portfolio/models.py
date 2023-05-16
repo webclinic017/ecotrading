@@ -274,14 +274,14 @@ def cal_profit_deal_close(pk):
     str_deal_close = []
     for i in item:
             new_end_date = i.time_matched_raw -timedelta(minutes=1)
-            avgprice = avg_price(pk,i.stock,new_end_date)
+            avgprice = round(avg_price(pk,i.stock,new_end_date),2)
             profit = i.qty*(i.matched_price -avgprice )*1000
             ratio_profit = (i.matched_price/avgprice-1)*100
             deal_close.append({'stock':i.stock,'date':i.time_matched,'qty': i.qty,
                                'price':i.matched_price,'avg_price':avgprice,
                                'profit':profit,'ratio_profit':ratio_profit})
             str_deal_close.append({'stock':i.stock,'date':i.time_matched,'qty': '{:,.0f}'.format(i.qty),
-                               'price':'{:,.0f}'.format(i.matched_price),'avg_price':'{:,.0f}'.format(avgprice),
+                               'price':i.matched_price,'avg_price':avgprice,
                                'profit':'{:,.0f}'.format(profit),'ratio_profit':str(round(ratio_profit,2))+str('%')})
     return deal_close, str_deal_close
 
