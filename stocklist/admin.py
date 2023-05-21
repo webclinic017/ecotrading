@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import *
 
+
 # Register your models here.
 
 class SignaldailyAdmin(admin.ModelAdmin):
@@ -8,4 +9,11 @@ class SignaldailyAdmin(admin.ModelAdmin):
     list_display = ('date','ticker','close','strategy','signal','milestone','distance')
     list_filter = ('ticker','signal', 'ticker')
 
+class OverviewBreakoutBacktestAdmin(admin.ModelAdmin):
+    models = OverviewBreakoutBacktest
+    list_display =['ticker','ratio_pln','drawdown','total_trades','won_total_trades',
+                   'won_average_pnl','won_max_pnl', 'lost_total_trades', 'lost_average_pnl',
+                   'lost_max_pnl', 'average_won_trades_per_day', 'sharpe_ratio']
+
 admin.site.register(Signaldaily, SignaldailyAdmin)
+admin.site.register(OverviewBreakoutBacktest, OverviewBreakoutBacktestAdmin)

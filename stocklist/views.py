@@ -147,7 +147,8 @@ def run_backtest(period, nav, commission):
     stock_prices = StockPrice.objects.filter(volume__gt=100).values()
     df = pd.DataFrame(stock_prices)
     df = breakout_strategy(df, period)
-    for item in LIST_STOCK:
+    stock_test = list(set(LIST_STOCK))
+    for item in stock_test:
         stock = item[0]
         print(stock)
         #chạy hàm for
