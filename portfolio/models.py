@@ -432,12 +432,13 @@ class StockPriceFilter(models.Model):
 
 
 #lấy danh sách mã chứng khoán, top 500 thanh khoản
-stock = StockPriceFilter.objects.all().order_by('-date_time','-volume')
+stock = StockPrice.objects.all().order_by('-date_time','-volume')
 LIST_STOCK = []
 for item in stock[:500]:
     stock = item.ticker
     LIST_STOCK.append((stock,stock))
     LIST_STOCK.sort()
+    LIST_STOCK = list(set(LIST_STOCK))
 
  
 class Transaction (models.Model):
