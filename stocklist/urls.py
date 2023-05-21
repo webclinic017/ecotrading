@@ -1,6 +1,8 @@
 from django.urls import path
-from crontab.views import CrontabView
+from .views import run_backtest
+
 
 urlpatterns = [
-    path('run-cron/', CrontabView.as_view()),
+    # ...
+    path('backtest/', run_backtest, name='backtest'),
 ]
