@@ -22,11 +22,12 @@ def add_test_value(group):
     return group
 
 def breakout_strategy(df, period, num_raw=None):
+    df = df.drop(df[(df['open'] == 0) & (df['close'] == 0)& (df['volume'] == 0)].index)
     df = df.groupby('ticker', group_keys=False).apply(lambda x: x.sort_values('date', ascending=False).head(num_raw) if num_raw is not None else x.sort_values('date', ascending=False))
     df['res'] = df.groupby('ticker')['high'].transform(lambda x: x[::-1].rolling(window=period).max()[::-1])
     df['sup'] = df.groupby('ticker')['low'].transform(lambda x: x[::-1].rolling(window=period).min()[::-1])
     df['mavol'] = df.groupby('ticker')['volume'].transform(lambda x: x[::-1].rolling(window=period).mean()[::-1])
-    df = df.groupby('ticker').apply(add_test_value)
+    df = df.groupby('ticker', group_keys=False).apply(add_test_value)
     df['tsi'].fillna(method='ffill', inplace=True)
     df['pre_close'] = df.groupby('ticker')['close'].shift(-1)
     buy = (df['close'] > df['tsi']) & (df['volume'] > df['mavol']*2) & (df['mavol'] > 100000) & (df['high']/df['close']-1 < 0.015) & (df['close']/df['pre_close']-1 > 0.03)

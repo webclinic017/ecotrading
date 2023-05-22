@@ -132,7 +132,7 @@ class definesize(bt.Sizer):
     def _getsizing(self, comminfo, cash, data, isbuy):
         position = self.broker.getposition(data)
         if not position:
-            size = cash / data.open * (self.params.percents / 100)
+            size = cash* (self.params.percents / 100) / data.open 
         else:
             size = position.size
 
@@ -147,10 +147,11 @@ def run_backtest(period, nav, commission):
     stock_test = OverviewBreakoutBacktest.objects.values('ticker')
     for item in stock_test:
         stock = item['ticker']
-        print(stock)
+        print('------đang chạy:', stock)
         stock_prices = StockPrice.objects.filter(ticker = stock).values()
         df = pd.DataFrame(stock_prices)
         df = breakout_strategy(df, period)
+        df = df.drop(['id','res','sup'], axis=1) 
         df = df.sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
         data = PandasData(dataname=df)
         # Tạo một phiên giao dịch Backtrader mới
@@ -256,12 +257,12 @@ def run_backtest(period, nav, commission):
 
 
 def run_backtest_one_stock(stock,period, nav, commission):
-    stock_prices = StockPrice.objects.all().values()
+    stock_prices = StockPrice.objects.filter(ticker = stock).values()
     df = pd.DataFrame(stock_prices)
     df = breakout_strategy(df, period)
-    #chạy hàm for
-    df_stock = df.loc[df['ticker'] == stock].sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
-    data = PandasData(dataname=df_stock)
+    df = df.drop(['id','res','sup'], axis=1) 
+    df = df.sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
+    data = PandasData(dataname=df)
     # Tạo một phiên giao dịch Backtrader mới
     cerebro = bt.Cerebro()
     # Thêm dữ liệu và chiến lược vào cerebro
@@ -292,7 +293,7 @@ def run_backtest_one_stock(stock,period, nav, commission):
     print('Final Portfolio Value: ${}'.format(port_value))
     print('P/L: ${}'.format(pnl))
     print('drawdown:', drawdown)
-    # cerebro.plot(style='candlestick')  # Thêm style='candlestick' để hiển thị biểu đồ dạng nến
+    cerebro.plot(style='candlestick')  # Thêm style='candlestick' để hiển thị biểu đồ dạng nến
     # Tạo biểu đồ
         
         # Lưu biểu đồ vào một tệp hình ảnh
