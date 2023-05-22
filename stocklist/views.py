@@ -101,23 +101,23 @@ class breakout(bt.SignalStrategy):
                 self.close()  
 
     # giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
-    def notify_trade(self, trade):
-        date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
-        date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
-        if trade.justopened:
-            print('----TRADE OPENED----')
-            print('Date: {}'.format(date_open))
-            print('Price: {}'.format(trade.price))# cũng là print('Price: {}'.format(self.data.open[0]))
-            print('Size: {}'.format(trade.size))
-        elif trade.isclosed:
-            print('----TRADE CLOSED----')
-            print('Date: {}'.format(date_close))
-            print('Price: {}'.format(self.data.open[0]))
-            print('Profit, Gross {}, Net {}'.format(
-                                                round(trade.pnl,2),
-                                                round(trade.pnlcomm,2)))
-        else:
-            return
+    # def notify_trade(self, trade):
+    #     date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
+    #     date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
+    #     if trade.justopened:
+    #         print('----TRADE OPENED----')
+    #         print('Date: {}'.format(date_open))
+    #         print('Price: {}'.format(trade.price))# cũng là print('Price: {}'.format(self.data.open[0]))
+    #         print('Size: {}'.format(trade.size))
+    #     elif trade.isclosed:
+    #         print('----TRADE CLOSED----')
+    #         print('Date: {}'.format(date_close))
+    #         print('Price: {}'.format(self.data.open[0]))
+    #         print('Profit, Gross {}, Net {}'.format(
+    #                                             round(trade.pnl,2),
+    #                                             round(trade.pnlcomm,2)))
+    #     else:
+    #         return
         
        
 class definesize(bt.Sizer):
@@ -180,7 +180,7 @@ def run_backtest(period, nav, commission):
         overview = result.analyzers.overviews.get_analysis()
         sharpe_ratio = result.analyzers.sharpe_ratio.get_analysis()['sharperatio']
         total_closed_test = overview.total.get('closed')
-        if total_closed_test and total_closed_test >0:
+        if total_closed_test and sharpe_ratio and total_closed_test >0:
             overview_data = {
             'nav': nav,
             'commission': commission,
@@ -293,7 +293,7 @@ def run_backtest_one_stock(stock,period, nav, commission):
     print('Final Portfolio Value: ${}'.format(port_value))
     print('P/L: ${}'.format(pnl))
     print('drawdown:', drawdown)
-    cerebro.plot(style='candlestick')  # Thêm style='candlestick' để hiển thị biểu đồ dạng nến
+    # cerebro.plot(style='candlestick')  # Thêm style='candlestick' để hiển thị biểu đồ dạng nến
     # Tạo biểu đồ
         
         # Lưu biểu đồ vào một tệp hình ảnh
@@ -302,4 +302,4 @@ def run_backtest_one_stock(stock,period, nav, commission):
         # Trích xuất thông tin kết quả backtest
         # trade_analysis = result[0]
         # Render template và trả về kết quả backtest    
-    return overview
+    return overview, sharpe_ratio
