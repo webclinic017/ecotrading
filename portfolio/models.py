@@ -39,7 +39,7 @@ def get_all_info_stock_price():
         close=float(a[i]['mat'])
         volume=float(a[i]['tmv'].replace(',', '') )*10
         StockPrice.objects.create(
-            icker=ticker,
+            ticker=ticker,
             date= date_time.date(),
             low =  low_price,
             high = high_price,
