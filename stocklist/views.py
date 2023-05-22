@@ -100,7 +100,7 @@ class breakout(bt.SignalStrategy):
             if self.data.close < self.trailing_sl and difine_stock_date_to_sell(self.buy_date,self.data.datetime.datetime())==True: 
                 self.close()  
 
-    # giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
+    # #giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
     # def notify_trade(self, trade):
     #     date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
     #     date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
@@ -148,107 +148,117 @@ def run_backtest(period, nav, commission):
     for item in stock_test:
         stock = item['ticker']
         print('------đang chạy:', stock)
-        stock_prices = StockPrice.objects.filter(ticker = stock).values()
-        df = pd.DataFrame(stock_prices)
-        df = breakout_strategy(df, period)
-        df = df.drop(['id','res','sup'], axis=1) 
-        df = df.sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
-        data = PandasData(dataname=df)
-        # Tạo một phiên giao dịch Backtrader mới
-        cerebro = bt.Cerebro()
-        # Thêm dữ liệu và chiến lược vào cerebro
-        cerebro.adddata(data)
-        cerebro.addobserver(bt.observers.DrawDown)
-        cerebro.addstrategy(breakout)
-        # Thiết lập thông số về kích thước vốn ban đầu và phí giao dịch
-        cerebro.broker.setcash(nav)  # Số dư ban đầu
-        cerebro.broker.setcommission(commission=commission)  # Phí giao dịch (0.15%)
-        #add the sizer
-        cerebro.addsizer(definesize)
-        # Analyzer
-        cerebro.addanalyzer(btanalyzers.TradeAnalyzer, _name='overviews')
-        cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio')
-        cerebro.addanalyzer(btanalyzers.DrawDown, _name='drawdown')
-        # Chạy backtest
-        result = cerebro.run()
-        result = result[0]
-        #Get final portfolio Value
-        port_value = round(cerebro.broker.getvalue(),0)
-        pnl = port_value - nav
-        ratio_pln = pnl/nav
-        drawdown = result.analyzers.drawdown.get_analysis()['drawdown']
-        overview = result.analyzers.overviews.get_analysis()
-        sharpe_ratio = result.analyzers.sharpe_ratio.get_analysis()['sharperatio']
-        total_closed_test = overview.total.get('closed')
-        if total_closed_test and sharpe_ratio and total_closed_test >0:
-            overview_data = {
-            'nav': nav,
-            'commission': commission,
-            'ratio_pln': round(ratio_pln, 3),
-            'drawdown': round(drawdown, 3),
-            'sharpe_ratio': round(sharpe_ratio,3),
-            'total_trades': overview.total.get('total'),
-            'total_open_trades': overview.total.get('open'),
-            'total_closed_trades': overview.total.get('closed'),
-            #Chuỗi giao dịch liên tiếp
-            'won_current_streak': overview.streak.won.get('current'),
-            'won_longest_streak': overview.streak.won.get('longest'),
-            'lost_current_streak': overview.streak.lost.get('current'),
-            'lost_longest_streak': overview.streak.lost.get('longest'),
-            #Thống kê % lợi nhuận
-            'gross_total_pnl': round(overview.pnl.gross.get('total')/nav, 2),
-            'gross_average_pnl': round(overview.pnl.gross.get('average')/nav, 2),
-            'net_total_pnl': round(overview.pnl.net.get('total')/nav, 2),
-            'net_average_pnl': round(overview.pnl.net.get('average')/nav, 2),
-            #Thống kê giao dịch thắng
-            'won_total_trades': overview.won.get('total'),
-            'won_total_pnl': round(overview.won.pnl.get('total')/nav, 2),
-            'won_average_pnl': round(overview.won.pnl.get('average')/nav, 2),
-            'won_max_pnl': round(overview.won.pnl.get('max')/nav, 2),
-            'lost_total_trades': overview.lost.get('total'),
-            'lost_total_pnl': round(overview.lost.pnl.get('total')/nav, 2),
-            'lost_average_pnl': round(overview.lost.pnl.get('average')/nav, 2),
-            'lost_max_pnl': round(overview.lost.pnl.get('max')/nav, 2),
-            'total_long_trades': overview.long.get('total'),
-            'total_long_pnl': round(overview.long.pnl.get('total')/nav, 2),
-            'total_long_average_pnl': round(overview.long.pnl.get('average')/nav, 2),
-            'won_long_trades': overview.long.won,
-            'won_long_total_pnl': round(overview.long.pnl.won.get('total')/nav,2),
-            'won_long_average_pnl': round(overview.long.pnl.won.get('average')/nav,2),
-            'won_long_max_pnl': round(overview.long.pnl.won.get('max')/nav,2),
-            'lost_long_trades': overview.long.lost,
-            'lost_long_total_pnl': round(overview.long.pnl.lost.get('total')/nav, 2),
-            'lost_long_average_pnl': round(overview.long.pnl.lost.get('average')/nav, 2),
-            'lost_long_max_pnl': round(overview.long.pnl.lost.get('max')/nav, 2),
-            'total_short_trades': overview.short.get('total'),
-            'total_short_pnl': overview.short.pnl.get('total'),
-            'total_short_average_pnl': round(overview.short.pnl.get('average')/nav,2),
-            'won_short_total_pnl': round(overview.short.pnl.won.get('total'),2),
-            'won_short_average_pnl': round(overview.short.pnl.won.get('average')/nav,2),
-            'won_short_max_pnl': round(overview.short.pnl.won.get('max')/nav,2),
-            'lost_short_total_pnl': round(overview.short.pnl.lost.get('total')/nav,2),
-            'lost_short_average_pnl': round(overview.short.pnl.lost.get('average')/nav,2),
-            'lost_short_max_pnl': round(overview.short.pnl.lost.get('max')/nav,2),
-            'lost_short_trades': overview.short.lost,
-            'won_short_trades': overview.short.won,
-            'total_trades_length': overview.len.get('total'),
-            'average_trades_per_day': round(overview.len.get('average'),2),
-            'max_trades_per_day': overview.len.get('max'),
-            'min_trades_per_day': overview.len.get('min'),
-            'total_won_trades_length': overview.len.won.get('total'),
-            'average_won_trades_per_day': overview.len.won.get('average'),
-            'max_won_trades_per_day': overview.len.won.get('max'),
-            'min_won_trades_per_day': overview.len.won.get('min'),
-            'total_lost_trades_length': overview.len.lost.get('total'),
-            'average_lost_trades_per_day': overview.len.lost.get('average'),
-            'max_lost_trades_per_day': overview.len.lost.get('max'),
-            'min_lost_trades_per_day': overview.len.lost.get('min'),
-            }
-            obj, created = OverviewBreakoutBacktest.objects.update_or_create(
-            ticker=stock,  # Giá trị của trường ticker để tìm hoặc tạo mới
-            defaults=overview_data,
-            )
-    return 
+        try:
+            stock_prices = StockPrice.objects.filter(ticker=stock).values()
+            df = pd.DataFrame(stock_prices)
+            df = breakout_strategy(df, period)
+            df = df.drop(['id','res','sup'], axis=1) 
+            df = df.sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
+            data = PandasData(dataname=df)
+            
+            # Tạo một phiên giao dịch Backtrader mới
+            cerebro = bt.Cerebro()
+            # Thêm dữ liệu và chiến lược vào cerebro
+            cerebro.adddata(data)
+            cerebro.addobserver(bt.observers.DrawDown)
+            cerebro.addstrategy(breakout)
+            
+            # Thiết lập thông số về kích thước vốn ban đầu và phí giao dịch
+            cerebro.broker.setcash(nav)  # Số dư ban đầu
+            cerebro.broker.setcommission(commission=commission)  # Phí giao dịch (0.15%)
+            
+            #add the sizer
+            cerebro.addsizer(definesize)
+            
+            # Analyzer
+            cerebro.addanalyzer(btanalyzers.TradeAnalyzer, _name='overviews')
+            cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio')
+            cerebro.addanalyzer(btanalyzers.DrawDown, _name='drawdown')
+            
+            # Chạy backtest
+            result = cerebro.run()
+            result = result[0]
+            
+            #Get final portfolio Value
+            port_value = round(cerebro.broker.getvalue(), 0)
+            pnl = port_value - nav
+            ratio_pln = pnl / nav
+            drawdown = result.analyzers.drawdown.get_analysis()['drawdown']
+            overview = result.analyzers.overviews.get_analysis()
+            sharpe_ratio = result.analyzers.sharpe_ratio.get_analysis()['sharperatio']
+            total_closed_test = overview.total.get('closed')
+            
+            if total_closed_test and sharpe_ratio and total_closed_test > 0:
+                overview_data = {
+                    'nav': nav,  # vốn ban đầu
+                    'commission': commission,  # phí giao dịch
+                    'ratio_pln': round(ratio_pln, 3),  # tỷ suất lợi nhuận
+                    'drawdown': round(drawdown, 3),  # Tìm hiểu
+                    'sharpe_ratio': round(sharpe_ratio, 3),  # tìm hiểu
+                    'total_trades': overview.total.a.totalaaaaget('total'),  # tổng số deal
+                    'total_open_trades': overview.total.get('open'),  # deal đang mở, chưa chốt
+                    'total_closed_trades': overview.total.get('closed'),  # đang đã đóng
+                    # Chuỗi giao dịch liên tiếp
+                    'won_current_streak': overview.streak.won.get('current'),
+                    'won_longest_streak': overview.streak.won.get('longest'),
+                    'lost_current_streak': overview.streak.lost.get('current'),
+                    'lost_longest_streak': overview.streak.lost.get('longest'),
+                    # Thống kê % lợi nhuận
+                    'gross_total_pnl': round(overview.pnl.gross.get('total') / nav, 2),
+                    'gross_average_pnl': round(overview.pnl.gross.get('average') / nav, 2),
+                    'net_total_pnl': round(overview.pnl.net.get('total') / nav, 2),
+                    'net_average_pnl': round(overview.pnl.net.get('average') / nav, 2),
+                    # Thống kê giao dịch thắng
+                    'won_total_trades': overview.won.get('total'),
+                    'won_total_pnl': round(overview.won.pnl.get('total') / nav, 2),
+                    'won_average_pnl': round(overview.won.pnl.get('average') / nav, 2),
+                    'won_max_pnl': round(overview.won.pnl.get('max') / nav, 2),
+                    'lost_total_trades': overview.lost.get('total'),
+                    'lost_total_pnl': round(overview.lost.pnl.get('total') / nav, 2),
+                    'lost_average_pnl': round(overview.lost.pnl.get('average') / nav, 2),
+                    'lost_max_pnl': round(overview.lost.pnl.get('max') / nav, 2),
+                    'total_long_trades': overview.long.get('total'),
+                    'total_long_pnl': round(overview.long.pnl.get('total') / nav, 2),
+                    'total_long_average_pnl': round(overview.long.pnl.get('average') / nav, 2),
+                    'won_long_trades': overview.long.won,
+                    'won_long_total_pnl': round(overview.long.pnl.won.get('total') / nav, 2),
+                    'won_long_average_pnl': round(overview.long.pnl.won.get('average') / nav, 2),
+                    'won_long_max_pnl': round(overview.long.pnl.won.get('max') / nav, 2),
+                    'lost_long_trades': overview.long.lost,
+                    'lost_long_total_pnl': round(overview.long.pnl.lost.get('total') / nav, 2),
+                    'lost_long_average_pnl': round(overview.long.pnl.lost.get('average') / nav, 2),
+                    'lost_long_max_pnl': round(overview.long.pnl.lost.get('max') / nav, 2),
+                    'total_short_trades': overview.short.get('total'),
+                    'total_short_pnl': overview.short.pnl.get('total'),
+                    'total_short_average_pnl': round(overview.short.pnl.get('average') / nav, 2),
+                    'won_short_total_pnl': round(overview.short.pnl.won.get('total'), 2),
+                    'won_short_average_pnl': round(overview.short.pnl.won.get('average') / nav, 2),
+                    'won_short_max_pnl': round(overview.short.pnl.won.get('max') / nav, 2),
+                    'lost_short_total_pnl': round(overview.short.pnl.lost.get('total') / nav, 2),
+                    'lost_short_average_pnl': round(overview.short.pnl.lost.get('average') / nav, 2),
+                    'lost_short_max_pnl': round(overview.short.pnl.lost.get('max') / nav, 2),
+                    'lost_short_trades': overview.short.lost,
+                    'won_short_trades': overview.short.won,
+                    'total_trades_length': overview.len.get('total'),
+                    'average_trades_per_day': round(overview.len.get('average'), 2),
+                    'max_trades_per_day': overview.len.get('max'),
+                    'min_trades_per_day': overview.len.get('min'),
+                    'total_won_trades_length': overview.len.won.get('total'),
+                    'average_won_trades_per_day': overview.len.won.get('average'),
+                    'max_won_trades_per_day': overview.len.won.get('max'),
+                    'min_won_trades_per_day': overview.len.won.get('min'),
+                    'total_lost_trades_length': overview.len.lost.get('total'),
+                    'average_lost_trades_per_day': overview.len.lost.get('average'),
+                    'max_lost_trades_per_day': overview.len.lost.get('max'),
+                    'min_lost_trades_per_day': overview.len.lost.get('min'),
+                }
+                obj, created = OverviewBreakoutBacktest.objects.update_or_create(ticker=stock, defaults=overview_data)
+        except Exception as e:
+            print(f"Có lỗi với cổ phiếu {stock}: {str(e)}")
+    return
+
+
+
 
     # render(request, 'myapp/backtest_result.html', 
                     #   {'summary': summary, 
@@ -293,6 +303,7 @@ def run_backtest_one_stock(stock,period, nav, commission):
     print('Final Portfolio Value: ${}'.format(port_value))
     print('P/L: ${}'.format(pnl))
     print('drawdown:', drawdown)
+    print('Overview:', overview)
     cerebro.plot(style='candlestick')  # Thêm style='candlestick' để hiển thị biểu đồ dạng nến
     # Tạo biểu đồ
         

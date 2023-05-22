@@ -11,9 +11,11 @@ class SignaldailyAdmin(admin.ModelAdmin):
 
 class OverviewBreakoutBacktestAdmin(admin.ModelAdmin):
     models = OverviewBreakoutBacktest
-    list_display =['ticker','ratio_pln','drawdown','total_trades','won_total_trades',
+    list_display =['ticker','ratio_pln','total_trades','won_total_trades','drawdown',
                    'won_average_pnl','won_max_pnl', 'lost_total_trades', 'lost_average_pnl',
                    'lost_max_pnl', 'average_won_trades_per_day', 'sharpe_ratio']
+    search_fields = ['ticker']
+
 
 admin.site.register(Signaldaily, SignaldailyAdmin)
 admin.site.register(OverviewBreakoutBacktest, OverviewBreakoutBacktestAdmin)
