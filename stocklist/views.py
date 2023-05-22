@@ -285,13 +285,14 @@ def run_backtest_one_stock(stock,period, nav, commission):
     drawdown = result.analyzers.drawdown.get_analysis()['drawdown']
     overview = result.analyzers.overviews.get_analysis()
     sharpe_ratio = result.analyzers.sharpe_ratio.get_analysis()['sharperatio']
-#Print out the final result
+    #Print out the final result
     print('----SUMMARY----')
     print('Final Portfolio Value: ${}'.format(port_value))
     print('P/L: ${}'.format(pnl))
     print('drawdown:', drawdown)
+    cerebro.plot(style='candlestick')  # Thêm style='candlestick' để hiển thị biểu đồ dạng nến
     # Tạo biểu đồ
-        # cerebro.plot(style='candlestick')  # Thêm style='candlestick' để hiển thị biểu đồ dạng nến
+        
         # Lưu biểu đồ vào một tệp hình ảnh
         # chart_path = os.path.join('stocklist/static', 'chart.png')
         # plt.savefig(chart_path)
