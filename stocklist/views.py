@@ -144,16 +144,15 @@ class definesize(bt.Sizer):
 
 
 def run_backtest(period, nav, commission):
-    stock_prices = StockPrice.objects.all().values()
-    df = pd.DataFrame(stock_prices)
-    df = breakout_strategy(df, period)
     stock_test = OverviewBreakoutBacktest.objects.values('ticker')
     for item in stock_test:
         stock = item['ticker']
         print(stock)
-        #chạy hàm for
-        df_stock = df.loc[df['ticker'] == stock].sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
-        data = PandasData(dataname=df_stock)
+        stock_prices = StockPrice.objects.filter(ticker = stock).values()
+        df = pd.DataFrame(stock_prices)
+        df = breakout_strategy(df, period)
+        df = df.sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
+        data = PandasData(dataname=df)
         # Tạo một phiên giao dịch Backtrader mới
         cerebro = bt.Cerebro()
         # Thêm dữ liệu và chiến lược vào cerebro
