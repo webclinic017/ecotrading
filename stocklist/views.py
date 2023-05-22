@@ -100,24 +100,24 @@ class breakout(bt.SignalStrategy):
             if self.data.close < self.trailing_sl and difine_stock_date_to_sell(self.buy_date,self.data.datetime.datetime())==True: 
                 self.close()  
 
-    # # giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
-    # def notify_trade(self, trade):
-    #     date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
-    #     date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
-    #     if trade.justopened:
-    #         print('----TRADE OPENED----')
-    #         print('Date: {}'.format(date_open))
-    #         print('Price: {}'.format(trade.price))# cũng là print('Price: {}'.format(self.data.open[0]))
-    #         print('Size: {}'.format(trade.size))
-    #     elif trade.isclosed:
-    #         print('----TRADE CLOSED----')
-    #         print('Date: {}'.format(date_close))
-    #         print('Price: {}'.format(self.data.open[0]))
-    #         print('Profit, Gross {}, Net {}'.format(
-    #                                             round(trade.pnl,2),
-    #                                             round(trade.pnlcomm,2)))
-    #     else:
-    #         return
+    # giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
+    def notify_trade(self, trade):
+        date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
+        date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
+        if trade.justopened:
+            print('----TRADE OPENED----')
+            print('Date: {}'.format(date_open))
+            print('Price: {}'.format(trade.price))# cũng là print('Price: {}'.format(self.data.open[0]))
+            print('Size: {}'.format(trade.size))
+        elif trade.isclosed:
+            print('----TRADE CLOSED----')
+            print('Date: {}'.format(date_close))
+            print('Price: {}'.format(self.data.open[0]))
+            print('Profit, Gross {}, Net {}'.format(
+                                                round(trade.pnl,2),
+                                                round(trade.pnlcomm,2)))
+        else:
+            return
         
        
 class definesize(bt.Sizer):
@@ -254,7 +254,7 @@ def run_backtest(period, nav, commission):
 
 
 def run_backtest_one_stock(stock,period, nav, commission):
-    stock_prices = StockPriceFilter.objects.filter(volume__gt=100).values()
+    stock_prices = StockPrice.objects.all().values()
     df = pd.DataFrame(stock_prices)
     df = breakout_strategy(df, period)
     #chạy hàm for
