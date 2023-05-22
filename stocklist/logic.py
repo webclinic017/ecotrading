@@ -83,14 +83,14 @@ def filter_stock_daily():
     bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
     group_id = '-967306064'
     list_stock = buy_today['ticker'].tolist()
-    # if list_stock:
-    #     bot.send_message(
-    #             chat_id=group_id, 
-    #             text=f"Danh sách cổ phiếu có tín hiệu breakout ngày {date_filter} là: {'; '.join(list_stock)}" )  
-    # else:
-    #     bot.send_message(
-    #             chat_id=group_id, 
-    #             text=f"Không có cổ phiếu thỏa mãn tiêu chí breakout được lọc trong ngày {date_filter} ")  
+    if list_stock:
+        bot.send_message(
+                chat_id=group_id, 
+                text=f"Danh sách cổ phiếu có tín hiệu breakout ngày {date_filter} là: {'; '.join(list_stock)}" )  
+    else:
+        bot.send_message(
+                chat_id=group_id, 
+                text=f"Không có cổ phiếu thỏa mãn tiêu chí breakout được lọc trong ngày {date_filter} ")  
     return buy_today           
 
 
