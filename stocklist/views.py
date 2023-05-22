@@ -144,12 +144,12 @@ class definesize(bt.Sizer):
 
 
 def run_backtest(period, nav, commission):
-    stock_prices = StockPrice.objects.filter(volume__gt=100).values()
+    stock_prices = StockPrice.objects.all().values()
     df = pd.DataFrame(stock_prices)
     df = breakout_strategy(df, period)
-    stock_test = list(set(LIST_STOCK))
+    stock_test = OverviewBreakoutBacktest.objects.values('ticker')
     for item in stock_test:
-        stock = item[0]
+        stock = item['ticker']
         print(stock)
         #chạy hàm for
         df_stock = df.loc[df['ticker'] == stock].sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
