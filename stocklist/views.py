@@ -145,6 +145,7 @@ class definesize(bt.Sizer):
 
 def run_backtest(period, nav, commission):
     stock_test = OverviewBreakoutBacktest.objects.values('ticker')
+    list_bug =[]
     for item in stock_test:
         stock = item['ticker']
         print('------đang chạy:', stock)
@@ -195,7 +196,7 @@ def run_backtest(period, nav, commission):
                     'ratio_pln': round(ratio_pln, 3),  # tỷ suất lợi nhuận
                     'drawdown': round(drawdown, 3),  # Tìm hiểu
                     'sharpe_ratio': round(sharpe_ratio, 3),  # tìm hiểu
-                    'total_trades': overview.total.a.totalaaaaget('total'),  # tổng số deal
+                    'total_trades': overview.total.get('total'),  # tổng số deal
                     'total_open_trades': overview.total.get('open'),  # deal đang mở, chưa chốt
                     'total_closed_trades': overview.total.get('closed'),  # đang đã đóng
                     # Chuỗi giao dịch liên tiếp
@@ -255,7 +256,8 @@ def run_backtest(period, nav, commission):
                 obj, created = OverviewBreakoutBacktest.objects.update_or_create(ticker=stock, defaults=overview_data)
         except Exception as e:
             print(f"Có lỗi với cổ phiếu {stock}: {str(e)}")
-    return
+            list_bug.append({stock:str(e)})
+    return list_bug
 
 
 
