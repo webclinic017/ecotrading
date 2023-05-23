@@ -245,11 +245,11 @@ def run_backtest(period, nav, commission):
                     'max_trades_per_day': overview.len.get('max'),
                     'min_trades_per_day': overview.len.get('min'),
                     'total_won_trades_length': overview.len.won.get('total'),
-                    'average_won_trades_per_day': overview.len.won.get('average'),
+                    'average_won_trades_per_day': round(overview.len.won.get('average'),2),
                     'max_won_trades_per_day': overview.len.won.get('max'),
                     'min_won_trades_per_day': overview.len.won.get('min'),
                     'total_lost_trades_length': overview.len.lost.get('total'),
-                    'average_lost_trades_per_day': overview.len.lost.get('average'),
+                    'average_lost_trades_per_day': round(overview.len.lost.get('average'),2),
                     'max_lost_trades_per_day': overview.len.lost.get('max'),
                     'min_lost_trades_per_day': overview.len.lost.get('min'),
                 }

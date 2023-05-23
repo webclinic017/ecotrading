@@ -16,6 +16,10 @@ class OverviewBreakoutBacktestAdmin(admin.ModelAdmin):
                    'lost_max_pnl', 'average_won_trades_per_day', 'sharpe_ratio']
     search_fields = ['ticker']
 
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.filter(total_trades__gt=0)
+
 
 admin.site.register(Signaldaily, SignaldailyAdmin)
 admin.site.register(OverviewBreakoutBacktest, OverviewBreakoutBacktestAdmin)
