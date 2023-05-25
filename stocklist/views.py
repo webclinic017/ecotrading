@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import backtrader.analyzers as btanalyzers
 from stocklist.logic import *
 from django.shortcuts import render
-import os
 from backtrader.observer import Observer
 from statistics import mean
 
@@ -159,9 +158,9 @@ class breakout(bt.SignalStrategy):
 
 
 def run_backtest(period, nav, commission):
-    # stock_test = OverviewBreakoutBacktest.objects.values('ticker')
+    stock_test = OverviewBreakoutBacktest.objects.values('ticker')
     list_bug =[]
-    stock_test = [{'ticker':'AAA'},{'ticker':'BVH'},{'ticker':'REE'}]
+    # stock_test = [{'ticker':'AAA'},{'ticker':'BVH'},{'ticker':'REE'}]
     for item in stock_test:
         stock = item['ticker']
         print('------đang chạy:', stock)
