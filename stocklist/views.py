@@ -113,7 +113,7 @@ class breakout(bt.SignalStrategy):
         else:
             # Kiểm tra giá hiện tại có vượt quá trailing_sl không
             if self.data.close > self.trailing_tp:
-                print(self.data.close[0],self.trailing_tp[0])
+                print(self.data.close[0],self.trailing_tp)
                 self.trailing_sl = self.trailing_tp
                 self.trailing_tp = self.trailing_tp+self.trailing_offset
             if self.data.close < self.trailing_sl:
