@@ -339,7 +339,7 @@ def run_backtest_one_stock(ticker,period, nav, commission):
         # Trích xuất thông tin kết quả backtest
         # trade_analysis = result[0]
         # Render template và trả về kết quả backtest    
-    return overview
+    return 
 
 
 def get_total_backtest():
