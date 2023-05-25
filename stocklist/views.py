@@ -83,8 +83,9 @@ class breakout(bt.SignalStrategy):
         ('change_day', 0.015),
         ('risk', 0.03),
     )
-    def __init__(self):
+    def __init__(self, ticker):
         #khai báo biến
+        self.ticker = ticker
         self.trailing_sl = None  # Biến đồng hồ để lưu giá trị stop loss
         #điều kiện buy
         self.buy_price1 = self.data.close > self.data.tsi
@@ -108,6 +109,7 @@ class breakout(bt.SignalStrategy):
                 self.trailing_offset= self.R/self.qty
                 self.trailing_sl = round(self.buy_price - self.trailing_offset,2)  # Đặt stop loss ban đầu
                 self.trailing_tp = round(self.buy_price + self.trailing_offset*2,2)    
+                print(self.ticker)
         else:
             # Kiểm tra giá hiện tại có vượt quá trailing_sl không
             if self.data.close > self.trailing_tp:
@@ -119,7 +121,6 @@ class breakout(bt.SignalStrategy):
                         self.close()  
                         self.sell_price =self.data.open[1]
                         data = {
-                            'ticker': stock,
                             'nav': round(self.nav,2),
                             'date_buy':self.buy_date,
                             'buy_price':self.buy_price,
@@ -132,7 +133,7 @@ class breakout(bt.SignalStrategy):
                             'take_profit': round(self.trailing_tp,2),
                             'strategy': 'breakout'
                         }
-                        obj, created = TransactionBacktest.objects.update_or_create(ticker=stock,date_buy = self.buy_date,strategy='breakout', defaults=data)
+                        obj, created = TransactionBacktest.objects.update_or_create(ticker=self.ticker,date_buy = self.buy_date,strategy='breakout', defaults=data)
                         return data           
                     
     #giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
@@ -160,24 +161,22 @@ class breakout(bt.SignalStrategy):
 def run_backtest(period, nav, commission):
     stock_test = OverviewBreakoutBacktest.objects.values('ticker')
     list_bug =[]
-    # stock_test = [{'ticker':'AAA'},{'ticker':'BVH'},{'ticker':'REE'}]
     for item in stock_test:
-        stock = item['ticker']
-        print('------đang chạy:', stock)
+        ticker = item['ticker']
+        print('------đang chạy:', ticker)
         try:
-            stock_prices = StockPrice.objects.filter(ticker=stock).values()
+            stock_prices = StockPrice.objects.filter(ticker=ticker).values()
             df = pd.DataFrame(stock_prices)
             df = breakout_strategy(df, period)
             df = df.drop(['id','res','sup'], axis=1) 
             df = df.sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
             data = PandasData(dataname=df)
-            
             # Tạo một phiên giao dịch Backtrader mới
             cerebro = bt.Cerebro()
             # Thêm dữ liệu và chiến lược vào cerebro
             cerebro.adddata(data)
             cerebro.addobserver(bt.observers.DrawDown)
-            cerebro.addstrategy(breakout)
+            cerebro.addstrategy(breakout,ticker)
             
             # Thiết lập thông số về kích thước vốn ban đầu và phí giao dịch
             cerebro.broker.setcash(nav)  # Số dư ban đầu
@@ -200,7 +199,8 @@ def run_backtest(period, nav, commission):
             overview = result.analyzers.overviews.get_analysis()
             sharpe_ratio = result.analyzers.sharpe_ratio.get_analysis()['sharperatio']
             total_closed_test = overview.total.get('closed')
-            list_trade = TransactionBacktest.objects.filter(ticker =stock, strategy = 'breakout')
+            
+            list_trade = TransactionBacktest.objects.filter(ticker =ticker, strategy = 'breakout')
             if total_closed_test and sharpe_ratio and total_closed_test > 0:
                 overview_data = {
                     'nav': nav,  # vốn ban đầu
@@ -268,10 +268,10 @@ def run_backtest(period, nav, commission):
                     'max_lost_trades_per_day': overview.len.lost.get('max'),
                     'min_lost_trades_per_day': overview.len.lost.get('min'),
                 }
-                obj, created = OverviewBreakoutBacktest.objects.update_or_create(ticker=stock, defaults=overview_data)
+                obj, created = OverviewBreakoutBacktest.objects.update_or_create(ticker=ticker, defaults=overview_data)
         except Exception as e:
-            print(f"Có lỗi với cổ phiếu {stock}: {str(e)}")
-            list_bug.append({stock:str(e)})
+            print(f"Có lỗi với cổ phiếu {ticker}: {str(e)}")
+            list_bug.append({ticker:str(e)})
     return list_bug
 
 
@@ -284,8 +284,8 @@ def run_backtest(period, nav, commission):
 
 
 
-def run_backtest_one_stock(stock,period, nav, commission):
-    stock_prices = StockPriceFilter.objects.filter(ticker = stock).values()
+def run_backtest_one_stock(ticker,period, nav, commission):
+    stock_prices = StockPriceFilter.objects.filter(ticker = ticker).values()
     df = pd.DataFrame(stock_prices)
     df = breakout_strategy(df, period)
     df = df.drop(['id','res','sup'], axis=1) 
@@ -296,7 +296,7 @@ def run_backtest_one_stock(stock,period, nav, commission):
     # Thêm dữ liệu và chiến lược vào cerebro
     cerebro.adddata(data)
     cerebro.addobserver(bt.observers.DrawDown)
-    cerebro.addstrategy(breakout)
+    cerebro.addstrategy(breakout,ticker)
     # Thiết lập thông số về kích thước vốn ban đầu và phí giao dịch
     cerebro.broker.setcash(nav)  # Số dư ban đầu
     cerebro.broker.setcommission(commission=commission)  # Phí giao dịch (0.15%)
@@ -319,7 +319,7 @@ def run_backtest_one_stock(stock,period, nav, commission):
     drawdown = result.analyzers.drawdown.get_analysis()['drawdown']
     overview = result.analyzers.overviews.get_analysis()
     sharpe_ratio = result.analyzers.sharpe_ratio.get_analysis()['sharperatio']
-    a = result.list_trade
+
     
     #Print out the final result
     print('----SUMMARY----')
@@ -336,7 +336,7 @@ def run_backtest_one_stock(stock,period, nav, commission):
         # Trích xuất thông tin kết quả backtest
         # trade_analysis = result[0]
         # Render template và trả về kết quả backtest    
-    return a, overview
+    return overview
 
 
 def get_total_backtest():
