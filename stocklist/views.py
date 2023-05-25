@@ -274,9 +274,9 @@ def run_backtest(period, nav, commission):
         except Exception as e:
             print(f"Có lỗi với cổ phiếu {ticker}: {str(e)}")
             list_bug.append({ticker:str(e)})
-        detail_stock = OverviewBreakoutBacktest.objects.filter(total_trades__gt=0)
-        strategy ='breakout'
-        total = {
+    detail_stock = OverviewBreakoutBacktest.objects.filter(total_trades__gt=0)
+    strategy ='breakout'
+    total = {
             'ratio_pln':mean(i.ratio_pln for i in detail_stock),
             'drawdown':mean(i.drawdown for i in detail_stock),
             'sharpe_ratio':mean(i.sharpe_ratio for i in detail_stock),
@@ -305,8 +305,8 @@ def run_backtest(period, nav, commission):
             'max_lost_trades_per_day': max(i.max_lost_trades_per_day or -sys.maxsize-1   for i in detail_stock),
             'min_lost_trades_per_day' : min(i.min_lost_trades_per_day or sys.maxsize   for i in detail_stock if i.min_lost_trades_per_day),
         }
-        obj, created = RatingStrategy.objects.update_or_create(strategy=strategy, defaults=total)
-        print('Đã tạo tổng kết chiến lược')
+    obj, created = RatingStrategy.objects.update_or_create(strategy=strategy, defaults=total)
+    print('Đã tạo tổng kết chiến lược')
     return list_bug
 
 
