@@ -302,7 +302,7 @@ def run_backtest(period, nav, commission):
             'total_lost_trades_length' :mean(i.total_lost_trades_length for i in detail_stock),
             'average_lost_trades_per_day' :mean(i.average_lost_trades_per_day for i in detail_stock),
             'max_lost_trades_per_day': max(i.max_lost_trades_per_day for i in detail_stock),
-            'min_lost_trades_per_day' : min(i.min_lost_trades_per_day for i in detail_stock),
+            'min_lost_trades_per_day' : min(i.min_lost_trades_per_day for i in detail_stock if i.min_lost_trades_per_day),
         }
         obj, created = RatingStrategy.objects.update_or_create(strategy=strategy, defaults=total)
         print('Đã tạo tổng kết chiến lược')
