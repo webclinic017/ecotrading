@@ -113,10 +113,11 @@ class breakout(bt.SignalStrategy):
         else:
             # Kiểm tra giá hiện tại có vượt quá trailing_sl không
             if self.data.close > self.trailing_tp:
-                print(self.data.close,self.trailing_tp)
+                print(self.data.close[0],self.trailing_tp[0])
                 self.trailing_sl = self.trailing_tp
                 self.trailing_tp = self.trailing_tp+self.trailing_offset
             if self.data.close < self.trailing_sl:
+                    print(self.data.close[0],self.trailing_tp[0])
                     self.date_sell =datetime.fromordinal(int(self.data.datetime[1]))
                     if self.date_sell >= difine_stock_date_to_sell(self.buy_date):
                         self.close()  
