@@ -108,16 +108,13 @@ class breakout(bt.SignalStrategy):
                 self.buy_date =datetime.fromordinal(int(self.data.datetime[1]))
                 self.trailing_offset= self.R/self.qty
                 self.trailing_sl = round(self.buy_price - self.trailing_offset,2)  # Đặt stop loss ban đầu
-                self.trailing_tp = round(self.buy_price + self.trailing_offset*2,2)    
-                
+                self.trailing_tp = round(self.buy_price + self.trailing_offset*2,2)   
         else:
             # Kiểm tra giá hiện tại có vượt quá trailing_sl không
             if self.data.close > self.trailing_tp:
-                print(self.data.close[0],self.trailing_tp)
                 self.trailing_sl = self.trailing_tp
                 self.trailing_tp = self.trailing_tp+self.trailing_offset
             if self.data.close < self.trailing_sl:
-                    print(self.data.close[0],self.trailing_tp)
                     self.date_sell =datetime.fromordinal(int(self.data.datetime[1]))
                     if self.date_sell >= difine_stock_date_to_sell(self.buy_date):
                         self.close()  
@@ -139,24 +136,24 @@ class breakout(bt.SignalStrategy):
                         
         return        
                     
-    #giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
-    def notify_trade(self, trade):
-        date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
-        date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
-        if trade.justopened:
-            print('----TRADE OPENED----')
-            print('Date: {}'.format(date_open))
-            print('Price: {}'.format(trade.price))# cũng là print('Price: {}'.format(self.data.open[0]))
-            print('Size: {}'.format(trade.size))
-        elif trade.isclosed:
-            print('----TRADE CLOSED----')
-            print('Date: {}'.format(date_close))
-            print('Price: {}'.format(self.data.open[0]))
-            print('Profit, Gross {}, Net {}'.format(
-                                                round(trade.pnl,2),
-                                                round(trade.pnlcomm,2)))
-        else:
-            return 
+    # #giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
+    # def notify_trade(self, trade):
+    #     date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
+    #     date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
+    #     if trade.justopened:
+    #         print('----TRADE OPENED----')
+    #         print('Date: {}'.format(date_open))
+    #         print('Price: {}'.format(trade.price))# cũng là print('Price: {}'.format(self.data.open[0]))
+    #         print('Size: {}'.format(trade.size))
+    #     elif trade.isclosed:
+    #         print('----TRADE CLOSED----')
+    #         print('Date: {}'.format(date_close))
+    #         print('Price: {}'.format(self.data.open[0]))
+    #         print('Profit, Gross {}, Net {}'.format(
+    #                                             round(trade.pnl,2),
+    #                                             round(trade.pnlcomm,2)))
+    #     else:
+    #         return 
         
        
 
@@ -276,6 +273,39 @@ def run_backtest(period, nav, commission):
         except Exception as e:
             print(f"Có lỗi với cổ phiếu {ticker}: {str(e)}")
             list_bug.append({ticker:str(e)})
+        detail_stock = OverviewBreakoutBacktest.objects.filter(total_trades__gt=0)
+        strategy ='breakout'
+        total = {
+            'ratio_pln':mean(i.ratio_pln for i in detail_stock),
+            'drawdown':mean(i.drawdown for i in detail_stock),
+            'sharpe_ratio':mean(i.sharpe_ratio for i in detail_stock),
+            'total_trades': sum(i.total_trades for i in detail_stock),
+            'total_open_trades' : sum(i.total_open_trades for i in detail_stock),
+            'win_trade_ratio': mean(i.win_trade_ratio for i in detail_stock),
+            'total_closed_trades': sum(i.total_closed_trades for i in detail_stock),
+            'won_total_trades' :sum(i.won_total_trades for i in detail_stock),
+            'won_total_pnl' :sum(i.won_total_pnl for i in detail_stock),
+            'won_average_pnl' :mean(i.won_average_pnl for i in detail_stock),
+            'won_max_pnl' : max(i.won_max_pnl for i in detail_stock),
+            'lost_total_trades' : sum(i.lost_total_trades for i in detail_stock),
+            'lost_total_pnl' : sum(i.lost_total_pnl for i in detail_stock),
+            'lost_average_pnl' :mean(i.lost_average_pnl for i in detail_stock),
+            'lost_max_pnl' : min(i.lost_max_pnl for i in detail_stock),
+            'total_trades_length' : mean(i.total_trades_length for i in detail_stock),
+            'average_trades_per_day': mean(i.average_trades_per_day for i in detail_stock),
+            'max_trades_per_day' :max(i.max_trades_per_day for i in detail_stock),
+            'min_trades_per_day' :  min(i.min_trades_per_day for i in detail_stock),
+            'total_won_trades_length' : mean(i.total_won_trades_length for i in detail_stock),
+            'average_won_trades_per_day' :mean(i.average_won_trades_per_day for i in detail_stock),
+            'max_won_trades_per_day' : max(i.max_won_trades_per_day for i in detail_stock),
+            'min_won_trades_per_day' : min(i.min_won_trades_per_day for i in detail_stock),
+            'total_lost_trades_length' :mean(i.total_lost_trades_length for i in detail_stock),
+            'average_lost_trades_per_day' :mean(i.average_lost_trades_per_day for i in detail_stock),
+            'max_lost_trades_per_day': max(i.max_lost_trades_per_day for i in detail_stock),
+            'min_lost_trades_per_day' : min(i.min_lost_trades_per_day for i in detail_stock),
+        }
+        obj, created = RatingStrategy.objects.update_or_create(strategy=strategy, defaults=total)
+        print('Đã tạo tổng kết chiến lược')
     return list_bug
 
 

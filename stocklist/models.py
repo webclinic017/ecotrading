@@ -122,3 +122,38 @@ class TransactionBacktest(models.Model):
 
     def __str__(self):
         return self.ticker
+    
+class RatingStrategy(models.Model):
+    strategy = models.CharField(max_length=50)
+    description = models.CharField(max_length=200, null=True)
+    ratio_pln= models.FloatField()
+    drawdown= models.FloatField(null=True)
+    sharpe_ratio= models.FloatField(null=True)
+    total_trades = models.IntegerField(null=True)
+    total_open_trades = models.IntegerField(null=True)
+    win_trade_ratio = models.FloatField(null=True)
+    total_closed_trades = models.IntegerField(null=True)
+    net_average_pnl = models.FloatField(null=True)
+    won_total_trades = models.IntegerField(null=True)
+    won_total_pnl = models.FloatField(null=True)
+    won_average_pnl = models.FloatField(null=True)
+    won_max_pnl = models.FloatField(null=True)
+    lost_total_trades = models.IntegerField(null=True)
+    lost_total_pnl = models.FloatField(null=True)
+    lost_average_pnl = models.FloatField(null=True)
+    lost_max_pnl = models.FloatField(null=True)
+    total_trades_length = models.IntegerField(null=True)
+    average_trades_per_day = models.FloatField(null=True)
+    max_trades_per_day = models.IntegerField(null=True)
+    min_trades_per_day = models.IntegerField(null=True)
+    total_won_trades_length = models.IntegerField(null=True)
+    average_won_trades_per_day = models.FloatField(null=True)
+    max_won_trades_per_day = models.IntegerField(null=True)
+    min_won_trades_per_day = models.IntegerField(null=True)
+    total_lost_trades_length = models.IntegerField(null=True)
+    average_lost_trades_per_day = models.FloatField(null=True)
+    max_lost_trades_per_day = models.IntegerField(null=True)
+    min_lost_trades_per_day = models.IntegerField(null=True)
+    
+    def __str__(self):
+        return self.strategy
