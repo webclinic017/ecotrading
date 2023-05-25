@@ -113,6 +113,7 @@ class breakout(bt.SignalStrategy):
         else:
             # Kiểm tra giá hiện tại có vượt quá trailing_sl không
             if self.data.close > self.trailing_tp:
+                print(self.data.close,self.trailing_tp)
                 self.trailing_sl = self.trailing_tp
                 self.trailing_tp = self.trailing_tp+self.trailing_offset
             if self.data.close < self.trailing_sl:
@@ -138,23 +139,23 @@ class breakout(bt.SignalStrategy):
         return        
                     
     #giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
-    # def notify_trade(self, trade):
-    #     date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
-    #     date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
-    #     if trade.justopened:
-    #         print('----TRADE OPENED----')
-    #         print('Date: {}'.format(date_open))
-    #         print('Price: {}'.format(trade.price))# cũng là print('Price: {}'.format(self.data.open[0]))
-    #         print('Size: {}'.format(trade.size))
-    #     elif trade.isclosed:
-    #         print('----TRADE CLOSED----')
-    #         print('Date: {}'.format(date_close))
-    #         print('Price: {}'.format(self.data.open[0]))
-    #         print('Profit, Gross {}, Net {}'.format(
-    #                                             round(trade.pnl,2),
-    #                                             round(trade.pnlcomm,2)))
-    #     else:
-    #         return 
+    def notify_trade(self, trade):
+        date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
+        date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
+        if trade.justopened:
+            print('----TRADE OPENED----')
+            print('Date: {}'.format(date_open))
+            print('Price: {}'.format(trade.price))# cũng là print('Price: {}'.format(self.data.open[0]))
+            print('Size: {}'.format(trade.size))
+        elif trade.isclosed:
+            print('----TRADE CLOSED----')
+            print('Date: {}'.format(date_close))
+            print('Price: {}'.format(self.data.open[0]))
+            print('Profit, Gross {}, Net {}'.format(
+                                                round(trade.pnl,2),
+                                                round(trade.pnlcomm,2)))
+        else:
+            return 
         
        
 
@@ -206,13 +207,13 @@ def run_backtest(period, nav, commission):
                 overview_data = {
                     'nav': nav,  # vốn ban đầu
                     'commission': commission,  # phí giao dịch
-                    'ratio_pln': round(ratio_pln, 3),  # tỷ suất lợi nhuận
+                    'ratio_pln': round(ratio_pln*100, 3),  # tỷ suất lợi nhuận
                     'drawdown': round(drawdown, 3),  # Tìm hiểu
                     'sharpe_ratio': round(sharpe_ratio, 3),  # tìm hiểu
                     'total_trades': overview.total.get('total'),  # tổng số deal
                     'total_open_trades': overview.total.get('open'),  # deal đang mở, chưa chốt
                     'total_closed_trades': overview.total.get('closed'),  # đang đã đóng
-                    'win_trade_ratio':round(overview.won.get('total')/overview.total.get('total'),2),
+                    'win_trade_ratio':round(overview.won.get('total')*100/overview.total.get('total'),2),
                     # Chuỗi giao dịch liên tiếp
                     'won_current_streak': overview.streak.won.get('current'),
                     'won_longest_streak': overview.streak.won.get('longest'),
