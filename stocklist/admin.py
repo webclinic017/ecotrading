@@ -19,7 +19,14 @@ class OverviewBreakoutBacktestAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         return queryset.filter(total_trades__gt=0)
+    
+class TransactionBacktestAdmin(admin.ModelAdmin):
+    model = TransactionBacktest
+    list_display = ['ticker','ratio_pln','date_buy','qty','buy_price','date_sell','sell_price','len_days','stop_loss','take_profit']
+    search_fields = ['ticker']
 
 
+admin.site.register(TransactionBacktest,TransactionBacktestAdmin)
 admin.site.register(Signaldaily, SignaldailyAdmin)
 admin.site.register(OverviewBreakoutBacktest, OverviewBreakoutBacktestAdmin)
+
