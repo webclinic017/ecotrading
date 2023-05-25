@@ -109,7 +109,7 @@ class breakout(bt.SignalStrategy):
                 self.trailing_offset= self.R/self.qty
                 self.trailing_sl = round(self.buy_price - self.trailing_offset,2)  # Đặt stop loss ban đầu
                 self.trailing_tp = round(self.buy_price + self.trailing_offset*2,2)    
-                print(self.ticker)
+                
         else:
             # Kiểm tra giá hiện tại có vượt quá trailing_sl không
             if self.data.close > self.trailing_tp:
@@ -134,7 +134,8 @@ class breakout(bt.SignalStrategy):
                             'strategy': 'breakout'
                         }
                         obj, created = TransactionBacktest.objects.update_or_create(ticker=self.ticker,date_buy = self.buy_date,strategy='breakout', defaults=data)
-                        return data           
+                        
+        return        
                     
     #giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
     # def notify_trade(self, trade):
@@ -159,7 +160,7 @@ class breakout(bt.SignalStrategy):
 
 
 def run_backtest(period, nav, commission):
-    stock_test = OverviewBreakoutBacktest.objects.values('ticker')
+    stock_test = OverviewBreakoutBacktest.objects.values('ticker').order_by('ticker')
     list_bug =[]
     for item in stock_test:
         ticker = item['ticker']
@@ -269,6 +270,7 @@ def run_backtest(period, nav, commission):
                     'min_lost_trades_per_day': overview.len.lost.get('min'),
                 }
                 obj, created = OverviewBreakoutBacktest.objects.update_or_create(ticker=ticker, defaults=overview_data)
+                print('Đã tạo thông số trade')
         except Exception as e:
             print(f"Có lỗi với cổ phiếu {ticker}: {str(e)}")
             list_bug.append({ticker:str(e)})

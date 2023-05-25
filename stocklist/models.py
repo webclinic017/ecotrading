@@ -14,14 +14,14 @@ class Signaldaily(models.Model):
     def __str__(self):
         return str(self.ticker) + str(self.strategy)
     
-    @property
-    def close(self):
-        close = StockPriceFilter.objects.filter(ticker = self.ticker).order_by('-date').first().close
-        return close
+    # @property
+    # def close(self):
+    #     close = StockPriceFilter.objects.filter(ticker = self.ticker).order_by('-date').first().close
+    #     return close
     
-    @property
-    def distance(self):
-        return round((self.close/self.milestone-1)*100,0)
+    # @property
+    # def distance(self):
+    #     return round((self.close/self.milestone-1)*100,0)
     
 @receiver(post_save, sender=Signaldaily)
 def create_trasation_auto_bot(sender, instance, created, **kwargs):
