@@ -288,7 +288,7 @@ def run_backtest(period, nav, commission):
 
 
 def run_backtest_one_stock(ticker,period, nav, commission):
-    stock_prices = StockPriceFilter.objects.filter(ticker = ticker).values()
+    stock_prices = StockPrice.objects.filter(ticker = ticker).values()
     df = pd.DataFrame(stock_prices)
     df = breakout_strategy(df, period)
     df = df.drop(['id','res','sup'], axis=1) 
