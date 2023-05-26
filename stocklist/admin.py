@@ -35,7 +35,13 @@ class TransactionBacktestAdmin(admin.ModelAdmin):
     list_display = ['ticker','ratio_pln','date_buy','qty','buy_price','date_sell','sell_price','len_days','stop_loss','take_profit']
     search_fields = ['ticker']
 
+class RatingStrategyAdmin(admin.ModelAdmin):
+    model= RatingStrategy
+    list_display = ['ratio_pln','total_trades','win_trade_ratio','drawdown','sharpe_ratio',
+                   'won_average_pnl', 'lost_average_pnl',
+                 'average_won_trades_per_day','average_lost_trades_per_day','view_transactions']
 
+admin.site.register(RatingStrategy,RatingStrategyAdmin)
 admin.site.register(TransactionBacktest,TransactionBacktestAdmin)
 admin.site.register(Signaldaily, SignaldailyAdmin)
 admin.site.register(OverviewBreakoutBacktest, OverviewBreakoutBacktestAdmin)
