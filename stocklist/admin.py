@@ -39,7 +39,7 @@ class RatingStrategyAdmin(admin.ModelAdmin):
     model= RatingStrategy
     list_display = ['ratio_pln','total_trades','win_trade_ratio','drawdown','sharpe_ratio',
                    'won_average_pnl', 'lost_average_pnl',
-                 'average_won_trades_per_day','average_lost_trades_per_day','view_transactions']
+                 'average_won_trades_per_day','average_lost_trades_per_day']
 
 admin.site.register(RatingStrategy,RatingStrategyAdmin)
 admin.site.register(TransactionBacktest,TransactionBacktestAdmin)
