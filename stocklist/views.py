@@ -138,23 +138,23 @@ class breakout(bt.SignalStrategy):
         return        
                     
     # #giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
-    def notify_trade(self, trade):
-        date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
-        date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
-        if trade.justopened:
-            print('----TRADE OPENED----')
-            print('Date: {}'.format(date_open))
-            print('Price: {}'.format(trade.price))# cũng là print('Price: {}'.format(self.data.open[0]))
-            print('Size: {}'.format(trade.size))
-        elif trade.isclosed:
-            print('----TRADE CLOSED----')
-            print('Date: {}'.format(date_close))
-            print('Price: {}'.format(self.data.open[0]))
-            print('Profit, Gross {}, Net {}'.format(
-                                                round(trade.pnl,2),
-                                                round(trade.pnlcomm,2)))
-        else:
-            return 
+    # def notify_trade(self, trade):
+    #     date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
+    #     date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
+    #     if trade.justopened:
+    #         print('----TRADE OPENED----')
+    #         print('Date: {}'.format(date_open))
+    #         print('Price: {}'.format(trade.price))# cũng là print('Price: {}'.format(self.data.open[0]))
+    #         print('Size: {}'.format(trade.size))
+    #     elif trade.isclosed:
+    #         print('----TRADE CLOSED----')
+    #         print('Date: {}'.format(date_close))
+    #         print('Price: {}'.format(self.data.open[0]))
+    #         print('Profit, Gross {}, Net {}'.format(
+    #                                             round(trade.pnl,2),
+    #                                             round(trade.pnlcomm,2)))
+    #     else:
+    #         return 
         
        
 
