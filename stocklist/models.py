@@ -11,6 +11,7 @@ class Signaldaily(models.Model):
     milestone = models.FloatField(default=0)
     signal = models.CharField(max_length=10)
     strategy = models.CharField(max_length=50)
+    modified_date = models.DateTimeField(auto_now=True)
     def __str__(self):
         return str(self.ticker) + str(self.strategy)
     
@@ -45,9 +46,13 @@ def create_trasation_auto_bot(sender, instance, created, **kwargs):
 
 class OverviewBreakoutBacktest(models.Model):
     ticker = models.CharField(max_length=15)
-    nav =  models.IntegerField()
-    commission =  models.IntegerField()
-    ratio_pln= models.FloatField()
+    nav =  models.IntegerField(default=10000000)
+    commission =  models.IntegerField(default=0.0015)
+    param_multiply_volumn = models.FloatField(default=2)
+    param_rate_of_increase = models.FloatField(default=0.03)
+    param_change_day = models.FloatField(default=0.015)
+    param_risk= models.FloatField(default=0.015)
+    ratio_pln= models.FloatField(default=0)
     drawdown= models.FloatField(null=True)
     sharpe_ratio= models.FloatField(null=True)
     total_trades = models.IntegerField(null=True)
@@ -102,6 +107,7 @@ class OverviewBreakoutBacktest(models.Model):
     average_lost_trades_per_day = models.FloatField(null=True)
     max_lost_trades_per_day = models.IntegerField(null=True)
     min_lost_trades_per_day = models.IntegerField(null=True)
+    modified_date = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return self.ticker
@@ -119,6 +125,7 @@ class TransactionBacktest(models.Model):
     stop_loss = models.FloatField()
     take_profit = models.FloatField()
     strategy = models.CharField(max_length=50)
+    modified_date = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.ticker
@@ -154,6 +161,7 @@ class RatingStrategy(models.Model):
     average_lost_trades_per_day = models.FloatField(null=True)
     max_lost_trades_per_day = models.IntegerField(null=True)
     min_lost_trades_per_day = models.IntegerField(null=True)
+    modified_date = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return self.strategy
