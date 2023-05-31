@@ -56,7 +56,12 @@ def filter_stock_daily():
     get_info_stock_price_filter()
     date_filter = datetime.today().date() 
     stock_prices = StockPriceFilter.objects.all().values()
+    # lọc ra top cổ phiếu có vol>100k
     df = pd.DataFrame(stock_prices)  
+    df['mean_vol'] = df.groupby('ticker')['volume'].transform('mean')
+    df =df.loc[df['mean_vol']>100000].reset_index(drop=True)
+    df = df.drop(['id', 'mean_vol'], axis=1)
+    # chuyển đổi df theo chiến lược
     df = breakout_strategy(df, 20, 25)
     df['milestone'] = np.where(df['signal']== 1,df['res'],np.where(df['signal']== -1,df['sup'],0))
     df_signal = df.loc[(df['signal'] !=0)&(df['close']>3), ['ticker', 'date', 'signal','milestone']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
@@ -84,10 +89,15 @@ def filter_stock_daily():
     bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
     group_id = '-967306064'
     list_stock = buy_today['ticker'].tolist()
+
     if list_stock:
-        bot.send_message(
+        #check lịch sử test
+        for stock in list_stock:
+            back_test= OverviewBreakoutBacktest.objects.filter(ticker=stock).first()
+            if back_test:
+                bot.send_message(
                 chat_id=group_id, 
-                text=f"Danh sách cổ phiếu có tín hiệu breakout ngày {date_filter} là: {'; '.join(list_stock)}" )  
+                text=f"Tín hiệu mua {stock}, lịch sử backtest với tổng số deal {back_test.total_trades} có lợi nhuận {back_test.ratio_pln}%, tỷ lệ thắng là {back_test.win_trade_ratio} " )  
     else:
         bot.send_message(
                 chat_id=group_id, 
