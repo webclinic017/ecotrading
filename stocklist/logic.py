@@ -30,7 +30,23 @@ def breakout_strategy(df, period, num_raw=None):
     df = df.groupby('ticker', group_keys=False).apply(add_test_value)
     df['tsi'].fillna(method='ffill', inplace=True)
     df['pre_close'] = df.groupby('ticker')['close'].shift(-1)
-    buy = (df['close'] > df['tsi']) & (df['volume'] > df['mavol']*2) & (df['mavol'] > 100000) & (df['high']/df['close']-1 < 0.015) & (df['close']/df['pre_close']-1 > 0.03)
+    return df
+
+def breakout_strategy_otm(df, period, num_raw=None):
+    df = df.drop(df[(df['open'] == 0) & (df['close'] == 0)& (df['volume'] == 0)].index)
+    df = df.groupby('ticker', group_keys=False).apply(lambda x: x.sort_values('date', ascending=False).head(num_raw) if num_raw is not None else x.sort_values('date', ascending=False))
+    df['res'] = df.groupby('ticker')['high'].transform(lambda x: x[::-1].rolling(window=period).max()[::-1])
+    df['sup'] = df.groupby('ticker')['low'].transform(lambda x: x[::-1].rolling(window=period).min()[::-1])
+    df['mavol'] = df.groupby('ticker')['volume'].transform(lambda x: x[::-1].rolling(window=period).mean()[::-1])
+    df = df.groupby('ticker', group_keys=False).apply(add_test_value)
+    df['tsi'].fillna(method='ffill', inplace=True)
+    df['pre_close'] = df.groupby('ticker')['close'].shift(-1)
+    backtest =OverviewBreakoutBacktest.objects.values('ticker', 'param_multiply_volumn','param_change_day','param_rate_of_increase')
+    df_param = pd.DataFrame(backtest)
+    df['param_multiply_volumn'] = df['ticker'].map(df_param.set_index('ticker')['param_multiply_volumn'])
+    df['param_change_day'] = df['ticker'].map(df_param.set_index('ticker')['param_change_day'])
+    df['param_rate_of_increase'] = df['ticker'].map(df_param.set_index('ticker')['param_rate_of_increase'])
+    buy = (df['close'] > df['tsi']) & (df['volume'] > df['mavol']*df['param_multiply_volumn']) & (df['mavol'] > 100000) & (df['high']/df['close']-1 < df['param_rate_of_increase']) & (df['close']/df['pre_close']-1 > df['param_change_day'])
     sell = (df['close'] < df['tsi']) & (df['volume'] > df['mavol']*2) & (df['mavol'] > 100000) & (df['low']/df['close']-1 < 0.015) & (df['close']/df['pre_close']-1 < 0.03)
     df['signal'] = np.where(buy, 1, np.where(sell, -1, 0))
     return df
@@ -62,7 +78,7 @@ def filter_stock_daily():
     df =df.loc[df['mean_vol']>100000].reset_index(drop=True)
     df = df.drop(['id', 'mean_vol'], axis=1)
     # chuyển đổi df theo chiến lược
-    df = breakout_strategy(df, 20, 25)
+    df = breakout_strategy_otm(df, 20, 25)
     df['milestone'] = np.where(df['signal']== 1,df['res'],np.where(df['signal']== -1,df['sup'],0))
     df_signal = df.loc[(df['signal'] !=0)&(df['close']>3), ['ticker', 'date', 'signal','milestone']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
     stocks_to_create = []
