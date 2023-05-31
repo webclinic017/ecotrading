@@ -122,7 +122,7 @@ def get_list_stock_price():
             'volume': volume,
             'date_time':date_time
                         } )
-    return StockPriceFilter.objects.all().order_by('-date_time')[:number]
+    return StockPriceFilter.objects.all().order_by('-date')[:10]
 
 # tìm thời điểm mốc ban đầu, thời điểm mua lần đầu
 def avg_price(pk,stock,end_date):
@@ -195,7 +195,7 @@ def qty_stock_on_account(pk):
                 qty_receiving = qty_total -qty_sellable
                 item_sell = Transaction.objects.filter(account_id = pk,position ='sell', stock =stock )
                 qty_sell_pending = sum(i.qty for i in item_sell if i.status =='pending')
-                market_price = StockPriceFilter.objects.filter(ticker = stock).order_by('-date_time').first().close     
+                market_price = StockPriceFilter.objects.filter(ticker = stock).order_by('-date').first().close     
                 profit = qty_total*(market_price-avgprice)*1000
                 ratio_profit = (market_price/avgprice-1)*100
                 port_raw.append({'stock': stock,'qty_total':qty_total, 'qty_sellable': qty_sellable, 
