@@ -108,13 +108,14 @@ def filter_stock_daily():
                     milestone=milestone)
                 
             # tạo lệnh mua tự động
-            if  signal== 'buy':
+            back_test= OverviewBreakoutBacktest.objects.filter(ticker=ticker).first().ratio_pln
+            if back_test> 10 and signal== 'buy':
                 close_price = StockPriceFilter.objects.filter(ticker = ticker).order_by('-date').first().close
                 risk = account.ratio_risk
                 nav = account.net_cash_flow +account.total_profit_close
                 R = risk*nav  
-                price= round(close_price*(1+0.002)*1000,0)
-                qty= math.floor(nav*0.2/price)
+                price= round(close_price*(1+0.002),0)
+                qty= math.floor(nav*0.2/(price*1000))
                 cut_loss_price  =  round((price - R/qty)/1000,2)
                 take_profit_price = round((price + 2*R/qty)/1000,2)
                 try:
@@ -134,11 +135,10 @@ def filter_stock_daily():
                     chat_id='-870288807', 
                     text=f"Tự động giao dịch {ticker} theo chiến lược breakout thất bại, lỗi {e}   ")    
             # gửi tín hiệu vào telegram
-                back_test= OverviewBreakoutBacktest.objects.filter(ticker=ticker).first()
-                if back_test:
-                    bot.send_message(
-                    chat_id=group_id, 
-                    text=f"Tín hiệu mua {ticker}, lịch sử backtest với tổng số deal {back_test.total_trades} có lợi nhuận {back_test.ratio_pln}%, tỷ lệ thắng là {back_test.win_trade_ratio}% " )  
+                
+                # bot.send_message(
+                #     chat_id=group_id, 
+                #     text=f"Tín hiệu mua {ticker}, lịch sử backtest với tổng số deal {back_test.total_trades} có lợi nhuận {back_test.ratio_pln}%, tỷ lệ thắng là {back_test.win_trade_ratio}% " )  
     else:
         bot.send_message(
                     chat_id=group_id, 
