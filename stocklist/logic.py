@@ -70,7 +70,7 @@ def breakout_strategy_otm(df, period, num_raw=None):
 
 
 def filter_stock_daily():
-    get_info_stock_price_filter()
+    # get_info_stock_price_filter()
     date_filter = datetime.today().date() 
     stock_prices = StockPriceFilter.objects.all().values()
     # lọc ra top cổ phiếu có vol>100k
@@ -109,6 +109,7 @@ def filter_stock_daily():
                 
             # tạo lệnh mua tự động
             if  signal== 'buy':
+                close_price = StockPriceFilter.objects.filter(ticker = ticker).order_by('-date').first().close
                 risk = account.ratio_risk
                 nav = account.net_cash_flow +account.total_profit_close
                 R = risk*nav  
@@ -117,7 +118,6 @@ def filter_stock_daily():
                 cut_loss_price  =  round((price - R/qty)/1000,2)
                 take_profit_price = round((price + 2*R/qty)/1000,2)
                 try:
-                    close_price = StockPriceFilter.objects.filter(ticker = ticker).order_by('-date').first().close
                     created_transation = Transaction.objects.create(
                         account= account,
                         stock= ticker,
