@@ -169,7 +169,6 @@ JAZZMIN_UI_TWEAKS = JAZZMIN_UI_TWEAKS
 CRONTAB_TIMEZONE = 'Asia/Ho_Chi_Minh'
 
 CRONJOBS = [
-    ('31 4 * * 1-5', 'stocklist.logic.filter_stock_daily'), # Chạy lúc 11:31 từ thứ 2 đến thứ 6
-    ('30 8 * * 1-5', 'stocklist.logic.filter_stock_daily'), # Chạy lúc 15:30 từ thứ 2 đến thứ 6
+    ('00 8 * * 1-5', 'stocklist.logic.filter_stock_daily'), # Chạy lúc 15:30 từ thứ 2 đến thứ 6
     ('30 15 * * 1-5', 'portfolio.models.get_all_info_stock_price'), # Chạy lúc 15:30 từ thứ 2 đến thứ 6
 ]
