@@ -728,7 +728,7 @@ def send_telegram_message(sender, instance, created, **kwargs):
         bot_token = account.bot.token
         chat_id = account.bot.chat_id
         bot = Bot(token=bot_token)
-        if instance.position =='sell':
+        if instance.name =='Bot_Breakout':
             bot.send_message(
                 chat_id='-870288807', 
                 text=f"Tài khoản {instance.account} có lệnh {instance.position} {instance.stock} giá {instance.price}  ")                  
