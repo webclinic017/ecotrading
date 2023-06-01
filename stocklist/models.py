@@ -24,26 +24,7 @@ class Signaldaily(models.Model):
     # def distance(self):
     #     return round((self.close/self.milestone-1)*100,0)
     
-@receiver(post_save, sender=Signaldaily)
-def create_trasation_auto_bot(sender, instance, created, **kwargs):
-    if created:
-        account = Account.objects.get(name ='Bot_Breakout')
-        close_price = StockPriceFilter.objects.filter(ticker = instance.ticker).order_by('-date').first().close
-        try:
-            created = Transaction.objects.create(
-                account= account,
-                stock= instance.ticker,
-                position='buy',
-                price= round(close_price*(1+0.002),2),
-                qty=1000,
-                description = 'Auto trade' )
-        except Exception as e:
-            # chat_id = account.bot.chat_id
-            bot = Bot(token=account.bot.token)
-            bot.send_message(
-            chat_id='-870288807', 
-            text=f"Tự động giao dịch {instance.ticker} theo chiến lược breakout thất bại, lỗi {e}   ")    
-    return  created             
+           
 
 class OverviewBreakoutBacktest(models.Model):
     ticker = models.CharField(max_length=15)

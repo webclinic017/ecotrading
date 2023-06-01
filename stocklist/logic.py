@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
@@ -81,44 +82,68 @@ def filter_stock_daily():
     df = breakout_strategy_otm(df, 20, 25)
     df['milestone'] = np.where(df['signal']== 1,df['res'],np.where(df['signal']== -1,df['sup'],0))
     df_signal = df.loc[(df['signal'] !=0)&(df['close']>3), ['ticker', 'date', 'signal','milestone']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
-    stocks_to_create = []
-    stocks_to_update = []
-    for index, row in df_signal.iterrows():
-        ticker = row['ticker']
-        date = row['date']
-        if row['signal']  == 1:
-            signal = 'buy'
-        else:
-            signal = 'sell'
-        strategy = 'breakout'
-        milestone = row['milestone']
-        stock = Signaldaily.objects.filter(ticker=ticker, date=date,strategy=strategy ).first()
-        if stock is None:
-            stocks_to_create.append(Signaldaily(ticker=ticker, date=date, signal=signal,strategy=strategy,milestone = milestone))
-        else:
-            stock.signal = signal
-            stock.milestone = milestone
-            stocks_to_update.append(stock)
-    Signaldaily.objects.bulk_create(stocks_to_create)
-    Signaldaily.objects.bulk_update(stocks_to_update, ['signal','milestone'])  
-    buy_today = df_signal.loc[(df_signal['date']==date_filter)& (df_signal['signal']==1)].reset_index(drop=True)
+    signal_today = df_signal.loc[df_signal['date']==date_filter].reset_index(drop=True)
+    account = Account.objects.get(name ='Bot_Breakout')
     bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
     group_id = '-967306064'
-    list_stock = buy_today['ticker'].tolist()
 
-    if list_stock:
-        #check lịch sử test
-        for stock in list_stock:
-            back_test= OverviewBreakoutBacktest.objects.filter(ticker=stock).first()
-            if back_test:
-                bot.send_message(
-                chat_id=group_id, 
-                text=f"Tín hiệu mua {stock}, lịch sử backtest với tổng số deal {back_test.total_trades} có lợi nhuận {back_test.ratio_pln}%, tỷ lệ thắng là {back_test.win_trade_ratio} " )  
+    if signal_today:
+        for index, row in signal_today.iterrows():
+            ticker = row['ticker']
+            date = row['date']
+            if row['signal'] ==1:
+                signal = 'buy'
+            else:
+                signal = 'sell'
+            milestone = row['milestone']
+            
+            lated_signal = Signaldaily.objects.filter(ticker=ticker,strategy='breakout' ).order_by('-date').first()
+            #check nếu không có tín hiệu nào trước đó hoặc tín hiệu đã có nhưng ngược với tín hiệu hiện tại 
+            if lated_signal is None or lated_signal.signal !=signal:
+                created_signal = Signaldaily.objects.create(
+                    ticker = ticker,
+                    date=date, 
+                    signal=signal,
+                    strategy = 'breakout',
+                    milestone=milestone)
+                
+            # tạo lệnh mua tự động
+            if  signal== 'buy':
+                risk = account.ratio_risk
+                nav = account.net_cash_flow +account.total_profit_close
+                R = risk*nav  
+                price= round((close_price*(1+0.002))/1000,0)
+                qty= math.floor(nav*0.2/price)
+                cut_loss_price  =  round((price - R/qty)/1000,2)
+                take_profit_price = round((price + 2*R/qty)/1000,2)
+                try:
+                    close_price = StockPriceFilter.objects.filter(ticker = ticker).order_by('-date').first().close
+                    created_transation = Transaction.objects.create(
+                        account= account,
+                        stock= ticker,
+                        position='buy',
+                        price= price,
+                        qty=qty,
+                        cut_loss_price =cut_loss_price,
+                        take_profit_price=take_profit_price,
+                        description = 'Auto trade' )
+                except Exception as e:
+                    # chat_id = account.bot.chat_id
+                    bot = Bot(token=account.bot.token)
+                    bot.send_message(
+                    chat_id='-870288807', 
+                    text=f"Tự động giao dịch {ticker} theo chiến lược breakout thất bại, lỗi {e}   ")    
+            # gửi tín hiệu vào telegram
+                back_test= OverviewBreakoutBacktest.objects.filter(ticker=ticker).first()
+                if back_test:
+                    bot.send_message(
+                    chat_id=group_id, 
+                    text=f"Tín hiệu mua {ticker}, lịch sử backtest với tổng số deal {back_test.total_trades} có lợi nhuận {back_test.ratio_pln}%, tỷ lệ thắng là {back_test.win_trade_ratio}% " )  
     else:
         bot.send_message(
-                chat_id=group_id, 
-                text=f"Không có cổ phiếu thỏa mãn tiêu chí breakout được lọc trong ngày {date_filter} ")  
-    return buy_today           
+                    chat_id=group_id, 
+                    text=f"Không có cổ phiếu thỏa mãn tiêu chí breakout được lọc trong ngày {date_filter} ")  
+    return          
 
 
 
