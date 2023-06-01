@@ -113,7 +113,7 @@ def filter_stock_daily():
                 risk = account.ratio_risk
                 nav = account.net_cash_flow +account.total_profit_close
                 R = risk*nav  
-                price= round((close_price*(1+0.002))/1000,0)
+                price= round(close_price*(1+0.002)*1000,0)
                 qty= math.floor(nav*0.2/price)
                 cut_loss_price  =  round((price - R/qty)/1000,2)
                 take_profit_price = round((price + 2*R/qty)/1000,2)
