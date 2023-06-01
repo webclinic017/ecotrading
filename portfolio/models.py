@@ -380,7 +380,7 @@ class Account (models.Model):
     @property
     def market_value(self):
         port = self.portfolio
-        market_value = sum(item['qty_total']*item['market_price'] for item in port)
+        market_value = sum(item['qty_total']*item['market_price']*1000 for item in port)
         return market_value
     
 

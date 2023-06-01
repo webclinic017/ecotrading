@@ -70,7 +70,7 @@ def breakout_strategy_otm(df, period, num_raw=None):
 
 
 def filter_stock_daily():
-    # get_info_stock_price_filter()
+    get_info_stock_price_filter()
     date_filter = datetime.today().date() 
     stock_prices = StockPriceFilter.objects.all().values()
     # lọc ra top cổ phiếu có vol>100k
@@ -136,9 +136,9 @@ def filter_stock_daily():
                     text=f"Tự động giao dịch {ticker} theo chiến lược breakout thất bại, lỗi {e}   ")    
             # gửi tín hiệu vào telegram
                 
-                # bot.send_message(
-                #     chat_id=group_id, 
-                #     text=f"Tín hiệu mua {ticker}, lịch sử backtest với tổng số deal {back_test.total_trades} có lợi nhuận {back_test.ratio_pln}%, tỷ lệ thắng là {back_test.win_trade_ratio}% " )  
+                bot.send_message(
+                    chat_id=group_id, 
+                    text=f"Tín hiệu mua {ticker}, lịch sử backtest với tổng số deal {back_test.total_trades} có lợi nhuận {back_test.ratio_pln}%, tỷ lệ thắng là {back_test.win_trade_ratio}% " )  
     else:
         bot.send_message(
                     chat_id=group_id, 
