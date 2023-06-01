@@ -87,7 +87,7 @@ def filter_stock_daily():
     bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
     group_id = '-967306064'
 
-    if signal_today:
+    if len(signal_today) > 0:
         for index, row in signal_today.iterrows():
             ticker = row['ticker']
             date = row['date']
