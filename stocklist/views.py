@@ -103,6 +103,7 @@ class breakout_otm(bt.SignalStrategy):
         self.save_deal = save_deal
         self.sma = bt.indicators.SimpleMovingAverage(self.data.close, period=int(self.params.sma))
         self.trailing_sl = None  # Biến đồng hồ để lưu giá trị stop loss
+        self.trailing_tp =None
         #điều kiện buy
         self.buy_price1 = self.data.close > self.data.tsi
         self.buy_vol = self.data.volume > self.data.mavol*self.params.multiply_volumn
