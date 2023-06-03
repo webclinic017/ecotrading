@@ -30,10 +30,6 @@ class OverviewBreakoutBacktest(models.Model):
     ticker = models.CharField(max_length=15)
     nav =  models.IntegerField(default=10000000)
     commission =  models.IntegerField(default=0.0015)
-    param_multiply_volumn = models.FloatField(default=2)
-    param_rate_of_increase = models.FloatField(default=0.03)
-    param_change_day = models.FloatField(default=0.015)
-    param_risk= models.FloatField(default=0.015)
     ratio_pln= models.FloatField(default=0)
     drawdown= models.FloatField(null=True)
     sharpe_ratio= models.FloatField(null=True)
@@ -147,3 +143,15 @@ class RatingStrategy(models.Model):
     
     def __str__(self):
         return self.strategy
+    
+class ParamsBreakoutOptimize(models.Model):  
+    ticker = models.CharField(max_length=15)  
+    multiply_volumn = models.FloatField(default=2)
+    rate_of_increase = models.FloatField(default=0.03)
+    change_day = models.FloatField(default=0.015)
+    risk= models.FloatField(default=0.015)
+    ratio_cutloss= models.FloatField(default=0.05)
+    sma = models.FloatField(default=20)
+
+    def __str__(self):
+        return self.ticker

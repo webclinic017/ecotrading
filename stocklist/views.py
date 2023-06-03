@@ -37,7 +37,14 @@ def difine_stock_date_to_sell(buy_date):
         
     return buy_date
 
-
+dict_params = {
+        'multiply_volumn': 2,
+        'rate_of_increase': 0.03,
+        'change_day': 0.015,
+        'risk': 0.03,
+        'ratio_cutloss':0.05,
+        'sma':20,
+            }
 
 
 
@@ -61,7 +68,8 @@ class PandasData(btfeed.PandasData):
 
 class definesize(bt.Sizer):
     params = (
-        ('percents', 50),
+        ('risk', dict_params['risk']),
+        ('ratio_cutloss',dict_params['ratio_cutloss']),
         ('retint', False),  # return an int size or rather the float value
     )
 
@@ -71,7 +79,8 @@ class definesize(bt.Sizer):
     def _getsizing(self, comminfo, cash, data, isbuy):
         position = self.broker.getposition(data)
         if not position:
-            size = cash* (self.params.percents / 100) / data.open 
+            risk1R = data.open[1]*self.params.ratio_cutloss
+            size = math.floor(int(cash* self.params.risk/ risk1R))
         else:
             size = position.size
 
@@ -81,14 +90,17 @@ class definesize(bt.Sizer):
 
 class breakout_otm(bt.SignalStrategy):
     params = (
-        ('multiply_volumn', 2),
-        ('rate_of_increase', 0.03),
-        ('change_day', 0.015),
-        ('risk', 0.03),
+        ('multiply_volumn',dict_params['multiply_volumn'] ),
+        ('rate_of_increase', dict_params['rate_of_increase'] ),
+        ('change_day', dict_params['change_day'] ),
+        ('risk', dict_params['risk']),
+        ('ratio_cutloss',dict_params['ratio_cutloss'] ),
+        ('sma',dict_params['sma'] )
     )
     def __init__(self, ticker):
         #khai báo biến
         self.ticker = ticker
+        self.sma = bt.indicators.SimpleMovingAverage(self.data.close, period=int(self.params.sma))
         self.trailing_sl = None  # Biến đồng hồ để lưu giá trị stop loss
         #điều kiện buy
         self.buy_price1 = self.data.close > self.data.tsi
@@ -96,20 +108,21 @@ class breakout_otm(bt.SignalStrategy):
         self.buy_minvol =self.data.mavol > 100000
         self.buy_price2 = self.data.high/self.data.close-1 < self.params.change_day
         self.buy_price3 = self.data.close/self.data.pre_close-1 > self.params.rate_of_increase
+        self.buy_price4= self.data.close > self.sma
         #plot view
         tsi = bt.indicators.SimpleMovingAverage(self.data.tsi, period=1)
         tsi.plotinfo.plotname = 'tsi'
     
     def next(self):
         if not self.position:
-            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True:
+            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True:
                 self.buy()
                 self.nav= self.broker.getcash()
                 self.R = self.nav*self.params.risk
                 self.buy_price = self.data.open[1]
                 self.qty = self.sizer.getsizing(data=self.data, isbuy=True)
                 self.buy_date =datetime.fromordinal(int(self.data.datetime[1]))
-                self.trailing_offset= self.R/self.qty
+                self.trailing_offset= self.buy_price*self.params.ratio_cutloss 
                 self.trailing_sl = round(self.buy_price - self.trailing_offset,2)  # Đặt stop loss ban đầu
                 self.trailing_tp = round(self.buy_price + self.trailing_offset*2,2)   
         else:
@@ -123,18 +136,39 @@ class breakout_otm(bt.SignalStrategy):
                         self.close()  
         return     
     
+    # # #giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
+    # def notify_trade(self, trade):
+    #     date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
+    #     date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
+    #     if trade.justopened:
+    #         print('----TRADE OPENED----')
+    #         print('Date: {}'.format(date_open))
+    #         print('Price: {}'.format(trade.price))# cũng là print('Price: {}'.format(self.data.open[0]))
+    #         print('Size: {}'.format(trade.size))
+    #     elif trade.isclosed:
+    #         print('----TRADE CLOSED----')
+    #         print('Date: {}'.format(date_close))
+    #         print('Price: {}'.format(self.data.open[0]))
+    #         print('Profit, Gross {}, Net {}'.format(
+    #                                             round(trade.pnl,2),
+    #                                             round(trade.pnlcomm,2)))
+    #     else:
+    #         return 
 
 class breakout(bt.SignalStrategy):
 
     params = (
-        ('multiply_volumn', 2),
-        ('rate_of_increase', 0.03),
-        ('change_day', 0.015),
-        ('risk', 0.03),
+        ('multiply_volumn',dict_params['multiply_volumn'] ),
+        ('rate_of_increase', dict_params['rate_of_increase'] ),
+        ('change_day', dict_params['change_day'] ),
+        ('risk', dict_params['risk']),
+        ('ratio_cutloss',dict_params['ratio_cutloss'] ),
+        ('sma',dict_params['sma'] )
     )
     def __init__(self, ticker):
         #khai báo biến
         self.ticker = ticker
+        self.sma = bt.indicators.SimpleMovingAverage(self.data.close, period=int(self.params.sma))
         self.trailing_sl = None  # Biến đồng hồ để lưu giá trị stop loss
         #điều kiện buy
         self.buy_price1 = self.data.close > self.data.tsi
@@ -142,20 +176,21 @@ class breakout(bt.SignalStrategy):
         self.buy_minvol =self.data.mavol > 100000
         self.buy_price2 = self.data.high/self.data.close-1 < self.params.change_day
         self.buy_price3 = self.data.close/self.data.pre_close-1 > self.params.rate_of_increase
+        self.buy_price4= self.data.close > self.sma
         #plot view
         tsi = bt.indicators.SimpleMovingAverage(self.data.tsi, period=1)
         tsi.plotinfo.plotname = 'tsi'
     
     def next(self):
         if not self.position:
-            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True:
+            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True:
                 self.buy()
                 self.nav= self.broker.getcash()
                 self.R = self.nav*self.params.risk
                 self.buy_price = self.data.open[1]
                 self.qty = self.sizer.getsizing(data=self.data, isbuy=True)
                 self.buy_date =datetime.fromordinal(int(self.data.datetime[1]))
-                self.trailing_offset= self.R/self.qty
+                self.trailing_offset= self.buy_price*self.params.ratio_cutloss 
                 self.trailing_sl = round(self.buy_price - self.trailing_offset,2)  # Đặt stop loss ban đầu
                 self.trailing_tp = round(self.buy_price + self.trailing_offset*2,2)   
         else:
@@ -212,21 +247,29 @@ def evaluate_strategy(params,nav,commission,size_class,data,strategy_class, tick
     cerebro.broker.setcash(nav)  # Số dư ban đầu
     cerebro.broker.setcommission(commission=commission)  # Phí giao dịch (0.15%)
     #add the sizer
-    cerebro.addsizer(size_class)
-    cerebro.addstrategy(strategy_class, ticker, multiply_volumn=params[0], rate_of_increase=params[1], change_day=params[2], risk=params[3])
+    cerebro.addsizer(size_class, risk=params[3],ratio_cutloss=params[4])
+    cerebro.addstrategy(strategy_class, 
+                        ticker, 
+                        multiply_volumn=params[0], 
+                        rate_of_increase=params[1], 
+                        change_day=params[2], 
+                        risk=params[3],
+                        ratio_cutloss=params[4],
+                        sma = params[5],
+                        )
     # Chạy backtest và tính toán chỉ số hiệu suất
     cerebro.run()
     # Trả về chỉ số hiệu suất muốn tối ưu (ví dụ: tổng lợi nhuận, tỷ lệ Sharpe, ...)
     return cerebro.broker.getvalue() 
 
 
-def run_backtest(period):
+def run_backtest(period, begin_list, end_list):
     nav = 10000000
     commission = 0.0015
     stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
     stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
     list_bug =[]
-    for item in stock_test:
+    for item in stock_test[begin_list:end_list]:
         ticker = item['ticker']
         print('------đang chạy:', ticker)
         try:
@@ -241,9 +284,11 @@ def run_backtest(period):
             multiply_volumn_values = [x / 2 for x in range(2, 10)]
             rate_of_increase_values = [0.01, 0.02, 0.03, 0.04]
             change_day_values = [0.01, 0.015, 0.02, 0.025,0.03]
-            risk_values = [0.02, 0.03, 0.04, 0.05]   
+            risk_values = [0.02, 0.03, 0.04, 0.05]
+            ratio_cutloss = [0.05,0.06, 0.07, 0.08, 0.09, 0.1]
+            sma = [20,30,40,50]   
             # Tạo danh sách các giá trị tham số
-            param_values = [multiply_volumn_values, rate_of_increase_values, change_day_values, risk_values]
+            param_values = [multiply_volumn_values, rate_of_increase_values, change_day_values, risk_values, ratio_cutloss, sma]
             # Tạo tất cả các tổ hợp tham số
             param_combinations = list(product(*param_values))
 
@@ -260,12 +305,14 @@ def run_backtest(period):
                     best_performance = performance
             
             params_data = {
-                    'param_multiply_volumn': best_params[0],  # vốn ban đầu
-                    'param_rate_of_increase': best_params[1],  # phí giao dịch
-                    'param_change_day':best_params[2],
-                    'param_risk': best_params[3],
+                    'multiply_volumn': best_params[0],  # vốn ban đầu
+                    'rate_of_increase': best_params[1],  # phí giao dịch
+                    'change_day':best_params[2],
+                    'risk': best_params[3],
+                    'ratio_cutloss':best_params[4],
+                    'sma':best_params[5],
             }
-            obj, created = OverviewBreakoutBacktest.objects.update_or_create(ticker=ticker, defaults=params_data)
+            obj, created = ParamsBreakoutOptimize.objects.update_or_create(ticker=ticker, defaults=params_data)
             print('Đã tạo param')
 
             # Tạo một phiên giao dịch Backtrader mới
@@ -274,10 +321,12 @@ def run_backtest(period):
             cerebro.adddata(data)
             # thêm chiến lược thông số đã được tối ưu
             cerebro.addstrategy(breakout, ticker, 
-                                multiply_volumn= params_data['param_multiply_volumn'], 
-                                rate_of_increase=params_data['param_rate_of_increase'], 
-                                change_day=params_data['param_change_day'], 
-                                risk= params_data['param_risk'])
+                                multiply_volumn= params_data['multiply_volumn'], 
+                                rate_of_increase=params_data['rate_of_increase'], 
+                                change_day=params_data['change_day'], 
+                                risk= params_data['risk'],
+                                ratio_cutloss = params_data['ratio_cutloss'],
+                                sma = params_data['sma'],)
 
             
             # Thiết lập thông số về kích thước vốn ban đầu và phí giao dịch
@@ -285,7 +334,7 @@ def run_backtest(period):
             cerebro.broker.setcommission(commission=commission)  # Phí giao dịch (0.15%)
             
             #add the sizer
-            cerebro.addsizer(definesize)
+            cerebro.addsizer(definesize, risk=params_data['risk'],ratio_cutloss=params_data['ratio_cutloss'])
             
             # Analyzer
             cerebro.addanalyzer(btanalyzers.TradeAnalyzer, _name='overviews')
@@ -425,10 +474,12 @@ def run_backtest_one_stock(ticker,period):
     multiply_volumn_values = [x / 2 for x in range(2, 10)]
     rate_of_increase_values = [0.01, 0.02, 0.03, 0.04]
     change_day_values = [0.01, 0.015, 0.02, 0.025,0.03]
-    risk_values = [0.02, 0.03, 0.04, 0.05]   
+    risk_values = [0.03]   
+    ratio_cutloss = [0.05,0.06, 0.07, 0.08, 0.09, 0.1]
+    sma = [20,30,40,50]
     #Thêm tối ưu hóa
     # Tạo danh sách các giá trị tham số
-    param_values = [multiply_volumn_values, rate_of_increase_values, change_day_values, risk_values]
+    param_values = [multiply_volumn_values, rate_of_increase_values, change_day_values, risk_values, ratio_cutloss,sma]
     # Tạo tất cả các tổ hợp tham số
     param_combinations = list(product(*param_values))
 
@@ -436,9 +487,10 @@ def run_backtest_one_stock(ticker,period):
     best_params = None
     best_performance = None
 
-    for params in param_combinations:
+    for params in param_combinations[:1]:
+        print (params)
         params = tuple(float(param) for param in params)  # Chuyển đổi các giá trị tham số sang kiểu số thực
-        performance = evaluate_strategy(params,nav= 1000000,commission= 0,size_class = definesize,data= data,strategy_class = breakout,ticker =  ticker)
+        performance = evaluate_strategy(params,nav= 1000000,commission= 0,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker)
 
         if best_performance is None or performance > best_performance:
             best_params = params

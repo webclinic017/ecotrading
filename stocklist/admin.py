@@ -8,8 +8,8 @@ from django.utils.html import format_html
 
 class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
-    list_display = ('date','ticker','strategy','signal','milestone')
-    list_filter = ('ticker','signal', 'ticker')
+    list_display = ('date','ticker','strategy','signal','milestone', 'modified_date')
+    list_filter = ('ticker','signal', 'ticker','date')
 
 class OverviewBreakoutBacktestAdmin(admin.ModelAdmin):
     model = OverviewBreakoutBacktest
@@ -32,12 +32,12 @@ class OverviewBreakoutBacktestAdmin(admin.ModelAdmin):
     
 class TransactionBacktestAdmin(admin.ModelAdmin):
     model = TransactionBacktest
-    list_display = ['ticker','ratio_pln','date_buy','qty','buy_price','date_sell','sell_price','len_days','stop_loss','take_profit']
+    list_display = ['ticker','ratio_pln','date_buy','qty','buy_price','date_sell','sell_price','len_days','stop_loss','take_profit','modified_date']
     search_fields = ['ticker']
 
 class RatingStrategyAdmin(admin.ModelAdmin):
     model= RatingStrategy
-    list_display = ['strategy','ratio_pln','total_trades','win_trade_ratio','drawdown','sharpe_ratio',
+    list_display = ['strategy','modified_date','ratio_pln','total_trades','win_trade_ratio','drawdown','sharpe_ratio',
                    'won_average_pnl', 'lost_average_pnl',
                  'average_won_trades_per_day','average_lost_trades_per_day']
 
