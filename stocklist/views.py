@@ -97,9 +97,10 @@ class breakout_otm(bt.SignalStrategy):
         ('ratio_cutloss',dict_params['ratio_cutloss'] ),
         ('sma',dict_params['sma'] )
     )
-    def __init__(self, ticker):
+    def __init__(self, ticker, save_deal):
         #khai báo biến
         self.ticker = ticker
+        self.save_deal = save_deal
         self.sma = bt.indicators.SimpleMovingAverage(self.data.close, period=int(self.params.sma))
         self.trailing_sl = None  # Biến đồng hồ để lưu giá trị stop loss
         #điều kiện buy
@@ -115,7 +116,7 @@ class breakout_otm(bt.SignalStrategy):
     
     def next(self):
         if not self.position:
-            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True and len(self.data.close) >= 2:
+            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True:
                 self.buy()
                 self.nav= self.broker.getcash()
                 self.R = self.nav*self.params.risk
@@ -130,10 +131,30 @@ class breakout_otm(bt.SignalStrategy):
             if self.data.close > self.trailing_tp:
                 self.trailing_sl = self.trailing_tp
                 self.trailing_tp = self.trailing_tp+self.trailing_offset
-            if self.data.close < self.trailing_sl and len(self.data.close)>= 2:
+            if self.data.close < self.trailing_sl and len(self.data)>2:
                     self.date_sell =datetime.fromordinal(int(self.data.datetime[1]))
                     if self.date_sell >= difine_stock_date_to_sell(self.buy_date):
-                        self.close()  
+                        self.close()
+                        if self.save_deal ==True:
+                            print('có save')
+                            self.sell_price =self.data.open[1]
+                            data = {
+                            'nav': round(self.nav,2),
+                            'date_buy':self.buy_date,
+                            'buy_price':self.buy_price,
+                            'qty': math.floor(int(self.qty)),
+                            'date_sell':self.date_sell,
+                            'sell_price': self.sell_price,
+                            'ratio_pln': round((self.sell_price-self.buy_price)*self.qty*100/self.nav,2),
+                            'len_days': (self.date_sell-self.buy_date).days,
+                            'stop_loss':round(self.trailing_sl,2),
+                            'take_profit': round(self.trailing_tp,2),
+                            'strategy': 'breakout'
+                            }
+                            obj, created = TransactionBacktest.objects.update_or_create(ticker=self.ticker,date_buy = self.buy_date,strategy='breakout', defaults=data)     
+                        else:
+                            print('no save')         
+
         return     
     
     # # #giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
@@ -155,92 +176,7 @@ class breakout_otm(bt.SignalStrategy):
     #     else:
     #         return 
 
-class breakout(bt.SignalStrategy):
 
-    params = (
-        ('multiply_volumn',dict_params['multiply_volumn'] ),
-        ('rate_of_increase', dict_params['rate_of_increase'] ),
-        ('change_day', dict_params['change_day'] ),
-        ('risk', dict_params['risk']),
-        ('ratio_cutloss',dict_params['ratio_cutloss'] ),
-        ('sma',dict_params['sma'] )
-    )
-    def __init__(self, ticker):
-        #khai báo biến
-        self.ticker = ticker
-        self.sma = bt.indicators.SimpleMovingAverage(self.data.close, period=int(self.params.sma))
-        self.trailing_sl = None  # Biến đồng hồ để lưu giá trị stop loss
-        #điều kiện buy
-        self.buy_price1 = self.data.close > self.data.tsi
-        self.buy_vol = self.data.volume > self.data.mavol*self.params.multiply_volumn
-        self.buy_minvol =self.data.mavol > 100000
-        self.buy_price2 = self.data.high/self.data.close-1 < self.params.change_day
-        self.buy_price3 = self.data.close/self.data.pre_close-1 > self.params.rate_of_increase
-        self.buy_price4= self.data.close > self.sma
-        #plot view
-        tsi = bt.indicators.SimpleMovingAverage(self.data.tsi, period=1)
-        tsi.plotinfo.plotname = 'tsi'
-    
-    def next(self):
-        if not self.position:
-            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True and len(self.data.close) >= 2:
-                self.buy()
-                self.nav= self.broker.getcash()
-                self.R = self.nav*self.params.risk
-                self.buy_price = self.data.open[1]
-                self.buy_date =datetime.fromordinal(int(self.data.datetime[1]))
-                self.qty = self.sizer.getsizing(data=self.data, isbuy=True)
-                self.trailing_offset= self.buy_price*self.params.ratio_cutloss 
-                self.trailing_sl = round(self.buy_price - self.trailing_offset,2)  # Đặt stop loss ban đầu
-                self.trailing_tp = round(self.buy_price + self.trailing_offset*2,2)   
-        else:
-            # Kiểm tra giá hiện tại có vượt quá trailing_sl không
-            if self.data.close > self.trailing_tp:
-                self.trailing_sl = self.trailing_tp
-                self.trailing_tp = self.trailing_tp+self.trailing_offset
-            if self.data.close < self.trailing_sl and len(self.data.close)>= 2:
-                    self.date_sell =datetime.fromordinal(int(self.data.datetime[1]))
-                    if self.date_sell >= difine_stock_date_to_sell(self.buy_date):
-                        self.close()  
-                        self.sell_price =self.data.open[1]
-                        data = {
-                            'nav': round(self.nav,2),
-                            'date_buy':self.buy_date,
-                            'buy_price':self.buy_price,
-                            'qty': math.floor(int(self.qty)),
-                            'date_sell':self.date_sell,
-                            'sell_price': self.sell_price,
-                            'ratio_pln': round((self.sell_price-self.buy_price)*self.qty*100/self.nav,2),
-                            'len_days': (self.date_sell-self.buy_date).days,
-                            'stop_loss':round(self.trailing_sl,2),
-                            'take_profit': round(self.trailing_tp,2),
-                            'strategy': 'breakout'
-                        }
-                        obj, created = TransactionBacktest.objects.update_or_create(ticker=self.ticker,date_buy = self.buy_date,strategy='breakout', defaults=data)
-                        
-        return     
-    
-     
-                    
-    # #giao dịch sẽ lấy giá open của phiên liền sau đó (không phải giá đóng cửa)
-    # def notify_trade(self, trade):
-    #     date_open = self.data.datetime.datetime().strftime('%Y-%m-%d')
-    #     date_close = self.data.datetime.datetime().strftime('%Y-%m-%d')
-    #     if trade.justopened:
-    #         print('----TRADE OPENED----')
-    #         print('Date: {}'.format(date_open))
-    #         print('Price: {}'.format(trade.price))# cũng là print('Price: {}'.format(self.data.open[0]))
-    #         print('Size: {}'.format(trade.size))
-    #     elif trade.isclosed:
-    #         print('----TRADE CLOSED----')
-    #         print('Date: {}'.format(date_close))
-    #         print('Price: {}'.format(self.data.open[0]))
-    #         print('Profit, Gross {}, Net {}'.format(
-    #                                             round(trade.pnl,2),
-    #                                             round(trade.pnlcomm,2)))
-    #     else:
-    #         return 
-        
 def evaluate_strategy(params,nav,commission,size_class,data,strategy_class, ticker):
     cerebro = bt.Cerebro()
     cerebro.adddata(data)
@@ -249,7 +185,7 @@ def evaluate_strategy(params,nav,commission,size_class,data,strategy_class, tick
     #add the sizer
     cerebro.addsizer(size_class, risk=params[3],ratio_cutloss=params[4])
     cerebro.addstrategy(strategy_class, 
-                        ticker, 
+                        ticker, False,
                         multiply_volumn=params[0], 
                         rate_of_increase=params[1], 
                         change_day=params[2], 
@@ -320,7 +256,7 @@ def run_backtest(period, begin_list, end_list):
             # Thêm dữ liệu và chiến lược vào cerebro
             cerebro.adddata(data)
             # thêm chiến lược thông số đã được tối ưu
-            cerebro.addstrategy(breakout, ticker, 
+            cerebro.addstrategy(breakout_otm, ticker,True,
                                 multiply_volumn= params_data['multiply_volumn'], 
                                 rate_of_increase=params_data['rate_of_increase'], 
                                 change_day=params_data['change_day'], 
@@ -472,12 +408,12 @@ def run_backtest_one_stock(ticker,period):
     df = df.sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
     data = PandasData(dataname=df)
     # Khởi tạo các giá trị tham số muốn tối ưu
-    multiply_volumn_values = [x / 2 for x in range(2, 10)]
-    rate_of_increase_values = [0.01, 0.02, 0.03, 0.04]
-    change_day_values = [0.01, 0.015, 0.02, 0.025,0.03]
-    risk_values = [0.03]   
-    ratio_cutloss = [0.05,0.06, 0.07, 0.08, 0.09, 0.1]
-    sma = [20,30,40,50]
+    multiply_volumn_values = [x / 2 for x in range(2, 3)]
+    rate_of_increase_values = [0.01]
+    change_day_values = [0.01]
+    risk_values = [0.03, 0.05]   
+    ratio_cutloss = [0.05]
+    sma = [20]
     #Thêm tối ưu hóa
     # Tạo danh sách các giá trị tham số
     param_values = [multiply_volumn_values, rate_of_increase_values, change_day_values, risk_values, ratio_cutloss,sma]
@@ -488,14 +424,48 @@ def run_backtest_one_stock(ticker,period):
     best_params = None
     best_performance = None
 
-    for params in param_combinations[:1]:
-        print (params)
+    for params in param_combinations:
         params = tuple(float(param) for param in params)  # Chuyển đổi các giá trị tham số sang kiểu số thực
         performance = evaluate_strategy(params,nav= 1000000,commission= 0,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker)
-
         if best_performance is None or performance > best_performance:
             best_params = params
             best_performance = performance
+
+    params_data = {
+                    'multiply_volumn': best_params[0],  # vốn ban đầu
+                    'rate_of_increase': best_params[1],  # phí giao dịch
+                    'change_day':best_params[2],
+                    'risk': best_params[3],
+                    'ratio_cutloss':best_params[4],
+                    'sma':best_params[5],
+            }
+
+            # Tạo một phiên giao dịch Backtrader mới
+    cerebro = bt.Cerebro()
+            # Thêm dữ liệu và chiến lược vào cerebro
+    cerebro.adddata(data)
+            # thêm chiến lược thông số đã được tối ưu
+    cerebro.addstrategy(breakout_otm, ticker, True,
+                                multiply_volumn= params_data['multiply_volumn'], 
+                                rate_of_increase=params_data['rate_of_increase'], 
+                                change_day=params_data['change_day'], 
+                                risk= params_data['risk'],
+                                ratio_cutloss = params_data['ratio_cutloss'],
+                                sma = params_data['sma'],)
+
+            
+            # Thiết lập thông số về kích thước vốn ban đầu và phí giao dịch
+    cerebro.broker.setcash(1000000)  # Số dư ban đầu
+    cerebro.broker.setcommission(commission=0)  # Phí giao dịch (0.15%)
+            
+    #add the sizer
+    cerebro.addsizer(definesize, risk=params_data['risk'],ratio_cutloss=params_data['ratio_cutloss'])
+            
+    
+    # Chạy backtest
+    result = cerebro.run()
+    result = result[0]
+    cerebro.plot(style='candlestick')
 
     print("Các tham số tối ưu:", best_params)
     print("Hiệu suất tối ưu:", best_performance)
