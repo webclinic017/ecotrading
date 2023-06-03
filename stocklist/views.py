@@ -115,28 +115,28 @@ class breakout_otm(bt.SignalStrategy):
         tsi.plotinfo.plotname = 'tsi'
     
     def next(self):
-        if not self.position:
-            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True:
-                self.buy()
-                self.nav= self.broker.getcash()
-                self.R = self.nav*self.params.risk
-                self.buy_price = self.data.open[1]
-                self.qty = self.sizer.getsizing(data=self.data, isbuy=True)
-                self.buy_date =datetime.fromordinal(int(self.data.datetime[1]))
-                self.trailing_offset= self.buy_price*self.params.ratio_cutloss 
-                self.trailing_sl = round(self.buy_price - self.trailing_offset,2)  # Đặt stop loss ban đầu
-                self.trailing_tp = round(self.buy_price + self.trailing_offset*2,2)   
-        else:
-            # Kiểm tra giá hiện tại có vượt quá trailing_sl không
-            if self.data.close > self.trailing_tp:
-                self.trailing_sl = self.trailing_tp
-                self.trailing_tp = self.trailing_tp+self.trailing_offset
-            if self.data.close < self.trailing_sl and len(self.data)>2:
+        if len(self.data)>2:
+            if not self.position:
+                if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True:
+                    self.buy()
+                    self.nav= self.broker.getcash()
+                    self.R = self.nav*self.params.risk
+                    self.buy_price = self.data.open[1]
+                    self.qty = self.sizer.getsizing(data=self.data, isbuy=True)
+                    self.buy_date =datetime.fromordinal(int(self.data.datetime[1]))
+                    self.trailing_offset= self.buy_price*self.params.ratio_cutloss 
+                    self.trailing_sl = round(self.buy_price - self.trailing_offset,2)  # Đặt stop loss ban đầu
+                    self.trailing_tp = round(self.buy_price + self.trailing_offset*2,2)   
+            else:
+                # Kiểm tra giá hiện tại có vượt quá trailing_sl không
+                if self.data.close > self.trailing_tp:
+                    self.trailing_sl = self.trailing_tp
+                    self.trailing_tp = self.trailing_tp+self.trailing_offset
+                if self.data.close < self.trailing_sl:
                     self.date_sell =datetime.fromordinal(int(self.data.datetime[1]))
                     if self.date_sell >= difine_stock_date_to_sell(self.buy_date):
                         self.close()
                         if self.save_deal ==True:
-                            print('có save')
                             self.sell_price =self.data.open[1]
                             data = {
                             'nav': round(self.nav,2),
@@ -152,8 +152,7 @@ class breakout_otm(bt.SignalStrategy):
                             'strategy': 'breakout'
                             }
                             obj, created = TransactionBacktest.objects.update_or_create(ticker=self.ticker,date_buy = self.buy_date,strategy='breakout', defaults=data)     
-                        else:
-                            print('no save')         
+                             
 
         return     
     
@@ -234,12 +233,13 @@ def run_backtest(period, begin_list, end_list):
 
             for params in param_combinations:
                 params = tuple(float(param) for param in params)  # Chuyển đổi các giá trị tham số sang kiểu số thực
-                performance = evaluate_strategy(params,nav= nav,commission= commission,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker)
-                
-                if best_performance is None or performance > best_performance:
-                    best_params = params
-                    best_performance = performance
-            
+                try:
+                    performance = evaluate_strategy(params,nav= nav,commission= commission,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker)
+                    if best_performance is None or performance > best_performance:
+                        best_params = params
+                        best_performance = performance                
+                except Exception as e:
+                    print(f"Có lỗi với kịch bản {params}: {str(e)}")
             params_data = {
                     'multiply_volumn': best_params[0],  # vốn ban đầu
                     'rate_of_increase': best_params[1],  # phí giao dịch
@@ -426,20 +426,23 @@ def run_backtest_one_stock(ticker,period):
 
     for params in param_combinations:
         params = tuple(float(param) for param in params)  # Chuyển đổi các giá trị tham số sang kiểu số thực
-        performance = evaluate_strategy(params,nav= 1000000,commission= 0,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker)
-        if best_performance is None or performance > best_performance:
-            best_params = params
-            best_performance = performance
-
-    params_data = {
+        try:
+            performance = evaluate_strategy(params,nav= 10000,commission= 0,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker)
+            if best_performance is None or performance > best_performance:
+                best_params = params
+                best_performance = performance   
+                    
+        except Exception as e:
+                    print(f"Có lỗi với kịch bản {params}: {str(e)}")
+        params_data = {
                     'multiply_volumn': best_params[0],  # vốn ban đầu
                     'rate_of_increase': best_params[1],  # phí giao dịch
                     'change_day':best_params[2],
                     'risk': best_params[3],
                     'ratio_cutloss':best_params[4],
                     'sma':best_params[5],
-            }
-
+            }         
+    
             # Tạo một phiên giao dịch Backtrader mới
     cerebro = bt.Cerebro()
             # Thêm dữ liệu và chiến lược vào cerebro
