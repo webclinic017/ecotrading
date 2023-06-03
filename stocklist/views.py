@@ -115,7 +115,7 @@ class breakout_otm(bt.SignalStrategy):
     
     def next(self):
         if not self.position:
-            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True and self.data.open[1]:
+            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True and len(self.data.close) >= 2:
                 self.buy()
                 self.nav= self.broker.getcash()
                 self.R = self.nav*self.params.risk
@@ -130,7 +130,7 @@ class breakout_otm(bt.SignalStrategy):
             if self.data.close > self.trailing_tp:
                 self.trailing_sl = self.trailing_tp
                 self.trailing_tp = self.trailing_tp+self.trailing_offset
-            if self.data.close < self.trailing_sl and self.data.datetime[1]:
+            if self.data.close < self.trailing_sl and len(self.data.close)>= 2:
                     self.date_sell =datetime.fromordinal(int(self.data.datetime[1]))
                     if self.date_sell >= difine_stock_date_to_sell(self.buy_date):
                         self.close()  
@@ -183,7 +183,7 @@ class breakout(bt.SignalStrategy):
     
     def next(self):
         if not self.position:
-            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True:
+            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True and len(self.data.close) >= 2:
                 self.buy()
                 self.nav= self.broker.getcash()
                 self.R = self.nav*self.params.risk
@@ -198,7 +198,7 @@ class breakout(bt.SignalStrategy):
             if self.data.close > self.trailing_tp:
                 self.trailing_sl = self.trailing_tp
                 self.trailing_tp = self.trailing_tp+self.trailing_offset
-            if self.data.close < self.trailing_sl and self.data.datetime[1]:
+            if self.data.close < self.trailing_sl and len(self.data.close)>= 2:
                     self.date_sell =datetime.fromordinal(int(self.data.datetime[1]))
                     if self.date_sell >= difine_stock_date_to_sell(self.buy_date):
                         self.close()  
@@ -426,7 +426,8 @@ def run_backtest(period, begin_list, end_list):
     # chạy tổng kết        
     detail_stock = OverviewBreakoutBacktest.objects.filter(total_trades__gt=0)
     strategy ='breakout'
-    total = {
+    if detail_stock:
+        total = {
             'ratio_pln':round(mean(i.ratio_pln for i in detail_stock),2),
             'drawdown':round(mean(i.drawdown for i in detail_stock),2),
             'sharpe_ratio': round(mean(i.sharpe_ratio for i in detail_stock),2),
@@ -455,7 +456,7 @@ def run_backtest(period, begin_list, end_list):
             'max_lost_trades_per_day': max(i.max_lost_trades_per_day or -sys.maxsize-1 for i in detail_stock),
             'min_lost_trades_per_day' : min(i.min_lost_trades_per_day or sys.maxsize   for i in detail_stock if i.min_lost_trades_per_day),
         }
-    obj = RatingStrategy.objects.create(strategy=strategy, **total)
+        obj = RatingStrategy.objects.create(strategy=strategy, **total)
 
     print('Đã tạo tổng kết chiến lược')
     return list_bug
