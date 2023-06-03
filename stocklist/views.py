@@ -213,6 +213,7 @@ def run_backtest(period, begin_list, end_list):
             df = breakout_strategy(df, period)
             df = df.drop(['id','res','sup'], axis=1) 
             df = df.sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
+            df = df.fillna(0.0001)
             data = PandasData(dataname=df)
             #Chạy tối ưu hóa param
             # Khởi tạo các giá trị tham số muốn tối ưu
