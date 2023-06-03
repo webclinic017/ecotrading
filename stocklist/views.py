@@ -115,7 +115,7 @@ class breakout_otm(bt.SignalStrategy):
     
     def next(self):
         if not self.position:
-            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True:
+            if self.buy_price1 == True and self.buy_vol==True and self.buy_minvol==True and self.buy_price2 == True and self.buy_price3 ==True and self.buy_price4 ==True and self.data.open[1]:
                 self.buy()
                 self.nav= self.broker.getcash()
                 self.R = self.nav*self.params.risk
@@ -130,7 +130,7 @@ class breakout_otm(bt.SignalStrategy):
             if self.data.close > self.trailing_tp:
                 self.trailing_sl = self.trailing_tp
                 self.trailing_tp = self.trailing_tp+self.trailing_offset
-            if self.data.close < self.trailing_sl:
+            if self.data.close < self.trailing_sl and self.data.datetime[1]:
                     self.date_sell =datetime.fromordinal(int(self.data.datetime[1]))
                     if self.date_sell >= difine_stock_date_to_sell(self.buy_date):
                         self.close()  
@@ -188,8 +188,8 @@ class breakout(bt.SignalStrategy):
                 self.nav= self.broker.getcash()
                 self.R = self.nav*self.params.risk
                 self.buy_price = self.data.open[1]
-                self.qty = self.sizer.getsizing(data=self.data, isbuy=True)
                 self.buy_date =datetime.fromordinal(int(self.data.datetime[1]))
+                self.qty = self.sizer.getsizing(data=self.data, isbuy=True)
                 self.trailing_offset= self.buy_price*self.params.ratio_cutloss 
                 self.trailing_sl = round(self.buy_price - self.trailing_offset,2)  # Đặt stop loss ban đầu
                 self.trailing_tp = round(self.buy_price + self.trailing_offset*2,2)   
@@ -198,7 +198,7 @@ class breakout(bt.SignalStrategy):
             if self.data.close > self.trailing_tp:
                 self.trailing_sl = self.trailing_tp
                 self.trailing_tp = self.trailing_tp+self.trailing_offset
-            if self.data.close < self.trailing_sl:
+            if self.data.close < self.trailing_sl and self.data.datetime[1]:
                     self.date_sell =datetime.fromordinal(int(self.data.datetime[1]))
                     if self.date_sell >= difine_stock_date_to_sell(self.buy_date):
                         self.close()  
