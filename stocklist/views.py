@@ -218,12 +218,12 @@ def run_backtest(period, begin_list, end_list):
             data = PandasData(dataname=df)
             #Chạy tối ưu hóa param
             # Khởi tạo các giá trị tham số muốn tối ưu
-            multiply_volumn_values = [x / 2 for x in range(2, 10)]
+            multiply_volumn_values = [x / 2 for x in range(2, 6)]
             rate_of_increase_values = [0.01, 0.02, 0.03, 0.04]
-            change_day_values = [0.01, 0.015, 0.02, 0.025,0.03]
+            change_day_values = [0.015, 0.02, 0.025,0.03]
             risk_values = [0.02, 0.03, 0.04, 0.05]
             ratio_cutloss = [0.05,0.06, 0.07, 0.08, 0.09, 0.1]
-            sma = [20,30,40,50]   
+            sma = [20]   
             # Tạo danh sách các giá trị tham số
             param_values = [multiply_volumn_values, rate_of_increase_values, change_day_values, risk_values, ratio_cutloss, sma]
             # Tạo tất cả các tổ hợp tham số
@@ -234,6 +234,7 @@ def run_backtest(period, begin_list, end_list):
             best_performance = None
             list_param_bug = []
             for params in param_combinations:
+                print(params)
                 params = tuple(float(param) for param in params)  # Chuyển đổi các giá trị tham số sang kiểu số thực
                 try:
                     performance = evaluate_strategy(params,nav= nav,commission= commission,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker)
