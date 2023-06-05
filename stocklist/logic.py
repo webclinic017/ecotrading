@@ -78,7 +78,6 @@ def filter_stock_muanual():
             lated_signal = Signaldaily.objects.filter(ticker=data['ticker'],strategy='breakout' , date = date_filter).order_by('-date').first()
             #check nếu không có tín hiệu nào trước đó hoặc tín hiệu đã có nhưng ngược với tín hiệu hiện tại 
             if lated_signal is None:
-                created_signal = Signaldaily.objects.create(**data)
                 back_test= OverviewBreakoutBacktest.objects.filter(ticker=data['ticker']).first()
                 if back_test:
                     data['total_trades'] =back_test.total_trades
@@ -140,6 +139,16 @@ def filter_stock_daily():
             bot.send_message(
                 chat_id='-967306064', 
                 text=f"Tín hiệu mua {ticker['ticker']}, lịch sử backtest với tổng số deal {ticker['total_trades']} có lợi nhuận {ticker['ratio_pln']}%, tỷ lệ thắng là {ticker['win_trade_ratio']}% " )   
+        for ticker in buy_today:
+             Signaldaily.objects.create(
+                ticker = ticker['ticker'],
+                date = ticker['date'],
+                milestone =ticker['milestone'],
+                signal = ticker['signal'],
+                ratio_cutloss = ticker['ratio_cutloss'],
+                strategy = 'breakout'
+             )
+             
     return          
 
 
