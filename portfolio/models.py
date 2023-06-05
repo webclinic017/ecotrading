@@ -323,20 +323,30 @@ def check_status_order(pk):
 
 
 class BotTelegram (models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    token = models.CharField(max_length=100, unique=True)
+    description = models.TextField(max_length=255, blank=True)
+    owner = models.ForeignKey(User,on_delete=models.CASCADE )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
+    modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
+    def __str__(self):
+        return self.name
+
+class ChatGroupTelegram (models.Model):
     POSITION_CHOICES = [
         ('internal', 'internal'),
         ('external', 'external'),
     ]
     name = models.CharField(max_length=50, unique=True)
-    token = models.CharField(max_length=100, unique=True)
+    token = models.ForeignKey(BotTelegram, on_delete=models.CASCADE )
     chat_id = models.CharField(max_length=50, unique=True)
     description = models.TextField(max_length=255, blank=True)
-    owner = models.ForeignKey(User,on_delete=models.CASCADE )
     type = models.CharField(max_length=20, choices=POSITION_CHOICES, null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
     def __str__(self):
         return self.name
+
 
 # Create your models here.
 class Account (models.Model):
