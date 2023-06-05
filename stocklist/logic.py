@@ -101,12 +101,15 @@ def filter_stock_daily():
     buy_today = filter_stock_muanual()
     date_filter = datetime.today().date() 
     account = Account.objects.get(name ='Bot_Breakout')
+    external_room = ChatGroupTelegram.objects.filter(type = 'external',is_signal =True,rank ='1' )
     num_stock = len(buy_today)
     max_signal = min(num_stock, 5)
     max_trade =min(num_stock, 3)
     if max_trade ==0:
-         bot.send_message(
-                    chat_id='-967306064', #room Khách hàng
+        for group in external_room:
+            bot = Bot(token=group.token.token)
+            bot.send_message(
+                    chat_id=group.chat_id, #room Khách hàng
                     text=f"Không có cổ phiếu thỏa mãn tiêu chí breakout được lọc trong ngày {date_filter} ")  
     else:
         for ticker in buy_today[:max_trade]:
@@ -136,9 +139,11 @@ def filter_stock_daily():
                         text=f"Tự động giao dịch {ticker['ticker']} theo chiến lược breakout thất bại, lỗi {e}   ")    
         for ticker in buy_today[:max_signal]:
            # gửi tín hiệu vào telegram
-            bot.send_message(
-                chat_id='-967306064', 
-                text=f"Tín hiệu mua {ticker['ticker']}, lịch sử backtest với tổng số deal {ticker['total_trades']} có lợi nhuận {ticker['ratio_pln']}%, tỷ lệ thắng là {ticker['win_trade_ratio']}% " )   
+            for group in external_room:
+                bot = Bot(token=group.token.token)
+                bot.send_message(
+                    chat_id=group.chat_id, 
+                    text=f"Tín hiệu mua {ticker['ticker']}, lịch sử backtest với tổng số deal {ticker['total_trades']} có lợi nhuận {ticker['ratio_pln']}%, tỷ lệ thắng là {ticker['win_trade_ratio']}% " )   
         for ticker in buy_today:
              Signaldaily.objects.create(
                 ticker = ticker['ticker'],

@@ -6,9 +6,15 @@ from django.utils.html import format_html
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 
+class ChatGroupTelegramAdmin(admin.StackedInline):
+    model = ChatGroupTelegram
+
+
 
 class BotTelegramAdmin(admin.ModelAdmin):
-    models = BotTelegram
+    inlines = [ChatGroupTelegramAdmin,]
+    model = BotTelegram
+    
 
 class TransactionAdmin(admin.ModelAdmin):
     model = Transaction

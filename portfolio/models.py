@@ -334,17 +334,24 @@ class BotTelegram (models.Model):
         return self.name
 
 class ChatGroupTelegram (models.Model):
-    POSITION_CHOICES = [
+    TYPE_CHOICES = [
         ('internal', 'internal'),
         ('external', 'external'),
+    ]
+    RANK_CHOICES = [
+        ('1', '1'),
+        ('2', '2'),
+        ('3','3'),
     ]
     name = models.CharField(max_length=50, unique=True)
     token = models.ForeignKey(BotTelegram, on_delete=models.CASCADE )
     chat_id = models.CharField(max_length=50, unique=True)
     description = models.TextField(max_length=255, blank=True)
-    type = models.CharField(max_length=20, choices=POSITION_CHOICES, null=False, blank=False)
+    type = models.CharField(max_length=20, choices= TYPE_CHOICES, null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
+    rank  = models.CharField(max_length=20, choices= RANK_CHOICES, null=False, blank=False)
+    is_signal = models.BooleanField(default=True)
     def __str__(self):
         return self.name
 
