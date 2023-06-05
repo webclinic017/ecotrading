@@ -83,6 +83,7 @@ def get_info_stock_price_filter():
             'open':open,
             'close': close,
             'volume': volume,
+            'date_time':date_time, 
                         } )
         if created:
             count = count + 1
