@@ -10,6 +10,7 @@ class Signaldaily(models.Model):
     date = models.DateField()#auto_now_add=True)
     milestone = models.FloatField(default=0)
     signal = models.CharField(max_length=10)
+    ratio_cutloss = models.FloatField(default=0)
     strategy = models.CharField(max_length=50)
     modified_date = models.DateTimeField(auto_now=True)
     def __str__(self):
