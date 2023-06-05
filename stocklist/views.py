@@ -14,6 +14,7 @@ from stocklist.logic import *
 from django.shortcuts import render
 from backtrader.observer import Observer
 from statistics import mean
+from django.http import JsonResponse
 
 
 
@@ -510,3 +511,7 @@ def run_backtest_one_stock(ticker,period):
     return 
 
 
+def get_signal(request):
+    list_buy = filter_stock_muanual()
+    
+    return JsonResponse(list_buy, safe=False)

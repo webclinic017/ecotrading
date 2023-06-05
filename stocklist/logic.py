@@ -108,9 +108,12 @@ def filter_stock_daily():
     if max_trade ==0:
         for group in external_room:
             bot = Bot(token=group.token.token)
-            bot.send_message(
+            try:
+                bot.send_message(
                     chat_id=group.chat_id, #room Khách hàng
                     text=f"Không có cổ phiếu thỏa mãn tiêu chí breakout được lọc trong ngày {date_filter} ")  
+            except:
+                pass
     else:
         for ticker in buy_today[:max_trade]:
                 close_price = StockPriceFilter.objects.filter(ticker = ticker['ticker']).order_by('-date').first().close
@@ -141,9 +144,12 @@ def filter_stock_daily():
            # gửi tín hiệu vào telegram
             for group in external_room:
                 bot = Bot(token=group.token.token)
-                bot.send_message(
+                try:
+                    bot.send_message(
                     chat_id=group.chat_id, 
                     text=f"Tín hiệu mua {ticker['ticker']}, lịch sử backtest với tổng số deal {ticker['total_trades']} có lợi nhuận {ticker['ratio_pln']}%, tỷ lệ thắng là {ticker['win_trade_ratio']}% " )   
+                except:
+                    pass
         for ticker in buy_today:
              Signaldaily.objects.create(
                 ticker = ticker['ticker'],
