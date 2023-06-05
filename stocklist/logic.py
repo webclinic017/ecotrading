@@ -51,7 +51,7 @@ def breakout_strategy_otmed(df, period, num_raw=None):
 
 
 
-def filter_stock_daily():
+def filter_stock_muanual():
     get_info_stock_price_filter()
     date_filter = datetime.today().date() 
     stock_prices = StockPriceFilter.objects.all().values()
@@ -65,10 +65,7 @@ def filter_stock_daily():
     df['milestone'] = np.where(df['signal']== 'buy',df['res'],0)
     df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker', 'date', 'signal','milestone','param_ratio_cutloss']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
     signal_today = df_signal.loc[df_signal['date']==date_filter].reset_index(drop=True)
-    account = Account.objects.get(name ='Bot_Breakout')
     bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
-    group_id = '-967306064'
-    
     buy_today =[]
     if len(signal_today) > 0:
         for index, row in signal_today.iterrows():
@@ -78,7 +75,6 @@ def filter_stock_daily():
             data['signal'] = 'buy'
             data['milestone'] = row['milestone']
             data['ratio_cutloss'] = row['param_ratio_cutloss']
-            
             lated_signal = Signaldaily.objects.filter(ticker=data['ticker'],strategy='breakout' , date = date_filter).order_by('-date').first()
             #check nếu không có tín hiệu nào trước đó hoặc tín hiệu đã có nhưng ngược với tín hiệu hiện tại 
             if lated_signal is None:
@@ -94,12 +90,24 @@ def filter_stock_daily():
 
     # tạo lệnh mua tự động
     buy_today.sort(key=lambda x: x['rating'], reverse=True)
+    for ticker in buy_today:
+           # gửi tín hiệu vào telegram
+            bot.send_message(
+                chat_id='-870288807', 
+                text=f"Tín hiệu mua {ticker['ticker']}, lịch sử backtest với tổng số deal {ticker['total_trades']} có lợi nhuận {ticker['ratio_pln']}%, tỷ lệ thắng là {ticker['win_trade_ratio']}% " )   
+    return buy_today
+     
+
+def filter_stock_daily():
+    buy_today = filter_stock_muanual()
+    date_filter = datetime.today().date() 
+    account = Account.objects.get(name ='Bot_Breakout')
     num_stock = len(buy_today)
     max_signal = min(num_stock, 5)
     max_trade =min(num_stock, 3)
     if max_trade ==0:
          bot.send_message(
-                    chat_id=group_id, 
+                    chat_id='-967306064', #room Khách hàng
                     text=f"Không có cổ phiếu thỏa mãn tiêu chí breakout được lọc trong ngày {date_filter} ")  
     else:
         for ticker in buy_today[:max_trade]:
@@ -108,9 +116,9 @@ def filter_stock_daily():
                 nav = account.net_cash_flow +account.total_profit_close
                 R = risk*nav  
                 price= round(close_price*(1+0.002),0)
-                qty= math.floor(nav*0.2/(price*1000))
-                cut_loss_price  =  round((price - R/qty)/1000,2)
-                take_profit_price = round((price + 2*R/qty)/1000,2)
+                cut_loss_price  =  round(price - price*ticker['ratio_cutloss'],2)
+                qty= math.floor(R/(price*ticker['ratio_cutloss']*1000))
+                take_profit_price = round((price + 2*price*ticker['ratio_cutloss']),2)
                 try:
                         created_transation = Transaction.objects.create(
                             account= account,
@@ -125,15 +133,14 @@ def filter_stock_daily():
                         # chat_id = account.bot.chat_id
                         bot = Bot(token=account.bot.token)
                         bot.send_message(
-                        chat_id='-870288807', 
+                        chat_id='-870288807', #room nội bộ
                         text=f"Tự động giao dịch {ticker['ticker']} theo chiến lược breakout thất bại, lỗi {e}   ")    
         for ticker in buy_today[:max_signal]:
            # gửi tín hiệu vào telegram
             bot.send_message(
-                chat_id=group_id, 
+                chat_id='-967306064', 
                 text=f"Tín hiệu mua {ticker['ticker']}, lịch sử backtest với tổng số deal {ticker['total_trades']} có lợi nhuận {ticker['ratio_pln']}%, tỷ lệ thắng là {ticker['win_trade_ratio']}% " )   
     return          
-
 
 
 
