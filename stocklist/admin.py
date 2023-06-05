@@ -9,7 +9,8 @@ from django.utils.html import format_html
 class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
     list_display = ('date','ticker','strategy','signal','milestone', 'modified_date')
-    list_filter = ('ticker','signal', 'ticker','date')
+    list_filter = ('signal', 'ticker','date')
+    search_fields = ['ticker']
 
 class OverviewBreakoutBacktestAdmin(admin.ModelAdmin):
     model = OverviewBreakoutBacktest
@@ -41,6 +42,12 @@ class RatingStrategyAdmin(admin.ModelAdmin):
                    'won_average_pnl', 'lost_average_pnl',
                  'average_won_trades_per_day','average_lost_trades_per_day']
 
+class ParamsBreakoutOptimizeAdmin(admin.ModelAdmin):  
+    model = ParamsBreakoutOptimize
+    list_display = ['ticker','multiply_volumn','rate_of_increase','change_day','risk','ratio_cutloss','sma']
+    search_fields = ['ticker']
+
+admin.site.register(ParamsBreakoutOptimize, ParamsBreakoutOptimizeAdmin)
 admin.site.register(RatingStrategy,RatingStrategyAdmin)
 admin.site.register(TransactionBacktest,TransactionBacktestAdmin)
 admin.site.register(Signaldaily, SignaldailyAdmin)
