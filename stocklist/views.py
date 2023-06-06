@@ -528,12 +528,10 @@ def get_qty_buy(request):
         ticker = request.POST['ticker']
         price = float(request.POST['price'])
         risk = 0.03
-
         R = risk * nav
         ratio_cutloss = ParamsBreakoutOptimize.objects.filter(ticker=ticker).first().ratio_cutloss
-        qty = R / (price * ratio_cutloss * 1000)
-
-        return JsonResponse({'qty': qty})
+        qty = math.floor(int(R / (price * ratio_cutloss )))
+        return JsonResponse({'qty': '{:,.0f}'.format(qty)})
 
     return render(request, 'stocklist/calculator.html')
 
