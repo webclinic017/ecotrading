@@ -1,0 +1,54 @@
+<!-- calculator.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calculator</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#calculate-form').submit(function(event) {
+                event.preventDefault();
+                var nav = parseFloat($('#nav').val());
+                var ticker = $('#ticker').val();
+                var price = parseFloat($('#price').val());
+
+                if (!nav || !ticker || !price) {
+                    alert('Please fill in all fields.');
+                    return;
+                }
+
+                var R = 0.03 * nav;
+                $.ajax({
+                    type: 'POST',
+                    url: '',
+                    data: {
+                        'nav': nav,
+                        'ticker': ticker,
+                        'price': price,
+                        'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+                    },
+                    success: function(data) {
+                        alert('Qty: ' + data.qty);
+                    },
+                    error: function() {
+                        alert('An error occurred. Please try again.');
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Calculator</h1>
+    <form id="calculate-form" method="POST">
+        {% csrf_token %}
+        <label for="nav">NAV:</label>
+        <input type="number" id="nav" name="nav"><br><br>
+        <label for="ticker">Ticker:</label>
+        <input type="text" id="ticker" name="ticker"><br><br>
+        <label for="price">Price:</label>
+        <input type="number" id="price" name="price"><br><br>
+        <button type="submit">Calculate</button>
+    </form>
+</body>
+</html>

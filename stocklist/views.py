@@ -513,5 +513,27 @@ def run_backtest_one_stock(ticker,period):
 
 def get_signal(request):
     list_buy = filter_stock_muanual()
-    
     return JsonResponse(list_buy, safe=False)
+
+
+
+
+from django.shortcuts import render
+from django.http import JsonResponse
+from .models import ParamsBreakoutOptimize
+
+def get_qty_buy(request):
+    if request.method == 'POST':
+        nav = float(request.POST['nav'])
+        ticker = request.POST['ticker']
+        price = float(request.POST['price'])
+        risk = 0.03
+
+        R = risk * nav
+        ratio_cutloss = ParamsBreakoutOptimize.objects.filter(ticker=ticker).first().ratio_cutloss
+        qty = R / (price * ratio_cutloss * 1000)
+
+        return JsonResponse({'qty': qty})
+
+    return render(request, 'stocklist/calculator.html')
+
