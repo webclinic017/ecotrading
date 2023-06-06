@@ -155,7 +155,7 @@ def filter_stock_daily():
                 try:
                     bot.send_message(
                     chat_id=group.chat_id, 
-                    text=f"Tín hiệu mua {ticker['ticker']}, lịch sử backtest với tổng số deal {ticker['total_trades']} có lợi nhuận {ticker['ratio_pln']}%, tỷ lệ thắng là {ticker['win_trade_ratio']}%, tỷ lệ cắt lỗ tối ưu là giảm {ticker['ratio_cutloss']}% " )   
+                    text=f"Tín hiệu mua {ticker['ticker']}, lịch sử backtest với tổng số deal {ticker['total_trades']} có lợi nhuận {ticker['ratio_pln']}%, tỷ lệ thắng là {ticker['win_trade_ratio']}%, tỷ lệ cắt lỗ tối ưu là giảm {ticker['ratio_cutloss']*100}% " )   
                 except:
                     pass
         for ticker in buy_today:
