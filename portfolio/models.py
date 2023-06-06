@@ -748,7 +748,6 @@ def send_telegram_message(sender, instance, created, **kwargs):
     if created:
         account = Account.objects.get(pk = instance.account.pk)
         bot_token = account.bot.token 
-        # chat_id = account.bot.chat_id
         bot = Bot(token=bot_token)
         if instance.account.name =='Bot_Breakout':
             bot.send_message(
