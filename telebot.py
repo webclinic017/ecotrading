@@ -20,7 +20,7 @@ def port(update, context):
     port = response.json()['port']
     context.bot.send_message(chat_id=update.effective_chat.id, text=f"Port is {port}")
 
-def get_signal(update, context):
+def signal(update, context):
     response = requests.get('http://103.176.251.105/get-signal/')
     signal = response.json()
     context.bot.send_message(chat_id=update.effective_chat.id, text=f"Danh sách là {signal}")
