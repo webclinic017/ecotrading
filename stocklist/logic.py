@@ -52,8 +52,16 @@ def breakout_strategy_otmed(df, period, num_raw=None):
 
 
 def filter_stock_muanual():
-    get_info_stock_price_filter()
-    date_filter = datetime.today().date() 
+    now = datetime.today()
+    date_filter = now.date()
+    # Lấy ngày giờ gần nhất trong StockPriceFilter
+    latest_update = StockPriceFilter.objects.all().order_by('-date').first().date_time
+    # Tính khoảng thời gian giữa now và latest_update (tính bằng giây)
+    time_difference = (now - latest_update).total_seconds()
+    # Kiểm tra điều kiện để thực hiện hàm get_info_stock_price_filter()
+    if 0 <= now.weekday() <= 4 and 9 <= now.hour <= 15 and time_difference > 900:
+        get_info_stock_price_filter()
+
     stock_prices = StockPriceFilter.objects.all().values()
     # lọc ra top cổ phiếu có vol>100k
     df = pd.DataFrame(stock_prices)  
@@ -147,7 +155,7 @@ def filter_stock_daily():
                 try:
                     bot.send_message(
                     chat_id=group.chat_id, 
-                    text=f"Tín hiệu mua {ticker['ticker']}, lịch sử backtest với tổng số deal {ticker['total_trades']} có lợi nhuận {ticker['ratio_pln']}%, tỷ lệ thắng là {ticker['win_trade_ratio']}% " )   
+                    text=f"Tín hiệu mua {ticker['ticker']}, lịch sử backtest với tổng số deal {ticker['total_trades']} có lợi nhuận {ticker['ratio_pln']}%, tỷ lệ thắng là {ticker['win_trade_ratio']}%, tỷ lệ cắt lỗ tối ưu là giảm {ticker['ratio_cutloss']}% " )   
                 except:
                     pass
         for ticker in buy_today:
