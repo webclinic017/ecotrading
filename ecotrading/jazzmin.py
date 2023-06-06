@@ -42,7 +42,7 @@ JAZZMIN_SETTINGS = {
         # Url that gets reversed (Permissions can be added)
         {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
         # external url that opens in a new window (Permissions can be added)
-        #{"name": "Check Clothes", "url": "http://linhtrangbridal.online/checkproducts/", "new_window": True},
+        {"name": "Tính khối lượng", "url": "http://103.176.251.105/calculator-qty", "new_window": True},
         #{"name": "Calendar", "url":"http://linhtrangbridal.online/calendar/", "new_window": True},
        
     

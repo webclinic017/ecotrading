@@ -518,10 +518,6 @@ def get_signal(request):
 
 
 
-from django.shortcuts import render
-from django.http import JsonResponse
-from .models import ParamsBreakoutOptimize
-
 def get_qty_buy(request):
     if request.method == 'POST':
         nav = float(request.POST['nav'])
