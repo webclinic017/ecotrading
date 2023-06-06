@@ -16,7 +16,7 @@ def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="Hello, I'm a bot!")
 
 def port(update, context):
-    response = requests.get('http://localhost:8000/get-port/')
+    response = requests.get('http://103.176.251.105/get-port/')
     port = response.json()['port']
     context.bot.send_message(chat_id=update.effective_chat.id, text=f"Port is {port}")
 
