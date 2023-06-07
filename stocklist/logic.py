@@ -37,7 +37,7 @@ def breakout_strategy(df, period, num_raw=None):
 def breakout_strategy_otmed(df, period, num_raw=None):
     df = breakout_strategy(df, period, num_raw)  # Gọi hàm breakout_strategy từ trong hàm breakout_strategy_otm
     # Tiếp tục thêm các phần xử lý riêng cho hàm breakout_strategy_otm
-    backtest = ParamsOptimize.objects.values('ticker','multiply_volumn','rate_of_increase','change_day','risk','ratio_cutloss','sma')
+    backtest = ParamsOptimize.objects.values('ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma')
     df_param = pd.DataFrame(backtest)
     df['param_multiply_volumn'] = df['ticker'].map(df_param.set_index('ticker')['multiply_volumn'])
     df['param_change_day'] = df['ticker'].map(df_param.set_index('ticker')['change_day'])
@@ -71,7 +71,7 @@ def filter_stock_muanual():
     # chuyển đổi df theo chiến lược
     df = breakout_strategy_otmed(df, 20, 25)
     df['milestone'] = np.where(df['signal']== 'buy',df['res'],0)
-    df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker', 'date', 'signal','milestone','param_ratio_cutloss']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
+    df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker','close', 'date', 'signal','milestone','param_ratio_cutloss']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
     signal_today = df_signal.loc[df_signal['date']==date_filter].reset_index(drop=True)
     bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
     buy_today =[]
@@ -79,6 +79,7 @@ def filter_stock_muanual():
         for index, row in signal_today.iterrows():
             data = {}
             data['ticker'] = row['ticker']
+            data['close'] = row['close']
             data['date'] = row['date']
             data['signal'] = 'buy'
             data['milestone'] = row['milestone']
@@ -161,6 +162,7 @@ def filter_stock_daily():
         for ticker in buy_today:
              Signaldaily.objects.create(
                 ticker = ticker['ticker'],
+                close = ticker['close'],
                 date = ticker['date'],
                 milestone =ticker['milestone'],
                 signal = ticker['signal'],
