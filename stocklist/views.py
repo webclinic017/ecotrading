@@ -209,9 +209,9 @@ def run_backtest(risk, begin_list, end_list):
         'period':20}
     created = StrategyTrading.objects.update_or_create(name='Breakout',risk = risk, defaults=strategy_data)
     strategy = StrategyTrading.objects.filter(name='Breakout',risk = risk).first()
-    # stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
-    # stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
-    stock_test = [{'ticker':'PNJ'}]
+    stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
+    stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
+    # stock_test = [{'ticker':'PNJ'}]
     list_bug =[]
     for item in stock_test[begin_list:end_list]:
         ticker = item['ticker']
