@@ -231,13 +231,14 @@ def run_backtest(risk, begin_list, end_list):
             change_day_values = [0.015, 0.02, 0.025,0.03] 
             risk_values = [risk]
             ratio_cutloss = [0.05,0.06, 0.07, 0.08, 0.09, 0.1]
+            sma = [20,30,50]  
             #####test
             # multiply_volumn_values = [x / 2 for x in range(2, 3)]
             # rate_of_increase_values = [0.01]  # tăng so với phiên trước đó
             # change_day_values = [0.015, 0.02] 
             # risk_values = [risk]
             # ratio_cutloss = [0.05,0.06]
-            # sma = [20]   
+            #  sma =[20]
             # Tạo danh sách các giá trị tham số
             param_values = [multiply_volumn_values, rate_of_increase_values, change_day_values, risk_values, ratio_cutloss, sma]
             # Tạo tất cả các tổ hợp tham số
