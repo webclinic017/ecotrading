@@ -37,7 +37,7 @@ def breakout_strategy(df, period, num_raw=None):
 def breakout_strategy_otmed(df, period, num_raw=None):
     df = breakout_strategy(df, period, num_raw)  # Gọi hàm breakout_strategy từ trong hàm breakout_strategy_otm
     # Tiếp tục thêm các phần xử lý riêng cho hàm breakout_strategy_otm
-    backtest = ParamsBreakoutOptimize.objects.values('ticker','multiply_volumn','rate_of_increase','change_day','risk','ratio_cutloss','sma')
+    backtest = ParamsOptimize.objects.values('ticker','multiply_volumn','rate_of_increase','change_day','risk','ratio_cutloss','sma')
     df_param = pd.DataFrame(backtest)
     df['param_multiply_volumn'] = df['ticker'].map(df_param.set_index('ticker')['multiply_volumn'])
     df['param_change_day'] = df['ticker'].map(df_param.set_index('ticker')['change_day'])
@@ -86,7 +86,7 @@ def filter_stock_muanual():
             lated_signal = Signaldaily.objects.filter(ticker=data['ticker'],strategy='breakout' , date = date_filter).order_by('-date').first()
             #check nếu không có tín hiệu nào trước đó hoặc tín hiệu đã có nhưng ngược với tín hiệu hiện tại 
             if lated_signal is None:
-                back_test= OverviewBreakoutBacktest.objects.filter(ticker=data['ticker']).first()
+                back_test= OverviewBacktest.objects.filter(ticker=data['ticker']).first()
                 if back_test:
                     data['total_trades'] =back_test.total_trades
                     data['ratio_pln'] = back_test.ratio_pln

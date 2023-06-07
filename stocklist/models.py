@@ -5,13 +5,27 @@ from portfolio.models import *
 
 # Create your models here.
 
+class StrategyTrading(models.Model):
+    name = models.CharField(max_length=100)
+    modified_date = models.DateTimeField(auto_now=True)
+    risk = models.FloatField(default=0.03)
+    description = models.CharField(max_length=200, null=True)
+    nav = models.FloatField(default=10000000)
+    commission = models.FloatField(default=0.0015)
+    period= models.IntegerField(default=20)
+
+    def __str__(self):
+        return str(self.name) +str('_')+str(self.risk)
+    
+
+
 class Signaldaily(models.Model):
     ticker = models.CharField(max_length=10)
     date = models.DateField()#auto_now_add=True)
     milestone = models.FloatField(default=0)
     signal = models.CharField(max_length=10)
     ratio_cutloss = models.FloatField(default=0)
-    strategy = models.CharField(max_length=50)
+    strategy = models.ForeignKey(StrategyTrading,on_delete=models.CASCADE, null=True, blank=True)
     modified_date = models.DateTimeField(auto_now=True)
     def __str__(self):
         return str(self.ticker) + str(self.strategy)
@@ -27,10 +41,9 @@ class Signaldaily(models.Model):
     
            
 
-class OverviewBreakoutBacktest(models.Model):
+class OverviewBacktest(models.Model):
     ticker = models.CharField(max_length=15)
-    nav =  models.IntegerField(default=10000000)
-    commission =  models.IntegerField(default=0.0015)
+    strategy = models.ForeignKey(StrategyTrading,on_delete=models.CASCADE, null=True, blank=True)
     ratio_pln= models.FloatField(default=0)
     drawdown= models.FloatField(null=True)
     sharpe_ratio= models.FloatField(null=True)
@@ -93,6 +106,7 @@ class OverviewBreakoutBacktest(models.Model):
     
 class TransactionBacktest(models.Model):
     ticker = models.CharField(max_length=15)
+    strategy = models.ForeignKey(StrategyTrading,on_delete=models.CASCADE, null=True, blank=True)
     nav =  models.FloatField()
     date_buy = models.DateField()
     qty =models.IntegerField()
@@ -110,7 +124,7 @@ class TransactionBacktest(models.Model):
         return self.ticker
     
 class RatingStrategy(models.Model):
-    strategy = models.CharField(max_length=50)
+    strategy = models.ForeignKey(StrategyTrading,on_delete=models.CASCADE, null=True, blank=True)
     description = models.CharField(max_length=200, null=True)
     ratio_pln= models.FloatField()
     drawdown= models.FloatField(null=True)
@@ -145,12 +159,12 @@ class RatingStrategy(models.Model):
     def __str__(self):
         return self.strategy
     
-class ParamsBreakoutOptimize(models.Model):  
+class ParamsOptimize(models.Model):  
     ticker = models.CharField(max_length=15)  
+    strategy = models.ForeignKey(StrategyTrading,on_delete=models.CASCADE, null=True, blank=True)
     multiply_volumn = models.FloatField(default=2)
     rate_of_increase = models.FloatField(default=0.03)
     change_day = models.FloatField(default=0.015)
-    risk= models.FloatField(default=0.015)
     ratio_cutloss= models.FloatField(default=0.05)
     sma = models.FloatField(default=20)
 

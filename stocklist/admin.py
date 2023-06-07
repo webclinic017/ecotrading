@@ -12,8 +12,8 @@ class SignaldailyAdmin(admin.ModelAdmin):
     list_filter = ('signal', 'ticker','date')
     search_fields = ['ticker']
 
-class OverviewBreakoutBacktestAdmin(admin.ModelAdmin):
-    model = OverviewBreakoutBacktest
+class OverviewBacktestAdmin(admin.ModelAdmin):
+    model = OverviewBacktest
     list_display =['ticker','ratio_pln','total_trades','win_trade_ratio','drawdown','sharpe_ratio',
                    'won_average_pnl', 'lost_average_pnl',
                  'average_won_trades_per_day','average_lost_trades_per_day','view_transactions']
@@ -42,14 +42,14 @@ class RatingStrategyAdmin(admin.ModelAdmin):
                    'won_average_pnl', 'lost_average_pnl',
                  'average_won_trades_per_day','average_lost_trades_per_day']
 
-class ParamsBreakoutOptimizeAdmin(admin.ModelAdmin):  
-    model = ParamsBreakoutOptimize
-    list_display = ['ticker','multiply_volumn','rate_of_increase','change_day','risk','ratio_cutloss','sma']
+class ParamsOptimizeAdmin(admin.ModelAdmin):  
+    model = ParamsOptimize
+    list_display = ['ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma']
     search_fields = ['ticker']
 
-admin.site.register(ParamsBreakoutOptimize, ParamsBreakoutOptimizeAdmin)
+admin.site.register(ParamsOptimize, ParamsOptimizeAdmin)
 admin.site.register(RatingStrategy,RatingStrategyAdmin)
 admin.site.register(TransactionBacktest,TransactionBacktestAdmin)
 admin.site.register(Signaldaily, SignaldailyAdmin)
-admin.site.register(OverviewBreakoutBacktest, OverviewBreakoutBacktestAdmin)
+admin.site.register(OverviewBacktest, OverviewBacktestAdmin)
 

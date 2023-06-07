@@ -92,16 +92,17 @@ class definesize(bt.Sizer):
 class breakout_otm(bt.SignalStrategy):
     params = (
         ('multiply_volumn',dict_params['multiply_volumn'] ),
-        ('rate_of_increase', dict_params['rate_of_increase'] ),
-        ('change_day', dict_params['change_day'] ),
+        ('rate_of_increase', dict_params['rate_of_increase'] ), # tăng so với phiên trước đó
+        ('change_day', dict_params['change_day'] ),#thay đổi giữa giá đóng cửa và giá cao nhất
         ('risk', dict_params['risk']),
         ('ratio_cutloss',dict_params['ratio_cutloss'] ),
         ('sma',dict_params['sma'] )
     )
-    def __init__(self, ticker, save_deal):
+    def __init__(self, ticker, save_deal, strategy):
         #khai báo biến
         self.ticker = ticker
         self.save_deal = save_deal
+        self.strategy = strategy
         self.sma = bt.indicators.SimpleMovingAverage(self.data.close, period=int(self.params.sma))
         self.trailing_sl = None  # Biến đồng hồ để lưu giá trị stop loss
         self.trailing_tp =None
@@ -151,9 +152,8 @@ class breakout_otm(bt.SignalStrategy):
                             'len_days': (self.date_sell-self.buy_date).days,
                             'stop_loss':round(self.trailing_sl,2),
                             'take_profit': round(self.trailing_tp,2),
-                            'strategy': 'breakout'
                             }
-                            obj, created = TransactionBacktest.objects.update_or_create(ticker=self.ticker,date_buy = self.buy_date,strategy='breakout', defaults=data)     
+                            obj, created = TransactionBacktest.objects.update_or_create(strategy=self.strategy, ticker=self.ticker,date_buy = self.buy_date, defaults=data)     
                              
 
         return     
@@ -178,7 +178,7 @@ class breakout_otm(bt.SignalStrategy):
     #         return 
 
 
-def evaluate_strategy(params,nav,commission,size_class,data,strategy_class, ticker):
+def evaluate_strategy(params,nav,commission,size_class,data,strategy_class, ticker, strategy):
     cerebro = bt.Cerebro()
     cerebro.adddata(data)
     cerebro.broker.setcash(nav)  # Số dư ban đầu
@@ -186,7 +186,7 @@ def evaluate_strategy(params,nav,commission,size_class,data,strategy_class, tick
     #add the sizer
     cerebro.addsizer(size_class, risk=params[3],ratio_cutloss=params[4])
     cerebro.addstrategy(strategy_class, 
-                        ticker, False,
+                        ticker, False,strategy,
                         multiply_volumn=params[0], 
                         rate_of_increase=params[1], 
                         change_day=params[2], 
@@ -200,11 +200,18 @@ def evaluate_strategy(params,nav,commission,size_class,data,strategy_class, tick
     return cerebro.broker.getvalue() 
 
 
-def run_backtest(period, begin_list, end_list):
-    nav = 10000000
-    commission = 0.0015
-    stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
-    stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
+def run_backtest(risk, begin_list, end_list):
+    strategy_data = {
+        'name': 'Breakout',
+        'risk': risk,   
+        'nav': 10000000,
+        'commission' : 0.0015,
+        'period':20}
+    created = StrategyTrading.objects.update_or_create(name='Breakout',risk = risk, defaults=strategy_data)
+    strategy = StrategyTrading.objects.filter(name='Breakout',risk = risk).first()
+    # stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
+    # stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
+    stock_test = [{'ticker':'PNJ'}]
     list_bug =[]
     for item in stock_test[begin_list:end_list]:
         ticker = item['ticker']
@@ -212,7 +219,7 @@ def run_backtest(period, begin_list, end_list):
         try:
             stock_prices = StockPrice.objects.filter(ticker=ticker).values()
             df = pd.DataFrame(stock_prices)
-            df = breakout_strategy(df, period)
+            df = breakout_strategy(df, strategy.period)
             df = df.drop(['id','res','sup'], axis=1) 
             df = df.sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
             df = df.fillna(0.0001)
@@ -220,11 +227,17 @@ def run_backtest(period, begin_list, end_list):
             #Chạy tối ưu hóa param
             # Khởi tạo các giá trị tham số muốn tối ưu
             multiply_volumn_values = [x / 2 for x in range(2, 6)]
-            rate_of_increase_values = [0.01, 0.02, 0.03, 0.04]
-            change_day_values = [0.015, 0.02, 0.025,0.03]
-            risk_values = [0.02, 0.03, 0.04, 0.05]
+            rate_of_increase_values = [0.01, 0.02, 0.03]  # tăng so với phiên trước đó
+            change_day_values = [0.015, 0.02, 0.025,0.03] 
+            risk_values = [risk]
             ratio_cutloss = [0.05,0.06, 0.07, 0.08, 0.09, 0.1]
-            sma = [20]   
+            #####test
+            # multiply_volumn_values = [x / 2 for x in range(2, 3)]
+            # rate_of_increase_values = [0.01]  # tăng so với phiên trước đó
+            # change_day_values = [0.015, 0.02] 
+            # risk_values = [risk]
+            # ratio_cutloss = [0.05,0.06]
+            # sma = [20]   
             # Tạo danh sách các giá trị tham số
             param_values = [multiply_volumn_values, rate_of_increase_values, change_day_values, risk_values, ratio_cutloss, sma]
             # Tạo tất cả các tổ hợp tham số
@@ -235,10 +248,9 @@ def run_backtest(period, begin_list, end_list):
             best_performance = None
             list_param_bug = []
             for params in param_combinations:
-                print(params)
                 params = tuple(float(param) for param in params)  # Chuyển đổi các giá trị tham số sang kiểu số thực
                 try:
-                    performance = evaluate_strategy(params,nav= nav,commission= commission,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker)
+                    performance = evaluate_strategy(params,nav=strategy.nav,commission= strategy.commission,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker, strategy=strategy)
                     if best_performance is None or performance > best_performance:
                         best_params = params
                         best_performance = performance                
@@ -252,11 +264,10 @@ def run_backtest(period, begin_list, end_list):
                         'multiply_volumn': best_params[0],  # vốn ban đầu
                         'rate_of_increase': best_params[1],  # phí giao dịch
                         'change_day':best_params[2],
-                        'risk': best_params[3],
                         'ratio_cutloss':best_params[4],
                         'sma':best_params[5],
                 }
-                obj, created = ParamsBreakoutOptimize.objects.update_or_create(ticker=ticker, defaults=params_data)
+                obj, created = ParamsOptimize.objects.update_or_create(strategy = strategy,ticker=ticker, defaults=params_data)
                 print('Đã tạo param')
 
                 # Tạo một phiên giao dịch Backtrader mới
@@ -264,21 +275,21 @@ def run_backtest(period, begin_list, end_list):
                 # Thêm dữ liệu và chiến lược vào cerebro
                 cerebro.adddata(data)
                 # thêm chiến lược thông số đã được tối ưu
-                cerebro.addstrategy(breakout_otm, ticker,True,
+                cerebro.addstrategy(breakout_otm, ticker,True,strategy,
                                     multiply_volumn= params_data['multiply_volumn'], 
                                     rate_of_increase=params_data['rate_of_increase'], 
                                     change_day=params_data['change_day'], 
-                                    risk= params_data['risk'],
+                                    risk= risk,
                                     ratio_cutloss = params_data['ratio_cutloss'],
                                     sma = params_data['sma'],)
 
                 
                 # Thiết lập thông số về kích thước vốn ban đầu và phí giao dịch
-                cerebro.broker.setcash(nav)  # Số dư ban đầu
-                cerebro.broker.setcommission(commission=commission)  # Phí giao dịch (0.15%)
+                cerebro.broker.setcash(strategy.nav)  # Số dư ban đầu
+                cerebro.broker.setcommission(commission=strategy.commission)  # Phí giao dịch (0.15%)
                 
                 #add the sizer
-                cerebro.addsizer(definesize, risk=params_data['risk'],ratio_cutloss=params_data['ratio_cutloss'])
+                cerebro.addsizer(definesize, risk=risk,ratio_cutloss=params_data['ratio_cutloss'])
                 
                 # Analyzer
                 cerebro.addanalyzer(btanalyzers.TradeAnalyzer, _name='overviews')
@@ -289,16 +300,14 @@ def run_backtest(period, begin_list, end_list):
                 result = result[0]
                 #Get final portfolio Value
                 port_value = round(cerebro.broker.getvalue(), 0)
-                ratio_pln = (port_value - nav) / nav
+                ratio_pln = (port_value - strategy.nav) / strategy.nav
                 drawdown = result.analyzers.drawdown.get_analysis()['drawdown']
                 overview = result.analyzers.overviews.get_analysis()
                 sharpe_ratio = result.analyzers.sharpe_ratio.get_analysis()['sharperatio']
                 total_closed_test = overview.total.get('closed')
-                list_trade = TransactionBacktest.objects.filter(ticker =ticker, strategy = 'breakout')
+                list_trade = TransactionBacktest.objects.filter(ticker =ticker, strategy = strategy)
                 if total_closed_test and sharpe_ratio and total_closed_test > 0:
                     overview_data = {
-                        'nav': nav,  # vốn ban đầu
-                        'commission': commission,  # phí giao dịch
                         'ratio_pln': round(ratio_pln*100, 3),  # tỷ suất lợi nhuận
                         'drawdown': round(drawdown, 3),  # Tìm hiểu
                         'sharpe_ratio': round(sharpe_ratio, 3),  # tìm hiểu
@@ -312,7 +321,7 @@ def run_backtest(period, begin_list, end_list):
                         'lost_current_streak': overview.streak.lost.get('current'),
                         'lost_longest_streak': overview.streak.lost.get('longest'),
                         # Thống kê % lợi nhuận
-                        'gross_average_pnl': round(overview.pnl.gross.get('average') / nav, 2),
+                        'gross_average_pnl': round(overview.pnl.gross.get('average') / strategy.nav, 2),
                         # 'net_total_pnl': #bị trùng 'ratio_pln'
                         'net_average_pnl': round(mean(i.ratio_pln for i in list_trade),3),         
                         # Thống kê giao dịch thắng
@@ -362,7 +371,7 @@ def run_backtest(period, begin_list, end_list):
                         'max_lost_trades_per_day': overview.len.lost.get('max'),
                         'min_lost_trades_per_day': overview.len.lost.get('min'),
                     }
-                    obj, created = OverviewBreakoutBacktest.objects.update_or_create(ticker=ticker, defaults=overview_data)
+                    obj, created = OverviewBacktest.objects.update_or_create(strategy=strategy,ticker=ticker, defaults=overview_data)
                     print('Đã tạo thông số trade')
             else:
                     print('Không tạo được thông số trade tối ưu')
@@ -370,8 +379,7 @@ def run_backtest(period, begin_list, end_list):
                 print(f"Có lỗi với cổ phiếu {ticker}: {str(e)}")
                 list_bug.append({ticker:str(e)})
     # chạy tổng kết        
-    detail_stock = OverviewBreakoutBacktest.objects.filter(total_trades__gt=0)
-    strategy ='breakout'
+    detail_stock = OverviewBacktest.objects.filter(strategy=strategy,total_trades__gt=0)
     if detail_stock:
         total = {
             'ratio_pln':round(mean(i.ratio_pln for i in detail_stock),2),
@@ -402,7 +410,7 @@ def run_backtest(period, begin_list, end_list):
             'max_lost_trades_per_day': max(i.max_lost_trades_per_day or -sys.maxsize-1 for i in detail_stock),
             'min_lost_trades_per_day' : min(i.min_lost_trades_per_day or sys.maxsize   for i in detail_stock if i.min_lost_trades_per_day),
         }
-        obj = RatingStrategy.objects.create(strategy=strategy, **total)
+        obj = RatingStrategy.objects.update_or_create(strategy=strategy, defaults=total)
 
     print('Đã tạo tổng kết chiến lược')
     return list_bug
@@ -525,7 +533,7 @@ def get_qty_buy(request):
         price = float(request.POST['price'])
         risk = 0.03
         R = risk * nav
-        ratio_cutloss = ParamsBreakoutOptimize.objects.filter(ticker=ticker).first().ratio_cutloss
+        ratio_cutloss = ParamsOptimize.objects.filter(ticker=ticker).first().ratio_cutloss
         qty = math.floor(int(R / (price * ratio_cutloss )))
         return JsonResponse({'qty': '{:,.0f}'.format(qty)})
 
