@@ -211,7 +211,7 @@ def run_backtest(risk, begin_list, end_list):
     strategy = StrategyTrading.objects.filter(name='Breakout',risk = risk).first()
     stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
     stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
-    # stock_test = [{'ticker':'PNJ'}]
+    # stock_test = [{'ticker':'REE'}]
     list_bug =[]
     for item in stock_test[begin_list:end_list]:
         ticker = item['ticker']
@@ -238,7 +238,7 @@ def run_backtest(risk, begin_list, end_list):
             # change_day_values = [0.015, 0.02] 
             # risk_values = [risk]
             # ratio_cutloss = [0.05,0.06]
-            #  sma =[20]
+            # sma =[20]
             # Tạo danh sách các giá trị tham số
             param_values = [multiply_volumn_values, rate_of_increase_values, change_day_values, risk_values, ratio_cutloss, sma]
             # Tạo tất cả các tổ hợp tham số
@@ -321,10 +321,6 @@ def run_backtest(risk, begin_list, end_list):
                         'won_longest_streak': overview.streak.won.get('longest'),
                         'lost_current_streak': overview.streak.lost.get('current'),
                         'lost_longest_streak': overview.streak.lost.get('longest'),
-                        # Thống kê % lợi nhuận
-                        'gross_average_pnl': round(overview.pnl.gross.get('average') / strategy.nav, 2),
-                        # 'net_total_pnl': #bị trùng 'ratio_pln'
-                        'net_average_pnl': round(mean(i.ratio_pln for i in list_trade),3),         
                         # Thống kê giao dịch thắng
                         'won_total_trades': overview.won.get('total'),
                         'won_total_pnl': round(sum(i.ratio_pln for i in list_trade if i.ratio_pln>0 ), 2),
