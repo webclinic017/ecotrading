@@ -324,12 +324,15 @@ def check_status_order(pk):
 
 
 class BotTelegram (models.Model):
-    name = models.CharField(max_length=50, unique=True)
-    token = models.CharField(max_length=100, unique=True)
-    description = models.TextField(max_length=255, blank=True)
-    owner = models.ForeignKey(User,on_delete=models.CASCADE )
+    name = models.CharField(max_length=50, unique=True, verbose_name= 'Tên')
+    token = models.CharField(max_length=100, unique=True, verbose_name= 'Token')
+    description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
+    owner = models.ForeignKey(User,on_delete=models.CASCADE, verbose_name= 'Chủ bot')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
+    class Meta:
+         verbose_name = 'Bot Telegram'
+         verbose_name_plural = 'Bot Telegram'
     def __str__(self):
         return self.name
 
@@ -343,37 +346,41 @@ class ChatGroupTelegram (models.Model):
         ('2', '2'),
         ('3','3'),
     ]
-    name = models.CharField(max_length=50, unique=True)
-    token = models.ForeignKey(BotTelegram, on_delete=models.CASCADE )
+    name = models.CharField(max_length=50, unique=True, verbose_name= 'Tên')
+    token = models.ForeignKey(BotTelegram, on_delete=models.CASCADE,verbose_name= 'Token' )
     chat_id = models.CharField(max_length=50, unique=True)
-    description = models.TextField(max_length=255, blank=True)
-    type = models.CharField(max_length=20, choices= TYPE_CHOICES, null=False, blank=False)
+    description = models.TextField(max_length=255, blank=True,verbose_name= 'Mô tả')
+    type = models.CharField(max_length=20, choices= TYPE_CHOICES, null=False, blank=False,verbose_name= 'Loại')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
-    rank  = models.CharField(max_length=20, choices= RANK_CHOICES, null=False, blank=False)
-    is_signal = models.BooleanField(default=True)
+    rank  = models.CharField(max_length=20, choices= RANK_CHOICES, null=False, blank=False, verbose_name= 'Cấp')
+    is_signal = models.BooleanField(default=True,verbose_name= 'Gửi tín hiệu')
+    class Meta:
+         verbose_name = 'Nhóm Telegram'
+         verbose_name_plural = 'Nhóm Telegram'
+    
     def __str__(self):
         return self.name
 
 
 # Create your models here.
 class Account (models.Model):
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50, unique=True, verbose_name= 'Tên')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
-    description = models.TextField(max_length=255, blank=True)
-    owner = models.ForeignKey(User,on_delete=models.CASCADE )
-    ratio_risk = models.FloatField(default=0.03)
-    transaction_fee = models.FloatField(default=0.0015)
-    tax = models.FloatField(default=0.001)
-    bot = models.ForeignKey(BotTelegram,on_delete=models.CASCADE )
+    description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
+    owner = models.ForeignKey(User,on_delete=models.CASCADE, verbose_name= 'Chủ TK' )
+    ratio_risk = models.FloatField(default=0.03,verbose_name= 'Tỷ lệ rủi ro')
+    transaction_fee = models.FloatField(default=0.0015, verbose_name= 'Phí giao dịch')
+    tax = models.FloatField(default=0.001, verbose_name= 'Thuế')
+    bot = models.ForeignKey(BotTelegram,on_delete=models.CASCADE, verbose_name= 'Bot' )
     
 
     
 
-    # class Meta:
-    #     verbose_name = 'Tài khoản'
-    #     verbose_name_plural = 'Tài khoản'
+    class Meta:
+         verbose_name = 'Tài khoản'
+         verbose_name_plural = 'Tài khoản'
 
     def __str__(self):
         return self.name
@@ -469,22 +476,25 @@ class Transaction (models.Model):
         ('buy', 'Buy'),
         ('sell', 'Sell'),
     ]
-    account = models.ForeignKey(Account,on_delete=models.CASCADE, null=False, blank=False )
+    account = models.ForeignKey(Account,on_delete=models.CASCADE, null=False, blank=False, verbose_name = 'Tài khoản' )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
-    stock = models.CharField(max_length=8, choices=LIST_STOCK, null=False, blank=False)
-    position = models.CharField(max_length=4, choices=POSITION_CHOICES, null=False, blank=False)
-    price = models.FloatField()
-    qty = models.IntegerField(null=True,blank=True)
-    cut_loss_price = models.FloatField(null=True,blank=True)
-    buy_code = models.IntegerField(default=0)
-    take_profit_price = models.FloatField(null=True,blank=True)
+    stock = models.CharField(max_length=8, choices=LIST_STOCK, null=False, blank=False,verbose_name = 'Cổ phiếu')
+    position = models.CharField(max_length=4, choices=POSITION_CHOICES, null=False, blank=False,verbose_name = 'Mua/Bán')
+    price = models.FloatField(verbose_name = 'Giá')
+    qty = models.IntegerField(null=True,blank=True,verbose_name = 'Khối lượng')
+    cut_loss_price = models.FloatField(null=True,blank=True,verbose_name = 'Giá cắt lỗ')
+    buy_code = models.IntegerField(default=0,verbose_name = 'Mã mua')
+    take_profit_price = models.FloatField(null=True,blank=True,verbose_name = 'Giá chốt lời')
     status_raw = models.CharField(max_length=10, null=True,blank=True)
     time_matched_raw = models.DateTimeField(null=True,blank=True)
     time_received_stock = models.DateTimeField(null=True,blank=True)
-    description = models.TextField(max_length=200,null=True,blank=True)
-    matched_price = models.FloatField(null=True, blank=True)
+    description = models.TextField(max_length=200,null=True,blank=True,verbose_name = 'Mô tả')
+    matched_price = models.FloatField(null=True, blank=True,verbose_name = 'Giá khớp lệnh')
  
+    class Meta:
+         verbose_name = 'Sổ lệnh '
+         verbose_name_plural = 'Sổ lệnh '
 
     def __str__(self):
         return self.position + str("_") + self.stock
@@ -780,11 +790,15 @@ def send_telegram_message(sender, instance, created, **kwargs):
     
 
 class CashTrasfer(models.Model):
-    account = models.ForeignKey(Account,on_delete=models.CASCADE )
+    account = models.ForeignKey(Account,on_delete=models.CASCADE,verbose_name = 'Tài khoản' )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
-    amount = models.FloatField()
-    description = models.TextField(max_length=255, blank=True)
+    amount = models.FloatField(verbose_name = 'Số tiền')
+    description = models.TextField(max_length=255, blank=True,verbose_name = 'Mô tả')
+    class Meta:
+         verbose_name = 'Giao dịch tiền'
+         verbose_name_plural = 'Giao dịch tiền'
+    
     def __str__(self):
         return str(self.amount) 
 
