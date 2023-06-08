@@ -119,8 +119,8 @@ def filter_stock_muanual( risk):
     return buy_today
      
 
-def filter_stock_daily(strategy, risk):
-    buy_today = filter_stock_muanual()
+def filter_stock_daily(risk):
+    buy_today = filter_stock_muanual(risk)
     date_filter = datetime.today().date() 
     account = Account.objects.get(name ='Bot_Breakout')
     external_room = ChatGroupTelegram.objects.filter(type = 'external',is_signal =True,rank ='1' )
