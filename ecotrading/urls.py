@@ -21,7 +21,7 @@ from django.conf.urls.static import static
 import debug_toolbar
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('', admin.site.urls),
     path('', include('portfolio.urls')), 
     path('', include('stocklist.urls'))
     
