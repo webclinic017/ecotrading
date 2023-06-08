@@ -106,8 +106,12 @@ def filter_stock_muanual( risk):
                     data['total_trades'] =back_test.total_trades
                     data['ratio_pln'] = back_test.ratio_pln
                     data['win_trade_ratio'] = back_test.win_trade_ratio
-                    data['rating'] = data['ratio_pln']
-                    if data['ratio_pln'] > 10 and data['win_trade_ratio']>40:
+                    #Tính rating tín hiệu
+                    rating_profit = (back_test.won_total_pnl - back_test.lost_total_pnl)/back_test.total_closed_trades 
+                    # rating_win_ratio = back_test.win_trade_ratio
+                    # rating_len_date = back_test.average_trades_per_day
+                    data['rating'] = rating_profit
+                    if data['rating'] > 3 and data['win_trade_ratio']>40:
                         buy_today.append(data)
     # tạo lệnh mua tự động
     buy_today.sort(key=lambda x: x['rating'], reverse=True)
