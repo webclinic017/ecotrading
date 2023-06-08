@@ -66,7 +66,7 @@ def breakout_strategy_otmed(df, risk,period,num_raw ):
     return df
 
 
-def filter_stock_muanual( risk):
+def filter_stock_muanual( risk = 0.03):
     strategy= StrategyTrading.objects.filter(name = 'Breakout', risk = risk).first()
     period = strategy.period
     num_raw =period + 5
@@ -123,7 +123,7 @@ def filter_stock_muanual( risk):
     return buy_today
      
 
-def filter_stock_daily(risk):
+def filter_stock_daily(risk=0.03):
     buy_today = filter_stock_muanual(risk)
     date_filter = datetime.today().date() 
     account = Account.objects.get(name ='Bot_Breakout')
