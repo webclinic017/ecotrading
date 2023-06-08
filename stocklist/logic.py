@@ -37,10 +37,7 @@ def breakout_strategy(df, period, num_raw=None):
     df['pre_close'] = df.groupby('ticker')['close'].shift(-1)
     return df
 
-def breakout_strategy_otmed(df, risk):
-    strategy= StrategyTrading.objects.filter(name = 'Breakout', risk = risk).first()
-    period = strategy.period
-    num_raw =period + 5
+def breakout_strategy_otmed(df, risk,period,num_raw ):
     backtest = ParamsOptimize.objects.values('ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma')
     df_param = pd.DataFrame(backtest)
     df['mean_vol'] = df.groupby('ticker')['volume'].transform('mean')
@@ -70,6 +67,9 @@ def breakout_strategy_otmed(df, risk):
 
 
 def filter_stock_muanual( risk):
+    strategy= StrategyTrading.objects.filter(name = 'Breakout', risk = risk).first()
+    period = strategy.period
+    num_raw =period + 5
     now = datetime.today()
     date_filter = now.date()
     # Lấy ngày giờ gần nhất trong StockPriceFilter
@@ -83,7 +83,7 @@ def filter_stock_muanual( risk):
     # lọc ra top cổ phiếu có vol>100k
     df = pd.DataFrame(stock_prices)  
     # chuyển đổi df theo chiến lược
-    df = breakout_strategy_otmed(df, risk)
+    df = breakout_strategy_otmed(df, risk,period, num_raw)
     df['milestone'] = np.where(df['signal']== 'buy',df['res'],0)
     df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker','close', 'date', 'signal','milestone','param_ratio_cutloss']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
     signal_today = df_signal.loc[df_signal['date']==date_filter].reset_index(drop=True)
@@ -98,7 +98,7 @@ def filter_stock_muanual( risk):
             data['signal'] = 'buy'
             data['milestone'] = row['milestone']
             data['ratio_cutloss'] = row['param_ratio_cutloss']
-            lated_signal = Signaldaily.objects.filter(ticker=data['ticker'],strategy='breakout' , date = date_filter).order_by('-date').first()
+            lated_signal = Signaldaily.objects.filter(ticker=data['ticker'],strategy=strategy , date = date_filter).order_by('-date').first()
             #check nếu không có tín hiệu nào trước đó hoặc tín hiệu đã có nhưng ngược với tín hiệu hiện tại 
             if lated_signal is None:
                 back_test= OverviewBacktest.objects.filter(ticker=data['ticker']).first()
