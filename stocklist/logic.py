@@ -22,6 +22,9 @@ def add_test_value(group):
         ))
     return group
 
+def calculate_sma(group):
+    return group['close'].rolling(window=group['param_sma']).mean()
+
 def breakout_strategy(df, period, num_raw=None):
     df = df.drop(df[(df['open'] == 0) & (df['close'] == 0)& (df['volume'] == 0)].index)
     df = df.groupby('ticker', group_keys=False).apply(lambda x: x.sort_values('date', ascending=False).head(num_raw) if num_raw is not None else x.sort_values('date', ascending=False))
@@ -34,24 +37,39 @@ def breakout_strategy(df, period, num_raw=None):
     df['pre_close'] = df.groupby('ticker')['close'].shift(-1)
     return df
 
-def breakout_strategy_otmed(df, period, num_raw=None):
-    df = breakout_strategy(df, period, num_raw)  # Gọi hàm breakout_strategy từ trong hàm breakout_strategy_otm
-    # Tiếp tục thêm các phần xử lý riêng cho hàm breakout_strategy_otm
+def breakout_strategy_otmed(df, risk):
+    strategy= StrategyTrading.objects.filter(name = 'breakout', risk = risk).first()
+    period = strategy.period
+    num_raw =period + 5
     backtest = ParamsOptimize.objects.values('ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma')
     df_param = pd.DataFrame(backtest)
+    df['mean_vol'] = df.groupby('ticker')['volume'].transform('mean')
+    df =df.loc[df['mean_vol']>100000].reset_index(drop=True)
+    df = df.drop(['id', 'mean_vol'], axis=1)
+    df['param_sma'] = df['ticker'].map(df_param.set_index('ticker')['sma'])
+    df = df.drop(df[(df['open'] == 0) & (df['close'] == 0) & (df['volume'] == 0) | pd.isna(df['param_sma'])].index)
+    df = df.groupby('ticker', group_keys=False).apply(lambda x: x.sort_values('date', ascending=False).head(num_raw) if num_raw is not None else x.sort_values('date', ascending=False))
+    df =df.reset_index(drop =True)
     df['param_multiply_volumn'] = df['ticker'].map(df_param.set_index('ticker')['multiply_volumn'])
     df['param_change_day'] = df['ticker'].map(df_param.set_index('ticker')['change_day'])
     df['param_rate_of_increase'] = df['ticker'].map(df_param.set_index('ticker')['rate_of_increase'])
     df['param_ratio_cutloss'] = df['ticker'].map(df_param.set_index('ticker')['ratio_cutloss'])
-    df['param_sma'] = df['ticker'].map(df_param.set_index('ticker')['sma'])
-    buy =(df['close'] > df['sma'])& (df['close'] > df['tsi']) & (df['volume'] > df['mavol']*df['param_multiply_volumn']) & (df['mavol'] > 100000) & (df['high']/df['close']-1 < df['param_rate_of_increase']) & (df['close']/df['pre_close']-1 > df['param_change_day'])
+    
+    df['res'] = df.groupby('ticker')['high'].transform(lambda x: x[::-1].rolling(window=period).max()[::-1])
+    df['sup'] = df.groupby('ticker')['low'].transform(lambda x: x[::-1].rolling(window=period).min()[::-1])
+    df['mavol'] = df.groupby('ticker')['volume'].transform(lambda x: x[::-1].rolling(window=period).mean()[::-1])
+    df['pre_close'] = df.groupby('ticker')['close'].shift(-1)
+    df['sma'] = df.groupby('ticker').apply(
+        lambda x: x['close'][::-1].rolling(window=x['param_sma'].astype(int).values[0]).mean()[::-1]).reset_index(drop=True)
+    df = df.groupby('ticker', group_keys=False).apply(add_test_value)
+    df['tsi'].fillna(method='ffill', inplace=True)
+    buy =(df['close'] > df['sma']) & (df['close'] > df['tsi']) & (df['volume'] > df['mavol']*df['param_multiply_volumn']) & (df['mavol'] > 100000) & (df['high']/df['close']-1 < df['param_rate_of_increase']) & (df['close']/df['pre_close']-1 > df['param_change_day'])
     cut_loss = df['close'] <= df['close']*(1-df['param_ratio_cutloss'])
     df['signal'] = np.where(buy, 'buy', 'newtral')
     return df
 
 
-
-def filter_stock_muanual():
+def filter_stock_muanual( risk):
     now = datetime.today()
     date_filter = now.date()
     # Lấy ngày giờ gần nhất trong StockPriceFilter
@@ -61,15 +79,11 @@ def filter_stock_muanual():
     # Kiểm tra điều kiện để thực hiện hàm get_info_stock_price_filter()
     if 0 <= now.weekday() <= 4 and 9 <= now.hour <= 15 and time_difference > 900:
         get_info_stock_price_filter()
-
     stock_prices = StockPriceFilter.objects.all().values()
     # lọc ra top cổ phiếu có vol>100k
     df = pd.DataFrame(stock_prices)  
-    df['mean_vol'] = df.groupby('ticker')['volume'].transform('mean')
-    df =df.loc[df['mean_vol']>100000].reset_index(drop=True)
-    df = df.drop(['id', 'mean_vol'], axis=1)
     # chuyển đổi df theo chiến lược
-    df = breakout_strategy_otmed(df, 20, 25)
+    df = breakout_strategy_otmed(df, risk)
     df['milestone'] = np.where(df['signal']== 'buy',df['res'],0)
     df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker','close', 'date', 'signal','milestone','param_ratio_cutloss']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
     signal_today = df_signal.loc[df_signal['date']==date_filter].reset_index(drop=True)
@@ -95,7 +109,6 @@ def filter_stock_muanual():
                     data['rating'] = data['ratio_pln']
                     if data['ratio_pln'] > 10 and data['win_trade_ratio']>40:
                         buy_today.append(data)
-
     # tạo lệnh mua tự động
     buy_today.sort(key=lambda x: x['rating'], reverse=True)
     for ticker in buy_today:
@@ -106,7 +119,7 @@ def filter_stock_muanual():
     return buy_today
      
 
-def filter_stock_daily():
+def filter_stock_daily(strategy, risk):
     buy_today = filter_stock_muanual()
     date_filter = datetime.today().date() 
     account = Account.objects.get(name ='Bot_Breakout')

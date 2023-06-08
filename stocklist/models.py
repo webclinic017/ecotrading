@@ -35,18 +35,16 @@ class Signaldaily(models.Model):
     class Meta:
         verbose_name = 'Tín hiệu giao dịch'
         verbose_name_plural = 'Tín hiệu giao dịch'
+    
+    
 
     def __str__(self):
         return str(self.ticker) + str(self.strategy)
     
-    # @property
-    # def close(self):
-    #     close = StockPriceFilter.objects.filter(ticker = self.ticker).order_by('-date').first().close
-    #     return close
+
     
-    # @property
-    # def distance(self):
-    #     return round((self.close/self.milestone-1)*100,0)
+    
+    
     
            
 
