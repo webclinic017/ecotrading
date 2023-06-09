@@ -9,8 +9,9 @@ router.register('test', TransactionViewSet)
 
 
 urlpatterns = [
-    path('account/<int:pk>',account, name='account'), 
+    path('account/<int:pk>/', account, name='account'),  
     path('get-port/', get_port, name='get_port'),
-    path('',include(router.urls)), 
+    # path('',include(router.urls)), 
+    path('', redirect_view),
    
 ]

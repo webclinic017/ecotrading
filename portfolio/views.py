@@ -4,12 +4,14 @@ from django.http import HttpResponse, Http404
 from django.template import loader
 from datetime import datetime
 from django.http import JsonResponse
+from django.http import HttpResponsePermanentRedirect
 
 
 # Create your views here.
 
 
-
+def redirect_view(request):
+    return HttpResponsePermanentRedirect('http://ecotrading.com.vn/admin')
 
 
 

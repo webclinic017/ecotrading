@@ -199,6 +199,18 @@ def evaluate_strategy(params,nav,commission,size_class,data,strategy_class, tick
     # Trả về chỉ số hiệu suất muốn tối ưu (ví dụ: tổng lợi nhuận, tỷ lệ Sharpe, ...)
     return cerebro.broker.getvalue() 
 
+def rating_stock(strategy_pk, min_hold, max_hold):
+    total =RatingStrategy.objects.filter(strategy=strategy_pk).first()
+    list_stock = OverviewBacktest.objects.all()
+    for stock in list_stock:
+        stock.rating_profit = round((stock.deal_average_pnl-total.min_ratio_pln)/(total.max_ratio_pln-total.min_ratio_pln)*50+50,2)
+        stock.rating_win_trade = round((stock.win_trade_ratio-total.min_win_trade_ratio)/(total.max_win_trade_ratio-total.min_win_trade_ratio)*50+50,2)
+        stock.rating_day_hold = round(100 - (stock.average_trades_per_day-min_hold)/(max_hold-min_hold)*50 ,2)
+        stock.rating_total = round(stock.rating_profit*0.5 + stock.rating_win_trade*0.3 + stock.rating_day_hold*0.2,2)
+        stock.save()
+    return
+    
+
 
 def run_backtest(risk, begin_list, end_list):
     strategy_data = {
@@ -367,6 +379,7 @@ def run_backtest(risk, begin_list, end_list):
                         'average_lost_trades_per_day': round(overview.len.lost.get('average'),2),
                         'max_lost_trades_per_day': overview.len.lost.get('max'),
                         'min_lost_trades_per_day': overview.len.lost.get('min'),
+                        'deal_average_pnl': round(sum(i.ratio_pln for i in list_trade )/overview.total.get('closed'),2),
                     }
                     obj, created = OverviewBacktest.objects.update_or_create(strategy=strategy,ticker=ticker, defaults=overview_data)
                     print('Đã tạo thông số trade')
@@ -378,20 +391,27 @@ def run_backtest(risk, begin_list, end_list):
     # chạy tổng kết        
     detail_stock = OverviewBacktest.objects.filter(strategy=strategy,total_trades__gt=0)
     if detail_stock:
+        min_hold = min(i.average_trades_per_day for i in detail_stock)
+        max_hold = max(i.average_trades_per_day for i in detail_stock)
         total = {
             'ratio_pln':round(mean(i.ratio_pln for i in detail_stock),2),
+            'deal_average_pnl': round(mean(i.deal_average_pnl for i in detail_stock),2),
+            'max_ratio_pln': max(i.deal_average_pnl for i in detail_stock),
+            'min_ratio_pln': min(i.deal_average_pnl for i in detail_stock),
             'drawdown':round(mean(i.drawdown for i in detail_stock),2),
             'sharpe_ratio': round(mean(i.sharpe_ratio for i in detail_stock),2),
             'total_trades': sum(i.total_trades for i in detail_stock),
             'total_open_trades': sum(i.total_open_trades for i in detail_stock),
             'win_trade_ratio': round(mean(i.win_trade_ratio for i in detail_stock), 2),
+            'max_win_trade_ratio': max(i.win_trade_ratio for i in detail_stock),
+            'min_win_trade_ratio': min(i.win_trade_ratio for i in detail_stock),
             'total_closed_trades': sum(i.total_closed_trades for i in detail_stock),
             'won_total_trades': sum(i.won_total_trades for i in detail_stock),
-            'won_total_pnl': sum(i.won_total_pnl for i in detail_stock),
+            'won_total_pnl': round(sum(i.won_total_pnl for i in detail_stock),2),
             'won_average_pnl': round(mean(i.won_average_pnl for i in detail_stock), 2),
             'won_max_pnl': max(i.won_max_pnl for i in detail_stock),
             'lost_total_trades': sum(i.lost_total_trades for i in detail_stock),
-            'lost_total_pnl': sum(i.lost_total_pnl for i in detail_stock),
+            'lost_total_pnl': round(sum(i.lost_total_pnl for i in detail_stock),2),
             'lost_average_pnl': round(mean(i.lost_average_pnl for i in detail_stock), 2),
             'lost_max_pnl': min(i.lost_max_pnl for i in detail_stock),
             'total_trades_length': round(mean(i.total_trades_length for i in detail_stock), 2),
@@ -410,6 +430,10 @@ def run_backtest(risk, begin_list, end_list):
         obj = RatingStrategy.objects.update_or_create(strategy=strategy, defaults=total)
 
     print('Đã tạo tổng kết chiến lược')
+    
+    rating_stock(strategy, min_hold, max_hold)
+    print('Đã tạo điểm tổng hợp')
+    
     return list_bug
 
 

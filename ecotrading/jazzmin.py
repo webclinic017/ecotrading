@@ -100,23 +100,16 @@ JAZZMIN_SETTINGS = {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
         "auth.Group": "fas fa-users",
-        "members.Member": "fas fa-user-shield",
-        "order.Cart": "fas fa-shopping-cart",
-        "products.product":"fas fa-hamburger",
-        "products.material":"fas fa-warehouse",
-        "products.importmaterial":"fas fa-plus-circle",
-        "products.materialloss":"fas fa-hourglass-half",
-        "products.category": "fas fa-star",
-        "products.Tag":"fas fa-tags",
-        "client.Client":"fas fa-male",
-        # "bills.Bill" : "fas fa-receipt",
-        # "event_calendar.Event":"far fa-calendar-check",
-        # "report.Report":"fas fa-flag-checkered" ,
-        # "frontend.layouthomepage":"fas fa-pen",
-        # "frontend.blockitems":"fas fa-pen",
-        # "frontend.categorydetail":"fas fa-pen",
-        # "frontend.clientpotential":"fas fa-person-booth",
+        "stocklist.StrategyTrading": "fas fa-user-shield",
+        "stocklist.Signaldaily": "fas fa-lightbulb-on",
+        "stocklist.OverviewBacktest": "fas fa-user-shield",
+        "stocklist.TransactionBacktest": "fas fa-user-shield",
+        "stocklist.RatingStrategy": "fas fa-user-shield",
+        "stocklist.ParamsOptimize": "fas fa-user-shield",
+        
 
+
+        
 
 
     

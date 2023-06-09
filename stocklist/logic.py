@@ -101,17 +101,10 @@ def filter_stock_muanual( risk = 0.03):
             lated_signal = Signaldaily.objects.filter(ticker=data['ticker'],strategy=strategy , date = date_filter).order_by('-date').first()
             #check nếu không có tín hiệu nào trước đó hoặc tín hiệu đã có nhưng ngược với tín hiệu hiện tại 
             if lated_signal is None:
-                back_test= OverviewBacktest.objects.filter(ticker=data['ticker']).first()
+                back_test= OverviewBacktest.objects.filter(ticker=data['ticker'],strategy=strategy).first()
                 if back_test:
-                    data['total_trades'] =back_test.total_trades
-                    data['ratio_pln'] = back_test.ratio_pln
-                    data['win_trade_ratio'] = back_test.win_trade_ratio
-                    #Tính rating tín hiệu
-                    rating_profit = (back_test.won_total_pnl - back_test.lost_total_pnl)/back_test.total_closed_trades 
-                    # rating_win_ratio = back_test.win_trade_ratio
-                    # rating_len_date = back_test.average_trades_per_day
-                    data['rating'] = rating_profit
-                    if data['rating'] > 3 and data['win_trade_ratio']>40:
+                    data['rating'] = back_test.rating_total
+                    if data['rating'] > 50:
                         buy_today.append(data)
     # tạo lệnh mua tự động
     buy_today.sort(key=lambda x: x['rating'], reverse=True)
@@ -119,7 +112,7 @@ def filter_stock_muanual( risk = 0.03):
            # gửi tín hiệu vào telegram
             bot.send_message(
                 chat_id='-870288807', 
-                text=f"Tín hiệu mua {ticker['ticker']}, lịch sử backtest với tổng số deal {ticker['total_trades']} có lợi nhuận {ticker['ratio_pln']}%, tỷ lệ thắng là {ticker['win_trade_ratio']}% " )   
+                text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {data['rating']}, tỷ lệ cắt lỗ tối ưu là {data['ratio_cutloss']*100}% " )   
     return buy_today
      
 
@@ -173,11 +166,12 @@ def filter_stock_daily(risk=0.03):
                 try:
                     bot.send_message(
                     chat_id=group.chat_id, 
-                    text=f"Tín hiệu mua {ticker['ticker']}, lịch sử backtest với tổng số deal {ticker['total_trades']} có lợi nhuận {ticker['ratio_pln']}%, tỷ lệ thắng là {ticker['win_trade_ratio']}%, tỷ lệ cắt lỗ tối ưu là giảm {ticker['ratio_cutloss']*100}% " )   
+                    text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']*100}% " )   
                 except:
                     pass
+                
         for ticker in buy_today:
-             Signaldaily.objects.create(
+            created = Signaldaily.objects.create(
                 ticker = ticker['ticker'],
                 close = ticker['close'],
                 date = ticker['date'],

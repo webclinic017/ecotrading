@@ -18,9 +18,8 @@ class SignaldailyAdmin(admin.ModelAdmin):
 
 class OverviewBacktestAdmin(admin.ModelAdmin):
     model = OverviewBacktest
-    list_display =['ticker','ratio_pln','total_trades','win_trade_ratio','drawdown','sharpe_ratio',
-                   'won_average_pnl', 'lost_average_pnl',
-                 'average_won_trades_per_day','average_lost_trades_per_day','view_transactions']
+    list_display =['ticker','rating_total','rating_profit','rating_win_trade','rating_day_hold','total_trades','win_trade_ratio',
+                   'deal_average_pnl','drawdown','sharpe_ratio','view_transactions']
     search_fields = ['ticker']
 
     def get_queryset(self, request):

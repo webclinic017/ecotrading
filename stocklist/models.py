@@ -63,7 +63,7 @@ class OverviewBacktest(models.Model):
     lost_current_streak = models.IntegerField(null=True)
     lost_longest_streak = models.IntegerField(null=True )
     gross_average_pnl = models.FloatField(null=True , verbose_name = 'Lợi nhuận gộp')
-    # net_average_pnl = models.FloatField(null=True)
+    deal_average_pnl = models.FloatField(null=True)
     won_total_trades = models.IntegerField(null=True , verbose_name = 'Tổng GD thắng')
     won_total_pnl = models.FloatField(null=True , verbose_name = 'Tổng LN thắng')
     won_average_pnl = models.FloatField(null=True , verbose_name = 'TB LN thắng')
@@ -107,7 +107,11 @@ class OverviewBacktest(models.Model):
     max_lost_trades_per_day = models.IntegerField(null=True, verbose_name = 'Ngày nắm giữ tối đa GD thua')
     min_lost_trades_per_day = models.IntegerField(null=True, verbose_name = 'Ngày nắm giữ tối thiểu GD thua')
     modified_date = models.DateTimeField(auto_now=True, verbose_name = 'Ngày tạo')
-    
+    rating_profit = models.FloatField(null=True,verbose_name = 'Điểm LN')
+    rating_win_trade = models.FloatField(null=True,verbose_name = 'Điểm tỷ lệ thắng')
+    rating_day_hold =models.FloatField(null=True,verbose_name = 'Điểm chu kì ')
+    rating_total = models.FloatField(null=True,verbose_name = 'Điểm tổng hợp')
+
     class Meta:
         verbose_name = 'Kết quả kiểm định'
         verbose_name_plural = 'Kết quả kiểm định'
@@ -115,6 +119,8 @@ class OverviewBacktest(models.Model):
     def __str__(self):
         return self.ticker
     
+    
+
 class TransactionBacktest(models.Model):
     ticker = models.CharField(max_length=15, verbose_name = 'Cổ phiếu')
     strategy = models.ForeignKey(StrategyTrading,on_delete=models.CASCADE, null=True, blank=True, verbose_name = 'Chiến lược')
@@ -141,14 +147,18 @@ class TransactionBacktest(models.Model):
 class RatingStrategy(models.Model):
     strategy = models.ForeignKey(StrategyTrading,on_delete=models.CASCADE, null=True, blank=True,verbose_name = 'Chiến lược')
     description = models.CharField(max_length=200, null=True,verbose_name = 'Mô tả')
-    ratio_pln= models.FloatField(verbose_name = 'Tỷ lệ LN')
+    ratio_pln= models.FloatField(default=0,verbose_name = 'TB tổng LN')
+    deal_average_pnl = models.FloatField(default=0,verbose_name = 'Tỷ lệ TB LN')
+    max_ratio_pln = models.FloatField(default=0,null=True,verbose_name = 'TB LN tối đa')
+    min_ratio_pln = models.FloatField(default=0,null=True,verbose_name = 'TB LN tối thiểu')
     drawdown= models.FloatField(null=True, verbose_name = 'Drawdown')
     sharpe_ratio= models.FloatField(null=True, verbose_name = 'Tỷ lệ Sharpe')
     total_trades = models.IntegerField(null=True, verbose_name = 'Tổng giao dịch')
     total_open_trades = models.IntegerField(null=True, verbose_name = 'Tổng GD đang mở')
     win_trade_ratio = models.FloatField(null=True, verbose_name = 'Tỷ lệ thắng')
+    max_win_trade_ratio = models.FloatField(default=0,null=True, verbose_name = 'Tỷ lệ thắng tối đa')
+    min_win_trade_ratio= models.FloatField(default=0,null=True, verbose_name = 'Tỷ lệ thắng tối thiểu')
     total_closed_trades = models.IntegerField(null=True, verbose_name = 'Tổng GD đã đóng')
-    # net_average_pnl = models.FloatField(null=True, verbose_name = 'Tỷ lệ LN')
     won_total_trades = models.IntegerField(null=True, verbose_name = 'Tổng GD thắng')
     won_total_pnl = models.FloatField(null=True, verbose_name = 'Tổng LN GD thắng')
     won_average_pnl = models.FloatField(null=True,verbose_name = 'TB LN GD thắng')
@@ -176,7 +186,7 @@ class RatingStrategy(models.Model):
         verbose_name_plural = 'Đánh giá chiến lược'
     
     def __str__(self):
-        return self.strategy
+        return str(self.strategy.name) +str('_')+str(self.strategy.risk)
     
 class ParamsOptimize(models.Model):  
     ticker = models.CharField(max_length=15,  verbose_name = 'Cổ phiếu' )  
