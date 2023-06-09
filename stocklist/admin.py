@@ -9,11 +9,12 @@ from django.utils.html import format_html
 class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
     list_display = ('date','ticker','strategy','signal','close','wavefoot','ratio_cutloss', 'modified_date')
-    list_filter = ('signal','date')
+    list_filter = ('date',)
     search_fields = ['ticker']
+
     @admin.display(description="% tăng từ chân sóng")
     def wavefoot(self, obj):
-        return round((obj.close / obj.milestone - 1) * 100, 0)
+        return round((obj.close / obj.milestone - 1) * 100, 2)
 
 
 class OverviewBacktestAdmin(admin.ModelAdmin):
