@@ -12,8 +12,8 @@ class SignaldailyAdmin(admin.ModelAdmin):
     list_filter = ('signal','date')
     search_fields = ['ticker']
     @admin.display(description="% tăng từ chân sóng")
-    def wavefoot(self):
-        return round((self.close / self.milestone - 1) * 100, 0)
+    def wavefoot(self, obj):
+        return round((obj.close / obj.milestone - 1) * 100, 0)
 
 
 class OverviewBacktestAdmin(admin.ModelAdmin):
