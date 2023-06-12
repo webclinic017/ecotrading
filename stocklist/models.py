@@ -25,7 +25,7 @@ class StrategyTrading(models.Model):
 class Signaldaily(models.Model):
     ticker = models.CharField(max_length=10, verbose_name = 'Cổ phiếu')
     date = models.DateField(verbose_name = 'Ngày cho tín hiệu')
-    close = models.FloatField(default=0, verbose_name = 'Giá thị trường')
+    close = models.FloatField(default=0, verbose_name = 'Giá mua')
     milestone = models.FloatField(default=0, verbose_name = 'Mốc an toàn')
     signal = models.CharField(max_length=10, verbose_name = 'Tín hiệu')
     ratio_cutloss = models.FloatField(default=0, verbose_name = 'Tỷ lệ cắt lỗ tối ưu')
@@ -40,6 +40,8 @@ class Signaldaily(models.Model):
 
     def __str__(self):
         return str(self.ticker) + str(self.strategy)
+    
+    
     
 
     

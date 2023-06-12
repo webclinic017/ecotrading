@@ -8,11 +8,16 @@ from django.utils.html import format_html
 
 class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
-    list_display = ('date','ticker','strategy','signal','close','wavefoot','ratio_cutloss', 'modified_date')
+    list_display = ('date','ticker','strategy','signal','close','market_price','wavefoot','ratio_cutloss', 'modified_date')
     list_filter = ('date',)
     search_fields = ['ticker']
 
     @admin.display(description="% tăng từ chân sóng")
+    def market_price(self, obj):
+        price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
+        return price
+    
+    @admin.display(description="Giá hiện tại")
     def wavefoot(self, obj):
         return round((obj.close / obj.milestone - 1) * 100, 2)
 
