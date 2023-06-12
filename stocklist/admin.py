@@ -12,14 +12,15 @@ class SignaldailyAdmin(admin.ModelAdmin):
     list_filter = ('date',)
     search_fields = ['ticker']
 
-    @admin.display(description="% tăng từ chân sóng")
+    @admin.display(description="Giá hiện tại")
     def market_price(self, obj):
         price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
         return price
     
-    @admin.display(description="Giá hiện tại")
+    @admin.display(description="% tăng/giảm")
     def wavefoot(self, obj):
-        return round((obj.close / obj.milestone - 1) * 100, 2)
+        market_price = market_price(self, obj)
+        return round((market_price / obj.close - 1) * 100, 2)
 
 
 class OverviewBacktestAdmin(admin.ModelAdmin):
