@@ -19,8 +19,8 @@ class SignaldailyAdmin(admin.ModelAdmin):
     
     @admin.display(description="% tăng/giảm")
     def wavefoot(self, obj):
-        market_price = market_price(self, obj)
-        return round((market_price / obj.close - 1) * 100, 2)
+        price = price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
+        return round((price/ obj.close - 1) * 100, 2)
 
 
 class OverviewBacktestAdmin(admin.ModelAdmin):
