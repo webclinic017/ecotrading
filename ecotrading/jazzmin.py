@@ -26,7 +26,7 @@ JAZZMIN_SETTINGS = {
 
     # List of model admins to search from the search bar, search bar omitted if excluded
     # If you want to use a single search field you dont need to use a list, you can use a simple string 
-    "search_model": ["portfolio.Transaction", ],
+    "search_model": ["stocklist.Signaldaily", ],
 
     # Field name on user model that contains avatar ImageField/URLField/Charfield or a callable that receives the user
     "user_avatar": None,
@@ -40,16 +40,12 @@ JAZZMIN_SETTINGS = {
     "topmenu_links": [
 
         # Url that gets reversed (Permissions can be added)
-        {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Trang chủ",  "url": "admin:index", "permissions": ["auth.view_user"]},
         # external url that opens in a new window (Permissions can be added)
-        {"name": "Tính khối lượng", "url": "http://103.176.251.105/calculator-qty", "new_window": True},
+        {"name": "Tính khối lượng", "url": "http://ecotrading.com.vn/calculator-qty", "new_window": True},
         #{"name": "Calendar", "url":"http://linhtrangbridal.online/calendar/", "new_window": True},
-       
-    
         # model admin to link to (Permissions checked against model)
         {"model": "order.Cart"},
-
-        
 
         # App with dropdown menu to all its models pages (Permissions checked against models)
         # {"model": "order.Cart"},
@@ -100,22 +96,13 @@ JAZZMIN_SETTINGS = {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
         "auth.Group": "fas fa-users",
-        "stocklist.StrategyTrading": "fas fa-user-shield",
-        "stocklist.Signaldaily": "fas fa-lightbulb-on",
-        "stocklist.OverviewBacktest": "fas fa-user-shield",
-        "stocklist.TransactionBacktest": "fas fa-user-shield",
-        "stocklist.RatingStrategy": "fas fa-user-shield",
-        "stocklist.ParamsOptimize": "fas fa-user-shield",
+        "stocklist.StrategyTrading": "fas fa-chess-queen",
+        "stocklist.Signaldaily": "far fa-lightbulb",
+        "stocklist.OverviewBacktest": "fas fa-check-circle",
+        "stocklist.TransactionBacktest": "fas fa-list-alt",
+        "stocklist.RatingStrategy": "fas fa-star",
+        "stocklist.ParamsOptimize": "fas fa-vials",
         
-
-
-        
-
-
-    
-
-
-
     },
     # Icons that are used when one is not manually specified
     "default_icon_parents": "fas fa-chevron-circle-right",
