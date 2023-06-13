@@ -463,7 +463,7 @@ def run_backtest_one_stock(ticker,risk):
     # Khởi tạo các giá trị tham số muốn tối ưu
     multiply_volumn_values = [x / 2 for x in range(2, 5)]
     rate_of_increase_values = [0.01, 0.02, 0.03]
-    change_day_values = [0.015, 0.02,]
+    change_day_values = [0.015, 0.02,0.025,0.03]
     risk_values = [risk]   
     ratio_cutloss = [0.05,0.07,0.1]
     sma = [20,50]
