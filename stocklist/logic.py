@@ -112,7 +112,7 @@ def filter_stock_muanual( risk = 0.03):
            # gửi tín hiệu vào telegram
             bot.send_message(
                 chat_id='-870288807', 
-                text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']*100}% " )   
+                text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, tỷ lệ cắt lỗ tối ưu là {round(ticker['ratio_cutloss']*100,0)}% " )   
     return buy_today
      
 
