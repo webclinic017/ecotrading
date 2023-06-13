@@ -216,6 +216,19 @@ def rating_stock(strategy_pk):
             stock.rating_total = round(stock.rating_profit*0.3 + stock.rating_win_trade*0.2 + stock.rating_day_hold*0.1+ rating_number_deal*0.4,2)
             stock.save()
     return
+
+def define_stock_not_test(strategy):
+    list_all = []
+    list_runned = []
+    stock = OverviewBacktest.objects.filter(strategy=strategy)
+    stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
+    stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
+    for i in stock:
+        list_runned.append(i.ticker)
+    for i in stock_test:
+        list_all.append(i['ticker'])
+    result = list(set(list_all)-set(list_runned))
+    return result
     
 
 
@@ -228,12 +241,13 @@ def run_backtest(risk, begin_list, end_list):
         'period':20}
     created = StrategyTrading.objects.update_or_create(name='Breakout',risk = risk, defaults=strategy_data)
     strategy = StrategyTrading.objects.filter(name='Breakout',risk = risk).first()
-    stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
-    stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
-    # stock_test = [{'ticker':'REE'}]
+    # stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
+    # stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
+    stock_test = define_stock_not_test(strategy)
     list_bug =[]
     for item in stock_test[begin_list:end_list]:
-        ticker = item['ticker']
+        # ticker = item['ticker']
+        ticker = item
         print('------đang chạy:', ticker)
         try:
             stock_prices = StockPrice.objects.filter(ticker=ticker).values()
@@ -245,12 +259,12 @@ def run_backtest(risk, begin_list, end_list):
             data = PandasData(dataname=df)
             #Chạy tối ưu hóa param
             # Khởi tạo các giá trị tham số muốn tối ưu
-            multiply_volumn_values = [x / 2 for x in range(2, 6)]
-            rate_of_increase_values = [0.01, 0.02, 0.03]  # tăng so với phiên trước đó
-            change_day_values = [0.015, 0.02, 0.025,0.03] 
-            risk_values = [risk]
-            ratio_cutloss = [0.05,0.06, 0.07, 0.08, 0.09, 0.1]
-            sma = [20,30,50]  
+            multiply_volumn_values = [x / 2 for x in range(2, 5)]
+            rate_of_increase_values = [0.01, 0.02, 0.03]
+            change_day_values = [0.015, 0.02,0.025,0.03]
+            risk_values = [risk]   
+            ratio_cutloss = [0.05,0.07,0.1]
+            sma = [20,50] 
             #####test
             # multiply_volumn_values = [x / 2 for x in range(2, 3)]
             # rate_of_increase_values = [0.01]  # tăng so với phiên trước đó
