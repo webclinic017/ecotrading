@@ -18,7 +18,7 @@ class SignaldailyAdmin(admin.ModelAdmin):
         return price
     @admin.display(description="Điểm tổng hợp")
     def rating_total(self, obj):
-        point = OverviewBacktest.objects.filter(ticker = obj.ticker).first()
+        point = OverviewBacktest.objects.filter(ticker = obj.ticker).first().rating_total
         return point
     
     @admin.display(description="% tăng/giảm")
