@@ -446,6 +446,7 @@ def run_backtest(risk, begin_list, end_list):
 
 
 def run_backtest_one_stock(ticker,risk):
+    strategy = StrategyTrading.objects.filter(name='Breakout',risk = risk).first()
     strategy_data = {
         'name': 'Breakout',
         'risk': risk,   
@@ -479,7 +480,7 @@ def run_backtest_one_stock(ticker,risk):
     for params in param_combinations:
         params = tuple(float(param) for param in params)  # Chuyển đổi các giá trị tham số sang kiểu số thực
         try:
-            performance = evaluate_strategy(params,nav= 10000,commission= 0,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker)
+            performance = evaluate_strategy(params,nav=strategy.nav,commission= strategy.commission,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker, strategy=strategy)
             if best_performance is None or performance > best_performance:
                 best_params = params
                 best_performance = performance   
