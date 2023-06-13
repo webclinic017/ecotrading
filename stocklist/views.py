@@ -199,15 +199,22 @@ def evaluate_strategy(params,nav,commission,size_class,data,strategy_class, tick
     # Trả về chỉ số hiệu suất muốn tối ưu (ví dụ: tổng lợi nhuận, tỷ lệ Sharpe, ...)
     return cerebro.broker.getvalue() 
 
-def rating_stock(strategy_pk, min_hold, max_hold):
+def rating_stock(strategy_pk):
     total =RatingStrategy.objects.filter(strategy=strategy_pk).first()
-    list_stock = OverviewBacktest.objects.all()
-    for stock in list_stock:
-        stock.rating_profit = round((stock.deal_average_pnl-total.min_ratio_pln)/(total.max_ratio_pln-total.min_ratio_pln)*50+50,2)
-        stock.rating_win_trade = round((stock.win_trade_ratio-total.min_win_trade_ratio)/(total.max_win_trade_ratio-total.min_win_trade_ratio)*50+50,2)
-        stock.rating_day_hold = round(100 - (stock.average_trades_per_day-min_hold)/(max_hold-min_hold)*50 ,2)
-        stock.rating_total = round(stock.rating_profit*0.5 + stock.rating_win_trade*0.3 + stock.rating_day_hold*0.2,2)
-        stock.save()
+    list_stock = OverviewBacktest.objects.filter(strategy=strategy_pk,total_trades__gt=0)
+    if list_stock:
+        min_hold = min(i.average_trades_per_day for i in list_stock)
+        max_hold = max(i.average_trades_per_day for i in list_stock)
+        min_deal = min(i.total_trades for i in list_stock)
+        max_deal = max(i.total_trades for i in list_stock)
+        for stock in list_stock:
+            stock.rating_profit = round((stock.deal_average_pnl-total.min_ratio_pln)/(total.max_ratio_pln-total.min_ratio_pln)*50+50,2)
+            stock.rating_win_trade = round((stock.win_trade_ratio-total.min_win_trade_ratio)/(total.max_win_trade_ratio-total.min_win_trade_ratio)*50+50,2)
+            stock.rating_day_hold = round(100 - (stock.average_trades_per_day-min_hold)/(max_hold-min_hold)*50 ,2)
+            rating_number_deal = round((stock.total_trades - min_deal)/(max_deal-min_deal)*50+50,2)
+            # profit: 30%, number_deal: 40% wintrade:20%, dayhold: 10%
+            stock.rating_total = round(stock.rating_profit*0.3 + stock.rating_win_trade*0.2 + stock.rating_day_hold*0.1+ rating_number_deal*0.4,2)
+            stock.save()
     return
     
 
@@ -261,12 +268,14 @@ def run_backtest(risk, begin_list, end_list):
             best_performance = None
             list_param_bug = []
             for params in param_combinations:
+                print(params)
                 params = tuple(float(param) for param in params)  # Chuyển đổi các giá trị tham số sang kiểu số thực
                 try:
                     performance = evaluate_strategy(params,nav=strategy.nav,commission= strategy.commission,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker, strategy=strategy)
                     if best_performance is None or performance > best_performance:
                         best_params = params
-                        best_performance = performance                
+                        best_performance = performance  
+                        print('chay ok:',best_performance)              
                 except Exception as e:
                     list_param_bug.append(params)
                     if len(list_param_bug)>20:
@@ -391,8 +400,6 @@ def run_backtest(risk, begin_list, end_list):
     # chạy tổng kết        
     detail_stock = OverviewBacktest.objects.filter(strategy=strategy,total_trades__gt=0)
     if detail_stock:
-        min_hold = min(i.average_trades_per_day for i in detail_stock)
-        max_hold = max(i.average_trades_per_day for i in detail_stock)
         total = {
             'ratio_pln':round(mean(i.ratio_pln for i in detail_stock),2),
             'deal_average_pnl': round(mean(i.deal_average_pnl for i in detail_stock),2),
@@ -430,8 +437,7 @@ def run_backtest(risk, begin_list, end_list):
         obj = RatingStrategy.objects.update_or_create(strategy=strategy, defaults=total)
 
     print('Đã tạo tổng kết chiến lược')
-    
-    rating_stock(strategy, min_hold, max_hold)
+    rating_stock(strategy)
     print('Đã tạo điểm tổng hợp')
     
     return list_bug
@@ -439,12 +445,19 @@ def run_backtest(risk, begin_list, end_list):
 
 
 
-def run_backtest_one_stock(ticker,period):
-    stock_prices = StockPrice.objects.filter(ticker = ticker).values()
+def run_backtest_one_stock(ticker,risk):
+    strategy_data = {
+        'name': 'Breakout',
+        'risk': risk,   
+        'nav': 10000000,
+        'commission' : 0.0015,
+        'period':20}
+    stock_prices = StockPrice.objects.filter(ticker=ticker).values()
     df = pd.DataFrame(stock_prices)
-    df = breakout_strategy(df, period)
+    df = breakout_strategy(df, 20)
     df = df.drop(['id','res','sup'], axis=1) 
     df = df.sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
+    df = df.fillna(0.0001)
     data = PandasData(dataname=df)
     # Khởi tạo các giá trị tham số muốn tối ưu
     multiply_volumn_values = [x / 2 for x in range(2, 3)]
