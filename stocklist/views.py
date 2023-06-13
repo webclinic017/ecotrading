@@ -241,13 +241,13 @@ def run_backtest(risk, begin_list, end_list):
         'period':20}
     created = StrategyTrading.objects.update_or_create(name='Breakout',risk = risk, defaults=strategy_data)
     strategy = StrategyTrading.objects.filter(name='Breakout',risk = risk).first()
-    # stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
-    # stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
-    stock_test = define_stock_not_test(strategy)
+    stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
+    stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
+    # stock_test = define_stock_not_test(strategy)
     list_bug =[]
     for item in stock_test[begin_list:end_list]:
-        # ticker = item['ticker']
-        ticker = item
+        ticker = item['ticker']
+        # ticker = item
         print('------đang chạy:', ticker)
         try:
             stock_prices = StockPrice.objects.filter(ticker=ticker).values()
@@ -282,14 +282,14 @@ def run_backtest(risk, begin_list, end_list):
             best_performance = None
             list_param_bug = []
             for params in param_combinations:
-                print(params)
+                # print(params)
                 params = tuple(float(param) for param in params)  # Chuyển đổi các giá trị tham số sang kiểu số thực
                 try:
                     performance = evaluate_strategy(params,nav=strategy.nav,commission= strategy.commission,size_class = definesize,data= data,strategy_class = breakout_otm,ticker =  ticker, strategy=strategy)
                     if best_performance is None or performance > best_performance:
                         best_params = params
                         best_performance = performance  
-                        print('chay ok:',best_performance)              
+                        # print('chay ok:',best_performance)              
                 except Exception as e:
                     list_param_bug.append(params)
                     if len(list_param_bug)>20:
