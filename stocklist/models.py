@@ -65,7 +65,7 @@ class OverviewBacktest(models.Model):
     lost_current_streak = models.IntegerField(null=True)
     lost_longest_streak = models.IntegerField(null=True )
     gross_average_pnl = models.FloatField(null=True , verbose_name = 'Lợi nhuận gộp')
-    deal_average_pnl = models.FloatField(null=True)
+    deal_average_pnl = models.FloatField(null=True, verbose_name = 'Tỷ lệ TB LN')
     won_total_trades = models.IntegerField(null=True , verbose_name = 'Tổng GD thắng')
     won_total_pnl = models.FloatField(null=True , verbose_name = 'Tổng LN thắng')
     won_average_pnl = models.FloatField(null=True , verbose_name = 'TB LN thắng')
