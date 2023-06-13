@@ -464,8 +464,8 @@ def run_backtest_one_stock(ticker,risk):
     multiply_volumn_values = [x / 2 for x in range(2, 3)]
     rate_of_increase_values = [0.01]
     change_day_values = [0.01]
-    risk_values = [0.03, 0.05]   
-    ratio_cutloss = [0.05]
+    risk_values = [0.03]   
+    ratio_cutloss = [0.05,0.1]
     sma = [20]
     #Thêm tối ưu hóa
     # Tạo danh sách các giá trị tham số
@@ -496,32 +496,29 @@ def run_backtest_one_stock(ticker,risk):
                     'sma':best_params[5],
             }         
     
-            # Tạo một phiên giao dịch Backtrader mới
+    # Tạo một phiên giao dịch Backtrader mới
     cerebro = bt.Cerebro()
-            # Thêm dữ liệu và chiến lược vào cerebro
+    # Thêm dữ liệu và chiến lược vào cerebro
     cerebro.adddata(data)
-            # thêm chiến lược thông số đã được tối ưu
-    cerebro.addstrategy(breakout_otm, ticker, True,
-                                multiply_volumn= params_data['multiply_volumn'], 
-                                rate_of_increase=params_data['rate_of_increase'], 
-                                change_day=params_data['change_day'], 
-                                risk= params_data['risk'],
-                                ratio_cutloss = params_data['ratio_cutloss'],
-                                sma = params_data['sma'],)
+    # thêm chiến lược thông số đã được tối ưu
+    cerebro.addstrategy(breakout_otm, ticker,True,strategy,
+                                    multiply_volumn= params_data['multiply_volumn'], 
+                                    rate_of_increase=params_data['rate_of_increase'], 
+                                    change_day=params_data['change_day'], 
+                                    risk= risk,
+                                    ratio_cutloss = params_data['ratio_cutloss'],
+                                    sma = params_data['sma'],)
 
-            
-            # Thiết lập thông số về kích thước vốn ban đầu và phí giao dịch
-    cerebro.broker.setcash(1000000)  # Số dư ban đầu
-    cerebro.broker.setcommission(commission=0)  # Phí giao dịch (0.15%)
-            
+                
+    # Thiết lập thông số về kích thước vốn ban đầu và phí giao dịch
+    cerebro.broker.setcash(strategy.nav)  # Số dư ban đầu
+    cerebro.broker.setcommission(commission=strategy.commission)  # Phí giao dịch (0.15%)      
     #add the sizer
-    cerebro.addsizer(definesize, risk=params_data['risk'],ratio_cutloss=params_data['ratio_cutloss'])
-            
-    
+    cerebro.addsizer(definesize, risk=risk,ratio_cutloss=params_data['ratio_cutloss'])     
     # Chạy backtest
     result = cerebro.run()
     result = result[0]
-    cerebro.plot(style='candlestick')
+    # cerebro.plot(style='candlestick')
 
     print("Các tham số tối ưu:", best_params)
     print("Hiệu suất tối ưu:", best_performance)
