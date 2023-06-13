@@ -25,9 +25,10 @@ class SignaldailyAdmin(admin.ModelAdmin):
 
 class OverviewBacktestAdmin(admin.ModelAdmin):
     model = OverviewBacktest
-    list_display =['ticker','rating_total','rating_profit','rating_win_trade','rating_day_hold','total_trades','win_trade_ratio',
+    list_display =['strategy','ticker','rating_total','rating_profit','rating_win_trade','rating_day_hold','total_trades','win_trade_ratio',
                    'deal_average_pnl','drawdown','sharpe_ratio','view_transactions']
     search_fields = ['ticker']
+    list_filter = ['strategy',]
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -43,7 +44,7 @@ class OverviewBacktestAdmin(admin.ModelAdmin):
     
 class TransactionBacktestAdmin(admin.ModelAdmin):
     model = TransactionBacktest
-    list_display = ['ticker','ratio_pln','date_buy','qty','buy_price','date_sell','sell_price','len_days','stop_loss','take_profit','modified_date']
+    list_display = ['strategy','ticker','ratio_pln','date_buy','qty','buy_price','date_sell','sell_price','len_days','stop_loss','take_profit','modified_date']
     search_fields = ['ticker']
     list_filter = ['strategy',]
 
@@ -53,11 +54,13 @@ class RatingStrategyAdmin(admin.ModelAdmin):
                    'won_average_pnl', 'lost_average_pnl',
                  'average_won_trades_per_day','average_lost_trades_per_day']
     search_fields = ['strategy','name']
+    
 
 class ParamsOptimizeAdmin(admin.ModelAdmin):  
     model = ParamsOptimize
-    list_display = ['ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma']
+    list_display = ['strategy','ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma']
     search_fields = ['ticker']
+    list_filter = ['strategy',]
 
 class StrategyTradingAdmin(admin.ModelAdmin):
     model = StrategyTrading
