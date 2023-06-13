@@ -104,10 +104,10 @@ def filter_stock_muanual( risk = 0.03):
                 back_test= OverviewBacktest.objects.filter(ticker=data['ticker'],strategy=strategy).first()
                 if back_test:
                     data['rating'] = back_test.rating_total
-                    # if data['rating'] > 50:
-                    buy_today.append(data)
+                    if data['rating'] > 50:
+                        buy_today.append(data)
     # tạo lệnh mua tự động
-    # buy_today.sort(key=lambda x: x['rating'], reverse=True)
+    buy_today.sort(key=lambda x: x['rating'], reverse=True)
     for ticker in buy_today:
            # gửi tín hiệu vào telegram
             bot.send_message(
