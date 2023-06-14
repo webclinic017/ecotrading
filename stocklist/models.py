@@ -31,6 +31,8 @@ class Signaldaily(models.Model):
     ratio_cutloss = models.FloatField(default=0, verbose_name = 'Tỷ lệ cắt lỗ tối ưu')
     strategy = models.ForeignKey(StrategyTrading,on_delete=models.CASCADE, null=True, blank=True, verbose_name = 'Chiến lược')
     modified_date = models.DateTimeField(auto_now=True, verbose_name = 'Ngày tạo')
+    is_cutloss = models.BooleanField(default=False)
+    cutloss_price = models.FloatField(default=0, verbose_name ='Giá cắt lỗ')
     
     class Meta:
         verbose_name = 'Tín hiệu giao dịch'
@@ -43,9 +45,17 @@ class Signaldaily(models.Model):
     
     
     
+@receiver(post_save, sender=StockPriceFilter)
+def create_cutloss_signal(sender, instance, created, **kwargs):
+    if not created:
+        signal  = Signaldaily.objects.filter(ticker=instance.ticker, strategy=1, is_cutloss=False)   
+        for stock in signal:
+            stock.cutloss_price = stock.close*stock.ratio_cutloss 
+            if stock.cutloss_price >= instance.close:
+                stock.is_cutloss = True
+                stock.save()
 
-    
-    
+
     
     
            

@@ -8,7 +8,7 @@ from django.utils.html import format_html
 
 class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
-    list_display = ('date','ticker','strategy','signal','close','market_price','wavefoot','ratio_cutloss','rating_total', 'modified_date','view_transactions')
+    list_display = ('date','ticker','strategy','signal','close','market_price','wavefoot','ratio_cutloss','cutloss_price','rating_total', 'modified_date','view_transactions')
     list_filter = ('date',)
     search_fields = ['ticker']
 
@@ -16,6 +16,8 @@ class SignaldailyAdmin(admin.ModelAdmin):
     def market_price(self, obj):
         price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
         return price
+    
+    
     @admin.display(description="Điểm tổng hợp")
     def rating_total(self, obj):
         point = OverviewBacktest.objects.filter(ticker = obj.ticker).first().rating_total
@@ -24,7 +26,12 @@ class SignaldailyAdmin(admin.ModelAdmin):
     @admin.display(description="% tăng/giảm")
     def wavefoot(self, obj):
         price = price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
-        return round((price/ obj.close - 1) * 100, 2)
+        if obj.is_cutloss == True:
+            ratio = obj.ratio_cutloss*100
+        else:
+            ratio = round((price/ obj.close - 1) * 100, 2)
+        return ratio
+    
     
     def view_transactions(self, obj):
         url = reverse('admin:stocklist_overviewbacktest_changelist') + f'?ticker={obj.ticker}'
