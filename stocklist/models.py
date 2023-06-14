@@ -220,11 +220,11 @@ class StockFundamental(models.Model):
     ticker = models.CharField(max_length=15,  verbose_name = 'Cổ phiếu' ) 
     name  = models.CharField(max_length=200,verbose_name='Tên công ty') 
     stock_exchange = models.CharField(max_length=200,verbose_name='Sàn niêm yến')
-    eps = models.FloatField( verbose_name = 'EPS')
-    roa = models.FloatField( verbose_name = 'ROA')
-    roe = models.FloatField( verbose_name = 'ROE')
-    dept_ratio = models.FloatField( verbose_name = 'Tỷ lệ nợ')
-    bvps = models.FloatField( verbose_name = 'BVPS')
+    eps = models.FloatField(null=True, verbose_name = 'EPS')
+    roa = models.FloatField(null=True, verbose_name = 'ROA')
+    roe = models.FloatField(null=True, verbose_name = 'ROE')
+    dept_ratio = models.FloatField(null=True, verbose_name = 'Tỷ lệ nợ')
+    bvps = models.FloatField( null=True,verbose_name = 'BVPS')
 
     def __str__(self):
         return self.ticker
