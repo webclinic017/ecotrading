@@ -37,8 +37,11 @@ def breakout_strategy(df, period, num_raw=None):
     df['pre_close'] = df.groupby('ticker')['close'].shift(-1)
     return df
 
-def breakout_strategy_otmed(df, risk,period,num_raw ):
-    backtest = ParamsOptimize.objects.values('ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma')
+def breakout_strategy_otmed(df, risk):
+    strategy= StrategyTrading.objects.filter(name = 'Breakout', risk = risk).first()
+    period = strategy.period
+    num_raw =period + 5
+    backtest = ParamsOptimize.objects.filter(strategy = strategy).values('ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma')
     df_param = pd.DataFrame(backtest)
     df['mean_vol'] = df.groupby('ticker')['volume'].transform('mean')
     df =df.loc[df['mean_vol']>100000].reset_index(drop=True)
@@ -68,8 +71,6 @@ def breakout_strategy_otmed(df, risk,period,num_raw ):
 
 def filter_stock_muanual( risk = 0.03):
     strategy= StrategyTrading.objects.filter(name = 'Breakout', risk = risk).first()
-    period = strategy.period
-    num_raw =period + 5
     now = datetime.today()
     date_filter = now.date()
     # Lấy ngày giờ gần nhất trong StockPriceFilter
@@ -77,13 +78,13 @@ def filter_stock_muanual( risk = 0.03):
     # Tính khoảng thời gian giữa now và latest_update (tính bằng giây)
     time_difference = (now - latest_update).total_seconds()
     # Kiểm tra điều kiện để thực hiện hàm get_info_stock_price_filter()
-    if 0 <= now.weekday() <= 4 and 9 <= now.hour <= 15 and time_difference > 900:
+    if 0 <= now.weekday() <= 4 and 9 <= now.hour < 15 and time_difference > 900:
         get_info_stock_price_filter()
     stock_prices = StockPriceFilter.objects.all().values()
     # lọc ra top cổ phiếu có vol>100k
     df = pd.DataFrame(stock_prices)  
     # chuyển đổi df theo chiến lược
-    df = breakout_strategy_otmed(df, risk,period, num_raw)
+    df = breakout_strategy_otmed(df, risk)
     df['milestone'] = np.where(df['signal']== 'buy',df['res'],0)
     df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker','close', 'date', 'signal','milestone','param_ratio_cutloss']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
     signal_today = df_signal.loc[df_signal['date']==date_filter].reset_index(drop=True)
