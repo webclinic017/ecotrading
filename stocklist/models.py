@@ -216,7 +216,7 @@ class ParamsOptimize(models.Model):
         verbose_name = 'Thông số tối ưu'
         verbose_name_plural = 'Thông số tối ưu'
 
-class StockFundamental(models.Model):
+class StockFundamentalData(models.Model):
     ticker = models.CharField(max_length=15,  verbose_name = 'Cổ phiếu' ) 
     name  = models.CharField(max_length=200,verbose_name='Tên công ty') 
     stock_exchange = models.CharField(max_length=200,verbose_name='Sàn niêm yến')
