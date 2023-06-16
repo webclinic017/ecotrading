@@ -115,6 +115,7 @@ def filter_stock_muanual( risk = 0.03):
     # Kiểm tra điều kiện để thực hiện hàm get_info_stock_price_filter()
     if 0 <= now.weekday() <= 4 and 9 <= now.hour < 15 and time_difference > 900:
         get_info_stock_price_filter()
+        save_fa_valuation()
     stock_prices = StockPriceFilter.objects.all().values()
     # lọc ra top cổ phiếu có vol>100k
     df = pd.DataFrame(stock_prices)  
@@ -138,8 +139,10 @@ def filter_stock_muanual( risk = 0.03):
             #check nếu không có tín hiệu nào trước đó hoặc tín hiệu đã có nhưng ngược với tín hiệu hiện tại 
             if lated_signal is None:
                 back_test= OverviewBacktest.objects.filter(ticker=data['ticker'],strategy=strategy).first()
+                fa = StockFundamentalData.objects.filter(ticker =data['ticker'] ).first()
                 if back_test:
                     data['rating'] = back_test.rating_total
+                    data['fundamental'] = fa.fundamental_rating
                     if data['rating'] > 50:
                         buy_today.append(data)
     # tạo lệnh mua tự động
@@ -148,7 +151,7 @@ def filter_stock_muanual( risk = 0.03):
            # gửi tín hiệu vào telegram
             bot.send_message(
                 chat_id='-870288807', 
-                text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
+                text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
     return buy_today
      
 
@@ -203,7 +206,7 @@ def filter_stock_daily(risk=0.03):
                 try:
                     bot.send_message(
                     chat_id=group.chat_id, 
-                    text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
+                    text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
                 except:
                     pass
 

@@ -257,10 +257,10 @@ def save_fa():
         else:
             rating_roa = 0
         if self.roe:
-            if self.roe >0 and self.roa <=25:
+            if self.roe >0 and self.roe <=25:
                 rating_roe = (self.roe-0) /(25-0)*40+50
             elif self.roe >25:
-                rating_roe =100
+                rating_roe = 100
             else:
                 rating_roe = 0
         else:
