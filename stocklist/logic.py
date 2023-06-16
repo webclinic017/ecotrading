@@ -7,9 +7,44 @@ from telegram import Bot
 from django.db.models import F
 from stocklist.models import  *
 import talib
-
-
 import numpy as np
+
+def save_fa_valuation():
+    fa = StockFundamentalData.objects.all()
+    for self in fa:
+        stock = StockPriceFilter.objects.filter(ticker = self.ticker).order_by('-date_time').first()
+        if stock:
+            self.market_price = stock.close
+        if self.bvps and self.market_price :
+            self.p_b = round(self.market_price*1000/self.bvps,2)
+            #dept từ 0-1: 80-100 điểm, 1-5: 50-80 điểm, 5-10: 20 - 50, trên 10: 20
+            if self.p_b > 0 and self.p_b <=1 :
+                rating_pb = 100 - (self.p_b-0) /(1-0)*(100-80)
+            elif self.p_b >1 and self.p_b<=10:
+                rating_pb = 80 - (self.p_b-1) /(10-1)*(80-50)
+            elif self.p_b >10:
+                rating_pb = 40
+            else:
+                rating_pb = 0
+        else:
+            rating_pb = 0
+        if self.eps and self.market_price:
+            self.p_e = round(self.market_price*1000/self.eps,2)
+            #dept từ 0-1: 80-100 điểm, 1-5: 50-80 điểm, 5-10: 20 - 50, trên 10: 20
+            if self.p_e > 0 and self.p_e <=1 :
+                rating_pe = 100 - (self.p_e-0) /(1-0)*(100-80)
+            elif self.p_e >1 and self.p_e<=10:
+                rating_pe = 80 - (self.p_e-1) /(10-1)*(80-50)
+            elif self.p_e >10:
+                rating_pe = 40
+            else:
+                rating_pe = 0
+        else:
+            rating_pe = 0
+        self.valuation_rating  = round(rating_pb*0.5+rating_pe*0.5,2)
+        self.fundamental_rating = round(self.growth_rating*0.5 + self.valuation_rating*0.3 + self.stable_rating*0.2,2)
+        self.save()
+
 
 def add_test_value(group):
     group['tsi'] = np.where(
@@ -98,7 +133,7 @@ def filter_stock_muanual( risk = 0.03):
             data['date'] = row['date']
             data['signal'] = 'buy'
             data['milestone'] = row['milestone']
-            data['ratio_cutloss'] = row['param_ratio_cutloss']
+            data['ratio_cutloss'] = round(row['param_ratio_cutloss']*100,0)
             lated_signal = Signaldaily.objects.filter(ticker=data['ticker'],strategy=strategy , date = date_filter).order_by('-date').first()
             #check nếu không có tín hiệu nào trước đó hoặc tín hiệu đã có nhưng ngược với tín hiệu hiện tại 
             if lated_signal is None:
@@ -113,7 +148,7 @@ def filter_stock_muanual( risk = 0.03):
            # gửi tín hiệu vào telegram
             bot.send_message(
                 chat_id='-870288807', 
-                text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, tỷ lệ cắt lỗ tối ưu là {round(ticker['ratio_cutloss']*100,0)}% " )   
+                text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
     return buy_today
      
 
@@ -168,7 +203,7 @@ def filter_stock_daily(risk=0.03):
                 try:
                     bot.send_message(
                     chat_id=group.chat_id, 
-                    text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']*100}% " )   
+                    text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
                 except:
                     pass
 
