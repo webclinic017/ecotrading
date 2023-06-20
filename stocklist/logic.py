@@ -113,7 +113,7 @@ def filter_stock_muanual( risk = 0.03):
     # Tính khoảng thời gian giữa now và latest_update (tính bằng giây)
     time_difference = (now - latest_update).total_seconds()
     # Kiểm tra điều kiện để thực hiện hàm get_info_stock_price_filter()
-    if 0 <= now.weekday() <= 4 and 9 <= now.hour < 15 and time_difference > 900:
+    if 0 <= now.weekday() <= 4 and 9 <= now.hour <= 15 and time_difference > 900:
         get_info_stock_price_filter()
         save_fa_valuation()
     stock_prices = StockPriceFilter.objects.all().values()
