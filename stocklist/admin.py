@@ -8,7 +8,7 @@ from django.utils.html import format_html
 
 class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
-    list_display = ('date','ticker','strategy','signal','close','market_price','wavefoot','ratio_cutloss','cutloss_price','rating_total','rating_fundamental', 'is_cutloss','view_transactions')
+    list_display = ('date','ticker','signal','close','market_price','wavefoot','ratio_cutloss','cutloss_price','rating_total','rating_fundamental', 'is_cutloss','view_transactions')
     list_filter = ('date',)
     search_fields = ['ticker']
 
@@ -45,7 +45,7 @@ class SignaldailyAdmin(admin.ModelAdmin):
 
 class OverviewBacktestAdmin(admin.ModelAdmin):
     model = OverviewBacktest
-    list_display =['ticker','rating_total','rating_profit','rating_win_trade','rating_day_hold','total_trades','win_trade_ratio',
+    list_display =['strategy','ticker','rating_total','rating_profit','rating_win_trade','rating_day_hold','total_trades','win_trade_ratio',
                    'deal_average_pnl','drawdown','sharpe_ratio','view_transactions']
     search_fields = ['ticker']
     list_filter = ['strategy',]
