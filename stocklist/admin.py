@@ -8,7 +8,7 @@ from django.utils.html import format_html
 
 class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
-    list_display = ('date','ticker','strategy','signal','close','market_price','wavefoot','ratio_cutloss','cutloss_price','rating_total', 'modified_date','view_transactions')
+    list_display = ('date','ticker','strategy','signal','close','market_price','wavefoot','ratio_cutloss','cutloss_price','rating_total','rating_fundamental', 'is_cutloss','view_transactions')
     list_filter = ('date',)
     search_fields = ['ticker']
 
@@ -41,7 +41,7 @@ class SignaldailyAdmin(admin.ModelAdmin):
 
 class OverviewBacktestAdmin(admin.ModelAdmin):
     model = OverviewBacktest
-    list_display =['strategy','ticker','rating_total','rating_profit','rating_win_trade','rating_day_hold','total_trades','win_trade_ratio',
+    list_display =['ticker','rating_total','rating_profit','rating_win_trade','rating_day_hold','total_trades','win_trade_ratio',
                    'deal_average_pnl','drawdown','sharpe_ratio','view_transactions']
     search_fields = ['ticker']
     list_filter = ['strategy',]
@@ -50,10 +50,17 @@ class OverviewBacktestAdmin(admin.ModelAdmin):
         queryset = super().get_queryset(request)
         return queryset.filter(total_trades__gt=0)
     
+    def rating_fundamental(self, obj):
+        fa = StockFundamentalData.objects.filter(ticker = obj.ticker).first()
+        return fa.fundamental_rating
+
+
+    
     def view_transactions(self, obj):
         url = reverse('admin:stocklist_transactionbacktest_changelist') + f'?ticker={obj.ticker}'
         return format_html('<a href="{}">Xem giao dịch</a>', url)
     view_transactions.short_description = 'Xem giao dịch'
+    rating_fundamental.short_description = 'Điểm cơ bản'
 
     
    
