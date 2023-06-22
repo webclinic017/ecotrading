@@ -50,7 +50,7 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
     if created:
         signal  = Signaldaily.objects.filter(ticker=instance.ticker, strategy=1, is_cutloss=False)   
         for stock in signal:
-            stock.cutloss_price = stock.close*(100-stock.ratio_cutloss)
+            stock.cutloss_price = round(stock.close*(100-stock.ratio_cutloss),2)
             if stock.cutloss_price >= instance.close:
                 stock.is_cutloss = True
                 stock.save()
