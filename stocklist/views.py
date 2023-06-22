@@ -566,8 +566,11 @@ def run_backtest_one_stock(ticker,risk):
 
 
 def get_signal(request):
-    list_buy = filter_stock_muanual()
-    return JsonResponse(list_buy, safe=False)
+    list_buy = []
+    if request.method == 'POST':
+        list_buy = filter_stock_muanual() 
+    data = {'list_buy': list_buy}
+    return render(request, 'stocklist/getsignal.html', data)
 
 
 

@@ -105,6 +105,7 @@ def breakout_strategy_otmed(df, risk):
 
 
 def filter_stock_muanual( risk = 0.03):
+    print('đang chạy')
     strategy= StrategyTrading.objects.filter(name = 'Breakout', risk = risk).first()
     now = datetime.today()
     date_filter = now.date()
@@ -115,6 +116,7 @@ def filter_stock_muanual( risk = 0.03):
     # Kiểm tra điều kiện để thực hiện hàm get_info_stock_price_filter()
     if 0 <= now.weekday() <= 4 and 9 <= now.hour <= 15 and time_difference > 900:
         get_info_stock_price_filter()
+        print('tải data xong')
         save_fa_valuation()
     stock_prices = StockPriceFilter.objects.all().values()
     # lọc ra top cổ phiếu có vol>100k
@@ -152,6 +154,7 @@ def filter_stock_muanual( risk = 0.03):
             bot.send_message(
                 chat_id='-870288807', 
                 text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
+    print('Cổ phiếu là:', buy_today)
     return buy_today
      
 
