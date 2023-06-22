@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tìm tín hiệu mới</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <h1>Lọc tín hiệu</h1>
+    <button id="execute-btn">Lọc cổ phiếu</button>
+    <ul id="stock-list"></ul>
+
+    <script>
+        $(document).ready(function() {
+            $('#execute-btn').click(function() {
+                // Hiển thị popup "Đang lấy dữ liệu"
+                Swal.fire({
+                    title: 'Đang lấy dữ liệu',
+                    allowOutsideClick: false,
+                    onBeforeOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Gửi yêu cầu POST đến view 'get_signal'
+                $.post('/get_signal/', {csrfmiddlewaretoken: '{{ csrf_token }}'}, function(data) {
+                    // Ẩn popup khi yêu cầu thành công
+                    Swal.close();
+
+                    // Hiển thị danh sách cổ phiếu
+                    var stockList = data.list_buy;
+                    var stockListHTML = '';
+                    if (stockList.length > 0) {
+                        stockList.forEach(function(stock) {
+                            stockListHTML += '<li>' + stock + '</li>';
+                        });
+                    } else {
+                        stockListHTML = '<li>Không có cổ phiếu nào.</li>';
+                    }
+                    $('#stock-list').html(stockListHTML);
+                }).fail(function(xhr, status, error) {
+                    // Ẩn popup khi yêu cầu thất bại và hiển thị popup lỗi
+                    Swal.close();
+                    Swal.fire({
+                        title: 'Có lỗi xảy ra',
+                        text: 'Lỗi: ' + error,
+                        icon: 'error'
+                    });
+                });
+            });
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.1.5/dist/sweetalert2.min.js"></script>
+</body>
+</html>
