@@ -18,7 +18,7 @@ class SignaldailyAdmin(admin.ModelAdmin):
         return price
     
     
-    @admin.display(description="Điểm tổng hợp")
+    @admin.display(description="Điểm kỹ thuật")
     def rating_total(self, obj):
         point = OverviewBacktest.objects.filter(ticker = obj.ticker).first().rating_total
         return point
@@ -32,6 +32,10 @@ class SignaldailyAdmin(admin.ModelAdmin):
             ratio = round((price/ obj.close - 1) * 100, 2)
         return ratio
     
+    @admin.display(description="Điểm cơ bản") 
+    def rating_fundamental(self, obj):
+        fa = StockFundamentalData.objects.filter(ticker = obj.ticker).first()
+        return fa.fundamental_rating
     
     def view_transactions(self, obj):
         url = reverse('admin:stocklist_overviewbacktest_changelist') + f'?ticker={obj.ticker}'
@@ -50,9 +54,7 @@ class OverviewBacktestAdmin(admin.ModelAdmin):
         queryset = super().get_queryset(request)
         return queryset.filter(total_trades__gt=0)
     
-    def rating_fundamental(self, obj):
-        fa = StockFundamentalData.objects.filter(ticker = obj.ticker).first()
-        return fa.fundamental_rating
+    
 
 
     
@@ -60,8 +62,7 @@ class OverviewBacktestAdmin(admin.ModelAdmin):
         url = reverse('admin:stocklist_transactionbacktest_changelist') + f'?ticker={obj.ticker}'
         return format_html('<a href="{}">Xem giao dịch</a>', url)
     view_transactions.short_description = 'Xem giao dịch'
-    rating_fundamental.short_description = 'Điểm cơ bản'
-
+   
     
    
     
