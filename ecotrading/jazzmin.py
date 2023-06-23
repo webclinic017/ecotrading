@@ -42,8 +42,8 @@ JAZZMIN_SETTINGS = {
         # Url that gets reversed (Permissions can be added)
         {"name": "Trang chủ",  "url": "admin:index", "permissions": ["auth.view_user"]},
         # external url that opens in a new window (Permissions can be added)
-        {"name": "Tính khối lượng", "url": "http://ecotrading.com.vn/calculator-qty", "new_window": True},
-        #{"name": "Calendar", "url":"http://linhtrangbridal.online/calendar/", "new_window": True},
+        {"name": "Tính khối lượng", "url": "http://103.176.251.105/calculator-qty", "new_window": True},
+        {"name": "Lọc cổ phiếu", "url":"http://103.176.251.105/get_signal/", "new_window": True},
         # model admin to link to (Permissions checked against model)
         {"model": "order.Cart"},
 
