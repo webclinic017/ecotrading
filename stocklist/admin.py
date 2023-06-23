@@ -27,7 +27,7 @@ class SignaldailyAdmin(admin.ModelAdmin):
     def wavefoot(self, obj):
         price = price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
         if obj.is_cutloss == True:
-            ratio = obj.ratio_cutloss*-1
+            ratio = obj.ratio_cutloss*-100
         else:
             ratio = round((price/ obj.close - 1) * 100, 2)
         return ratio
