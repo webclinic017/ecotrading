@@ -9,6 +9,8 @@ from stocklist.models import  *
 import talib
 import numpy as np
 
+
+
 def save_fa_valuation():
     fa = StockFundamentalData.objects.all()
     for self in fa:
@@ -220,11 +222,18 @@ def filter_stock_daily(risk=0.03):
                 date = ticker['date'],
                 milestone =ticker['milestone'],
                 signal = ticker['signal'],
-                ratio_cutloss = ticker['ratio_cutloss'],
+                ratio_cutloss = round(ticker['ratio_cutloss'],2),
                 strategy = strategy
              )
              
     return          
 
-
+@receiver(post_save, sender=DividendManage)
+def adjust_dividend(sender, instance, created, **kwargs):
+    if not created:
+        signal = Signaldaily.objects.filter(ticker = instance.ticker, is_cutloss = False, date_lte= instance.date_apply )
+        for stock in signal:
+            stock.close = round((stock.close + instance.price_option*instance.stock_option - instance.cash)/(1+instance.stock+instance.stock_option),2)
+            stock.cutloss_price = round(stock.close*(100-stock.ratio_cutloss)/100,2)
+            stock.save()
 

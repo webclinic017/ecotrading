@@ -88,9 +88,13 @@ class AccountAdmin(admin.ModelAdmin):
         return format_html("<a href='{}' target='_blank' style='background-color: #007bff; border-radius: 5px; color: white; padding: 5px;'>Xem Tài Khoản</a>", url)
     title_with_link.short_description = 'Thông tin Tài Khoản'
     
-
+class DividendManageAdmin(admin.ModelAdmin):
+    model = DividendManage
+    
 
 # Register your models here.
+
+admin.site.register(DividendManage,DividendManageAdmin)
 admin.site.register(CashTrasfer,CashTrasferAdmin)
 admin.site.register(Transaction,TransactionAdmin)
 admin.site.register(Account,AccountAdmin)
