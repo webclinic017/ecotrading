@@ -231,7 +231,7 @@ def filter_stock_daily(risk=0.03):
 @receiver(post_save, sender=DividendManage)
 def adjust_dividend(sender, instance, created, **kwargs):
     if not created:
-        signal = Signaldaily.objects.filter(ticker = instance.ticker, is_cutloss = False, date_lte= instance.date_apply )
+        signal = Signaldaily.objects.filter(ticker = instance.ticker, is_cutloss = False, date__lte= instance.date_apply )
         for stock in signal:
             stock.close = round((stock.close + instance.price_option*instance.stock_option - instance.cash)/(1+instance.stock+instance.stock_option),2)
             stock.cutloss_price = round(stock.close*(100-stock.ratio_cutloss)/100,2)
