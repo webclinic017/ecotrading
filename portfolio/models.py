@@ -651,15 +651,16 @@ class DividendManage(models.Model):
         ('stock', 'stock'),
         ('option','option')
     ]
-    ticker = models.CharField(max_length=10)
+    ticker =  models.CharField(max_length=8, choices=LIST_STOCK, null=False, blank=False,verbose_name = 'Cổ phiếu')
     type = models.CharField(max_length=20, choices=DIVIDEND_CHOICES, null=False, blank=False)
     date_apply = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
-    cash = models.FloatField(null= True, blank=True)
-    stock = models.FloatField(null= True, blank=True)
-    price_option = models.FloatField(null= True, blank=True)
-    stock_option = models.FloatField(null= True, blank=True)
+    cash = models.FloatField(null= False, blank=False, default=0)
+    stock = models.FloatField(null= False, blank=False, default=0)
+    price_option = models.FloatField(null= False, blank=False, default=0)
+    stock_option = models.FloatField(null= False, blank=False, default=0)
+    
     def __str__(self):
         return str(self.ticker) +str("_")+ str(self.date_apply)
         
