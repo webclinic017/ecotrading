@@ -90,6 +90,7 @@ class AccountAdmin(admin.ModelAdmin):
     
 class DividendManageAdmin(admin.ModelAdmin):
     model = DividendManage
+    list_display = ['ticker','type','date_apply','modified_at','created_at']
     
 
 # Register your models here.
