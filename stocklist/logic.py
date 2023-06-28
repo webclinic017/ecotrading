@@ -267,24 +267,25 @@ def save_event_stock(stock):
                 list_event.append(dividend)
                 event = dividend['event']
                 ex_rights_date = datetime.strptime(dividend['ex_rights_date'], '%d/%m/%Y').date()
-                if 'tiền' in event:
-                    dividend_type = 'cash'
-                    cash = re.findall(r'\d+', event)  # Tìm tất cả các giá trị số trong chuỗi
-                    if cash:
-                        value1 = int(cash[-1])/1000  # Lấy giá trị số đầu tiên
-                        cash_value += value1
-                elif 'cổ phiếu' in event and 'phát hành' not in event:
-                    dividend_type = 'stock'
-                    stock_values = re.findall(r'\d+', event)
-                    if stock_values:
-                        value2 = int(stock_values[-1])/int(stock_values[-2])
-                        stock_value += value2
-                elif 'cổ phiếu' in event and 'giá' in event and 'tỷ lệ' in event:
-                    dividend_type = 'option'
-                    option = re.findall(r'\d+', event)
-                    if option:
-                            stock_option_value = int(option[-2])/int(option[-3])
-                            price_option_value = int(option[-1])
+                if ex_rights_date == datetime.now().date():
+                    if 'tiền' in event:
+                        dividend_type = 'cash'
+                        cash = re.findall(r'\d+', event)  # Tìm tất cả các giá trị số trong chuỗi
+                        if cash:
+                            value1 = int(cash[-1])/1000  # Lấy giá trị số đầu tiên
+                            cash_value += value1
+                    elif 'cổ phiếu' in event and 'phát hành' not in event:
+                        dividend_type = 'stock'
+                        stock_values = re.findall(r'\d+', event)
+                        if stock_values:
+                            value2 = int(stock_values[-1])/int(stock_values[-2])
+                            stock_value += value2
+                    elif 'cổ phiếu' in event and 'giá' in event and 'tỷ lệ' in event:
+                        dividend_type = 'option'
+                        option = re.findall(r'\d+', event)
+                        if option:
+                                stock_option_value = int(option[-2])/int(option[-3])
+                                price_option_value = int(option[-1])
         if dividend_type == 'order':
             pass
         else:
