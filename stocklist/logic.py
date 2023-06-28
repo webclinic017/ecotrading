@@ -284,7 +284,9 @@ def save_event_stock(stock):
                     if option:
                             stock_option_value = int(option[-2])/int(option[-3])
                             price_option_value = int(option[-1])
-        if dividend_type != 'order':
+        if dividend_type == 'order':
+            pass
+        else:
             DividendManage.objects.update_or_create(
                         ticker= stock,  # Thay thế 'Your_Ticker_Value' bằng giá trị ticker thực tế
                         date_apply=ex_rights_date,
