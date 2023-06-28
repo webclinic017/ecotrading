@@ -267,7 +267,7 @@ def save_event_stock(stock):
                 list_event.append(dividend)
                 event = dividend['event']
                 ex_rights_date = datetime.strptime(dividend['ex_rights_date'], '%d/%m/%Y').date()
-                if ex_rights_date == datetime.now().date() +timedelta(days=1) :
+                if ex_rights_date == datetime.now().date():
                     if 'tiền' in event:
                         dividend_type = 'cash'
                         cash = re.findall(r'\d+', event)  # Tìm tất cả các giá trị số trong chuỗi
