@@ -252,6 +252,7 @@ def save_event_stock(stock):
         stock_value=0
         stock_option_value=0
         price_option_value=0
+        dividend_type = 'order'
         for row in rows[1:]:  # Bắt đầu từ vị trí thứ hai (loại bỏ dòng tiêu đề)
             dividend  = {}
             columns = row.find_all('td')  # Lấy tất cả các cột trong dòng

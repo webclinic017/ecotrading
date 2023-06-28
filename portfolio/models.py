@@ -649,7 +649,9 @@ class DividendManage(models.Model):
     DIVIDEND_CHOICES = [
         ('cash', 'cash'),
         ('stock', 'stock'),
-        ('option','option')
+        ('option','option'),
+        ('order','order'),
+
     ]
     ticker =  models.CharField(max_length=8, choices=LIST_STOCK, null=False, blank=False,verbose_name = 'Cổ phiếu')
     type = models.CharField(max_length=20, choices=DIVIDEND_CHOICES, null=False, blank=False)
