@@ -231,18 +231,18 @@ def filter_stock_daily(risk=0.03):
              
     return          
 
-# @receiver(post_save, sender=DividendManage)
-# def adjust_dividend(sender, instance, created, **kwargs):
-#     if not created:
-#         signal = Signaldaily.objects.filter(ticker = instance.ticker, is_cutloss = False, date__lte= instance.date_apply )
-#         bot = bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk') 
-#         for stock in signal:
-#             stock.close = round((stock.close + instance.price_option*instance.stock_option - instance.cash)/(1+instance.stock+instance.stock_option),2)
-#             stock.cutloss_price = round(stock.close*(100-stock.ratio_cutloss)/100,2)
-#             stock.save()
-#             bot.send_message(
-#                     chat_id='-870288807', 
-#                     text=f"Đã điều chỉnh tín hiệu cổ phiếu {stock} khi có quyền cổ tức phát sinh")
+@receiver(post_save, sender=DividendManage)
+def adjust_dividend(sender, instance, created, **kwargs):
+    if not created:
+        signal = Signaldaily.objects.filter(ticker = instance.ticker, is_cutloss = False, date__lte= instance.date_apply, is_adjust_divident=False )
+        bot = bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk') 
+        for stock in signal:
+            stock.close = round((stock.close + instance.price_option*instance.stock_option - instance.cash)/(1+instance.stock+instance.stock_option),2)
+            stock.cutloss_price = round(stock.close*(100-stock.ratio_cutloss)/100,2)
+            stock.save()
+            bot.send_message(
+                    chat_id='-870288807', 
+                    text=f"Đã điều chỉnh tín hiệu cổ phiếu {stock} khi có quyền cổ tức phát sinh")
 
 def save_event_stock(stock):
     list_event =[]
@@ -304,18 +304,5 @@ def check_dividend():
     signal = Signaldaily.objects.filter(is_cutloss = False)
     for stock in signal:
         dividend = save_event_stock(stock.ticker)
-        if dividend:
-            instance = DividendManage.objects.filter(ticker = stock).order_by('-date_apply').first()
-            if instance:
-                signal_adjust = Signaldaily.objects.filter(ticker = instance.ticker, is_cutloss = False, date__lte= instance.date_apply, is_adjust_divident = False )
-                bot = bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk') 
-                for stock in signal_adjust:
-                    stock.close = round((stock.close + instance.price_option*instance.stock_option - instance.cash)/(1+instance.stock+instance.stock_option),2)
-                    stock.cutloss_price = round(stock.close*(100-stock.ratio_cutloss)/100,2)
-                    stock.save()
-                    bot.send_message(
-                            chat_id='-870288807', 
-                            text=f"Đã điều chỉnh tín hiệu cổ phiếu {stock} khi có quyền cổ tức phát sinh")
-
-        
+    
         
