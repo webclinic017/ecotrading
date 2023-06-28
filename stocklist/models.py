@@ -33,6 +33,7 @@ class Signaldaily(models.Model):
     modified_date = models.DateTimeField(auto_now=True, verbose_name = 'Ngày tạo')
     is_cutloss = models.BooleanField(default=False)
     cutloss_price = models.FloatField(default=0, verbose_name ='Giá cắt lỗ')
+    is_adjust_divident = models.BooleanField(default=False)
     
     class Meta:
         verbose_name = 'Tín hiệu giao dịch'
