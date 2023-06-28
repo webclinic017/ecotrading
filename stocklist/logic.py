@@ -1,4 +1,5 @@
 import math
+import re
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
@@ -8,6 +9,8 @@ from django.db.models import F
 from stocklist.models import  *
 import talib
 import numpy as np
+import requests
+from bs4 import BeautifulSoup
 
 
 
@@ -237,3 +240,61 @@ def adjust_dividend(sender, instance, created, **kwargs):
             stock.cutloss_price = round(stock.close*(100-stock.ratio_cutloss)/100,2)
             stock.save()
 
+def save_event_stock(stock):
+    list_event =[]
+    linkbase= 'https://www.stockbiz.vn/MarketCalendar.aspx?Symbol='+ stock
+    r = requests.get(linkbase)
+    soup = BeautifulSoup(r.text,'html.parser')
+    table = soup.find('table', class_='dataTable')  # Tìm bảng chứa thông tin
+    if table:
+        rows = table.find_all('tr')  # Lấy tất cả các dòng trong bảng (loại bỏ dòng tiêu đề)
+        cash_value= 0
+        stock_value=0
+        stock_option_value=0
+        price_option_value=0
+        for row in rows[1:]:  # Bắt đầu từ vị trí thứ hai (loại bỏ dòng tiêu đề)
+            dividend  = {}
+            columns = row.find_all('td')  # Lấy tất cả các cột trong dòng
+            if len(columns) >= 3:  # Kiểm tra số lượng cột
+                dividend['ex_rights_date'] = columns[0].get_text(strip=True)
+                dividend['event'] = columns[4].get_text(strip=True)
+                list_event.append(dividend)
+                event = dividend['event']
+                ex_rights_date = datetime.strptime(dividend['ex_rights_date'], '%d/%m/%Y').date()
+                if 'tiền' in event:
+                    dividend_type = 'cash'
+                    cash = re.findall(r'\d+', event)  # Tìm tất cả các giá trị số trong chuỗi
+                    if cash:
+                        value1 = int(cash[-1])/1000  # Lấy giá trị số đầu tiên
+                        cash_value += value1
+                elif 'cổ phiếu' in event and 'phát hành' not in event:
+                    dividend_type = 'stock'
+                    stock_values = re.findall(r'\d+', event)
+                    if stock_values:
+                        value2 = int(stock_values[-1])/int(stock_values[-2])
+                        stock_value += value2
+                elif 'cổ phiếu' in event and 'giá' in event and 'tỷ lệ' in event:
+                    dividend_type = 'option'
+                    option = re.findall(r'\d+', event)
+                    if option:
+                            stock_option_value = int(option[-2])/int(option[-3])
+                            price_option_value = int(option[-1])
+        DividendManage.objects.update_or_create(
+                        ticker= stock,  # Thay thế 'Your_Ticker_Value' bằng giá trị ticker thực tế
+                        date_apply=ex_rights_date,
+                        defaults={
+                            'type': dividend_type,
+                            'cash': cash_value,
+                            'stock': stock_value,
+                            'price_option': price_option_value,
+                            'stock_option':stock_option_value
+                        }
+                    )
+    return list_event
+
+def check_dividend():
+    signal = Signaldaily.objects.filter(is_cutloss = False)
+    for stock in signal:
+        dividend = save_event_stock(stock.ticker)
+    
+        
