@@ -10,6 +10,7 @@ class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
     list_display = ('date','ticker','signal','close','market_price','wavefoot','ratio_cutloss','cutloss_price','rating_total','rating_fundamental', 'is_cutloss','view_transactions')
     list_filter = ('date',)
+    search_fields =['ticker',]
     def get_search_results(self, request, queryset, search_term):
         # Xử lý khi search_term không trống
         if search_term:
