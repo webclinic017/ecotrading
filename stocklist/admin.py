@@ -10,7 +10,7 @@ class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
     list_display = ('date','ticker','signal','close','market_price','wavefoot','ratio_cutloss','cutloss_price','rating_total','rating_fundamental', 'is_cutloss','view_transactions')
     list_filter = ('date',)
-    search_fields = ['ticker']
+    search_fields = ['ticker__in']
 
     @admin.display(description="Giá hiện tại")
     def market_price(self, obj):
