@@ -10,7 +10,22 @@ class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
     list_display = ('date','ticker','signal','close','market_price','wavefoot','ratio_cutloss','cutloss_price','rating_total','rating_fundamental', 'is_cutloss','view_transactions')
     list_filter = ('date',)
-    search_fields = ['ticker__in']
+    def get_search_results(self, request, queryset, search_term):
+        # Xử lý khi search_term không trống
+        if search_term:
+            # Tách các giá trị ticker thành một danh sách
+            tickers = search_term.split(',')
+
+            # Sử dụng Q objects để tạo ra điều kiện OR cho mỗi ticker
+            q_objects = Q()
+            for ticker in tickers:
+                q_objects |= Q(ticker__iexact=ticker.strip())
+
+            # Áp dụng điều kiện tìm kiếm
+            queryset = queryset.filter(q_objects)
+
+        # Trả về kết quả tìm kiếm
+        return queryset, False
 
     @admin.display(description="Giá hiện tại")
     def market_price(self, obj):
