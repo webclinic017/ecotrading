@@ -266,7 +266,7 @@ def save_event_stock(stock):
                 dividend['ex_rights_date'] = columns[0].get_text(strip=True)
                 dividend['event'] = columns[4].get_text(strip=True)
                 list_event.append(dividend)
-                event = dividend['event']
+                event = dividend['event'].lower()
                 ex_rights_date = datetime.strptime(dividend['ex_rights_date'], '%d/%m/%Y').date()
                 if ex_rights_date == datetime.now().date():
                     if 'tiền' in event:
