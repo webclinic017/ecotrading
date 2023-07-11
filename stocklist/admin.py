@@ -8,7 +8,7 @@ from django.utils.html import format_html
 
 class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
-    list_display = ('date','ticker','signal','close','market_price','wavefoot','ratio_cutloss','cutloss_price','rating_total','rating_fundamental', 'is_cutloss','view_transactions')
+    list_display = ('date','ticker','signal','close','market_price','wavefoot','ratio_cutloss','rating_total','rating_fundamental', 'is_closed','view_transactions')
     list_filter = ('date',)
     search_fields =['ticker',]
     def get_search_results(self, request, queryset, search_term):
@@ -42,8 +42,11 @@ class SignaldailyAdmin(admin.ModelAdmin):
     @admin.display(description="% tăng/giảm")
     def wavefoot(self, obj):
         price = price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
-        if obj.is_cutloss == True:
-            ratio = round(obj.ratio_cutloss*-1,2)
+        if obj.is_closed == True:
+            if obj.noted == 'Cắt lỗ':
+                ratio = round(obj.ratio_cutloss*-1,2)
+            elif obj.noted =='Chốt lời':    
+                ratio = round(obj.ratio_cutloss*2,2)
         else:
             ratio = round((price/ obj.close - 1) * 100, 2)
         return ratio
