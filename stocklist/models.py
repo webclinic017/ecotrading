@@ -31,7 +31,7 @@ class Signaldaily(models.Model):
     ratio_cutloss = models.FloatField(default=0, verbose_name = 'Tỷ lệ cắt lỗ tối ưu')
     strategy = models.ForeignKey(StrategyTrading,on_delete=models.CASCADE, null=True, blank=True, verbose_name = 'Chiến lược')
     modified_date = models.DateTimeField(auto_now=True, verbose_name = 'Ngày tạo')
-    is_closed = models.BooleanField(default=False)
+    is_closed = models.BooleanField(default=False, verbose_name='Đã chốt')
     cutloss_price = models.FloatField(default=0, verbose_name ='Giá cắt lỗ')
     take_profit_price = models.FloatField(default=0, verbose_name ='Giá chốt lời')
     is_adjust_divident = models.BooleanField(default=False)

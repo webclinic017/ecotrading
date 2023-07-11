@@ -9,7 +9,7 @@ from django.utils.html import format_html
 class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
     list_display = ('date','ticker','signal','close','market_price','wavefoot','ratio_cutloss','rating_total','rating_fundamental', 'is_closed','view_transactions')
-    list_filter = ('date',)
+    list_filter = ('date','is_closed',)
     search_fields =['ticker',]
     def get_search_results(self, request, queryset, search_term):
         # Xử lý khi search_term không trống
@@ -24,7 +24,6 @@ class SignaldailyAdmin(admin.ModelAdmin):
 
             # Áp dụng điều kiện tìm kiếm
             queryset = queryset.filter(q_objects)
-
         # Trả về kết quả tìm kiếm
         return queryset, False
 
@@ -41,7 +40,7 @@ class SignaldailyAdmin(admin.ModelAdmin):
     
     @admin.display(description="% tăng/giảm")
     def wavefoot(self, obj):
-        price = price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
+        price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
         if obj.is_closed == True:
             if obj.noted == 'Cắt lỗ':
                 ratio = round(obj.ratio_cutloss*-1,2)
