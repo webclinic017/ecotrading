@@ -52,7 +52,7 @@ class Signaldaily(models.Model):
 @receiver(post_save, sender=StockPriceFilter)
 def create_cutloss_signal(sender, instance, created, **kwargs):
     if not created:
-        signal  = Signaldaily.objects.filter(ticker=instance.ticker, strategy=1,is_cutloss=False )  
+        signal  = Signaldaily.objects.filter(ticker=instance.ticker, strategy=1,is_closed=False )  
         for stock in signal:
             stock.cutloss_price = round(stock.close*(100-stock.ratio_cutloss)/100,2)
             stock.take_profit_price = round(stock.close*(1+stock.ratio_cutloss*2),2)
