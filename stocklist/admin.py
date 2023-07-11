@@ -47,6 +47,8 @@ class SignaldailyAdmin(admin.ModelAdmin):
                 ratio = round(obj.ratio_cutloss*-1,2)
             elif obj.noted =='Chốt lời':    
                 ratio = round(obj.ratio_cutloss*2,2)
+            else:
+                ratio = 0
         else:
             ratio = round((price/ obj.close - 1) * 100, 2)
         return ratio
