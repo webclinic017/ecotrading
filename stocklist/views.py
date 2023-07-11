@@ -588,3 +588,5 @@ def get_qty_buy(request):
 
     return render(request, 'stocklist/calculator.html')
 
+def static_page_info_bot(request):
+    return render(request, 'stocklist\static_info_bot.html')

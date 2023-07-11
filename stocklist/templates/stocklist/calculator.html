@@ -1,8 +1,7 @@
-<!-- calculator.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Tính khối lượng mua</title>
+{% extends 'admin/base_site.html' %}
+{% block content %}
+
+  
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -39,7 +38,7 @@
     </script>
 </head>
 <body>
-    <h1>Tính khối lượng mua</h1>
+    <h1>Tính khối lượng mua cổ phiếu theo quản trị vốn</h1> 
     <form id="calculate-form" method="POST">
         {% csrf_token %}
         <label for="nav">Vốn:</label>
@@ -50,5 +49,4 @@
         <input type="number" id="price" name="price"><br><br>
         <button type="submit">Thực hiện</button>
     </form>
-</body>
-</html>
+{% endblock %}

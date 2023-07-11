@@ -36,6 +36,7 @@ class Signaldaily(models.Model):
     take_profit_price = models.FloatField(default=0, verbose_name ='Giá chốt lời')
     is_adjust_divident = models.BooleanField(default=False)
     noted = models.CharField(max_length=20,null=True, blank=True )
+    date_closed_deal = models.DateField(null=True, blank=True)
     
     class Meta:
         verbose_name = 'Tín hiệu giao dịch'
@@ -58,9 +59,11 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
             if stock.cutloss_price >= instance.close:
                 stock.is_closed = True
                 stock.noted = 'Cắt lỗ'
+                stock.date_closed_deal = datetime.now().date()
             elif stock.take_profit_price<= instance.close:
                 stock.is_closed = True
                 stock.noted = 'Chốt lời'
+                stock.date_closed_deal = datetime.now().date()
             stock.save()
 
 
