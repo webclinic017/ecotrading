@@ -142,6 +142,9 @@ def filter_stock_muanual( risk = 0.03):
             data['signal'] = 'buy'
             data['milestone'] = row['milestone']
             data['ratio_cutloss'] = round(row['param_ratio_cutloss']*100,0)
+            signal_previous = Signaldaily.objects.filter(ticker=data['ticker'],strategy=strategy ,is_closed =False ).order_by('-date').first()
+            if signal_previous:
+                data['signal'] = 'Tăng tỷ trọng'
             lated_signal = Signaldaily.objects.filter(ticker=data['ticker'],strategy=strategy , date = date_filter).order_by('-date').first()
             #check nếu không có tín hiệu nào trước đó hoặc tín hiệu đã có nhưng ngược với tín hiệu hiện tại 
             if lated_signal is None:
@@ -158,7 +161,7 @@ def filter_stock_muanual( risk = 0.03):
            # gửi tín hiệu vào telegram
             bot.send_message(
                 chat_id='-870288807', 
-                text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
+                text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
     print('Cổ phiếu là:', buy_today)
     return buy_today
      
