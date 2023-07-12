@@ -53,6 +53,7 @@ class Signaldaily(models.Model):
 def create_cutloss_signal(sender, instance, created, **kwargs):
     if not created:
         signal  = Signaldaily.objects.filter(ticker=instance.ticker, strategy=1,is_closed=False )  
+        bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk') 
         for stock in signal:
             stock.cutloss_price = round(stock.close*(100-stock.ratio_cutloss)/100,2)
             stock.take_profit_price = round(stock.close*(1+stock.ratio_cutloss/100*2),2)
@@ -60,10 +61,16 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
                 stock.is_closed = True
                 stock.noted = 'Cắt lỗ'
                 stock.date_closed_deal = datetime.now().date()
+                bot.send_message(
+                    chat_id='-870288807', 
+                    text=f"Đã CẮT LỖ tín hiệu mua {stock.ticker}")
             elif stock.take_profit_price<= instance.close:
                 stock.is_closed = True
                 stock.noted = 'Chốt lời'
                 stock.date_closed_deal = datetime.now().date()
+                bot.send_message(
+                    chat_id='-870288807', 
+                    text=f"Đã CHỐT LỜI tín hiệu mua {stock.ticker}")
             stock.save()
 
 
