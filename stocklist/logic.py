@@ -139,7 +139,7 @@ def filter_stock_muanual( risk = 0.03):
             data['ticker'] = row['ticker']
             data['close'] = row['close']
             data['date'] = row['date']
-            data['signal'] = 'buy'
+            data['signal'] = 'Mua mới'
             data['milestone'] = row['milestone']
             data['ratio_cutloss'] = round(row['param_ratio_cutloss']*100,0)
             signal_previous = Signaldaily.objects.filter(ticker=data['ticker'],strategy=strategy ,is_closed =False ).order_by('-date').first()
