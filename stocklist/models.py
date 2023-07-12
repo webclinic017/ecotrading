@@ -55,7 +55,7 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
         signal  = Signaldaily.objects.filter(ticker=instance.ticker, strategy=1,is_closed=False )  
         for stock in signal:
             stock.cutloss_price = round(stock.close*(100-stock.ratio_cutloss)/100,2)
-            stock.take_profit_price = round(stock.close*(1+stock.ratio_cutloss*2),2)
+            stock.take_profit_price = round(stock.close*(1+stock.ratio_cutloss/100*2),2)
             if stock.cutloss_price >= instance.close:
                 stock.is_closed = True
                 stock.noted = 'Cắt lỗ'
