@@ -27,7 +27,7 @@ class Signaldaily(models.Model):
     date = models.DateField(verbose_name = 'Ngày cho tín hiệu')
     close = models.FloatField(default=0, verbose_name = 'Giá mua')
     milestone = models.FloatField(default=0, verbose_name = 'Mốc an toàn')
-    signal = models.CharField(max_length=10, verbose_name = 'Tín hiệu')
+    signal = models.CharField(max_length=50, verbose_name = 'Tín hiệu')
     ratio_cutloss = models.FloatField(default=0, verbose_name = 'Tỷ lệ cắt lỗ tối ưu')
     strategy = models.ForeignKey(StrategyTrading,on_delete=models.CASCADE, null=True, blank=True, verbose_name = 'Chiến lược')
     modified_date = models.DateTimeField(auto_now=True, verbose_name = 'Ngày tạo')

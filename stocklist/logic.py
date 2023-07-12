@@ -231,7 +231,6 @@ def filter_stock_daily(risk=0.03):
                 ratio_cutloss = round(ticker['ratio_cutloss'],2),
                 strategy = strategy
              )
-             
     return          
 
 @receiver(post_save, sender=DividendManage)
