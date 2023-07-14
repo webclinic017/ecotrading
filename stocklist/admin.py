@@ -8,8 +8,8 @@ from django.utils.html import format_html
 
 class SignaldailyAdmin(admin.ModelAdmin):
     model = Signaldaily
-    list_display = ('date','ticker','signal','close','market_price','wavefoot','ratio_cutloss','rating_total','rating_fundamental', 'is_closed','view_transactions')
-    list_filter = ('date','is_closed',)
+    list_display = ('date','ticker','signal','close','market_price','wavefoot','ratio_cutloss','rating_total','rating_fundamental', 'is_closed','noted','view_transactions')
+    list_filter = ('date','is_closed','noted')
     search_fields =['ticker',]
     def get_search_results(self, request, queryset, search_term):
         # Xử lý khi search_term không trống
