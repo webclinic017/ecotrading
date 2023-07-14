@@ -23,6 +23,9 @@ class StrategyTrading(models.Model):
 
 
 class Signaldaily(models.Model):
+    STATUS = [
+        ('takeprofit', 'Chốt lời'),
+        ('cutloss', 'Cắt lỗ'),]
     ticker = models.CharField(max_length=10, verbose_name = 'Cổ phiếu')
     date = models.DateField(verbose_name = 'Ngày cho tín hiệu')
     close = models.FloatField(default=0, verbose_name = 'Giá mua')
@@ -35,7 +38,7 @@ class Signaldaily(models.Model):
     cutloss_price = models.FloatField(default=0, verbose_name ='Giá cắt lỗ')
     take_profit_price = models.FloatField(default=0, verbose_name ='Giá chốt lời')
     is_adjust_divident = models.BooleanField(default=False)
-    noted = models.CharField(max_length=20,null=True, blank=True )
+    noted = models.CharField(max_length=20, choices=STATUS, null=True, blank=True, verbose_name='Trạng thái')
     date_closed_deal = models.DateField(null=True, blank=True)
     
     class Meta:

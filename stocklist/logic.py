@@ -297,5 +297,9 @@ def check_dividend():
     signal = Signaldaily.objects.filter(is_closed = False)
     for stock in signal:
         dividend = save_event_stock(stock.ticker)
+    dividend_today = DividendManage.objects.filter(date_apply =datetime.now().date() )
+    for i in dividend_today:
+        i.save()
+        
     
         
