@@ -62,14 +62,14 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
             stock.take_profit_price = round(stock.close*(1+stock.ratio_cutloss/100*2),2)
             if stock.cutloss_price >= instance.close:
                 stock.is_closed = True
-                stock.noted = 'Cắt lỗ'
+                stock.noted = 'cutloss'
                 stock.date_closed_deal = datetime.now().date()
                 bot.send_message(
                     chat_id='-870288807', 
                     text=f"Đã CẮT LỖ tín hiệu mua {stock.ticker}")
             elif stock.take_profit_price<= instance.close:
                 stock.is_closed = True
-                stock.noted = 'Chốt lời'
+                stock.noted = 'takeprofit'
                 stock.date_closed_deal = datetime.now().date()
                 bot.send_message(
                     chat_id='-870288807', 
