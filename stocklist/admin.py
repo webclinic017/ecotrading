@@ -42,9 +42,9 @@ class SignaldailyAdmin(admin.ModelAdmin):
     def wavefoot(self, obj):
         price = obj.market_price
         if obj.is_closed == True:
-            if obj.noted == 'Cắt lỗ':
+            if obj.noted == 'cutloss':
                 ratio = round(obj.ratio_cutloss*-1,2)
-            elif obj.noted =='Chốt lời':    
+            elif obj.noted =='takeprofit':    
                 ratio = round(obj.ratio_cutloss*2,2)
             else:
                 ratio = 0
