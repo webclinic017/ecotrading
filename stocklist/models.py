@@ -40,6 +40,7 @@ class Signaldaily(models.Model):
     is_adjust_divident = models.BooleanField(default=False)
     noted = models.CharField(max_length=20, choices=STATUS, null=True, blank=True, verbose_name='Trạng thái')
     date_closed_deal = models.DateField(null=True, blank=True)
+    market_price = models.FloatField(default=0, verbose_name = 'Giá thị trường')
     
     class Meta:
         verbose_name = 'Tín hiệu giao dịch'

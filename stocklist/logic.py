@@ -108,6 +108,14 @@ def breakout_strategy_otmed(df, risk):
     df['signal'] = np.where(buy, 'buy', 'newtral')
     return df
 
+def get_stock_price_and_save():
+    get_info_stock_price_filter()
+    signal = Signaldaily.objects.all()
+    for stock in signal:
+        price = StockPriceFilter.objects.filter(ticker = stock.ticker).first()
+        stock.market_price = price.close
+        stock.save()
+        
 
 def filter_stock_muanual( risk = 0.03):
     print('đang chạy')
@@ -120,7 +128,7 @@ def filter_stock_muanual( risk = 0.03):
     time_difference = (now - latest_update).total_seconds()
     # Kiểm tra điều kiện để thực hiện hàm get_info_stock_price_filter()
     if 0 <= now.weekday() <= 4 and 9 <= now.hour <= 15 and time_difference > 900:
-        get_info_stock_price_filter()
+        get_stock_price_and_save()
         print('tải data xong')
         save_fa_valuation()
     stock_prices = StockPriceFilter.objects.all().values()
@@ -302,4 +310,4 @@ def check_dividend():
         i.save()
         
     
-        
+ 

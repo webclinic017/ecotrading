@@ -27,10 +27,10 @@ class SignaldailyAdmin(admin.ModelAdmin):
         # Trả về kết quả tìm kiếm
         return queryset, False
 
-    @admin.display(description="Giá hiện tại")
-    def market_price(self, obj):
-        price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
-        return price
+    # @admin.display(description="Giá hiện tại")
+    # def market_price(self, obj):
+    #     price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
+    #     return price
     
     
     @admin.display(description="Điểm kỹ thuật")
@@ -40,7 +40,7 @@ class SignaldailyAdmin(admin.ModelAdmin):
     
     @admin.display(description="% tăng/giảm")
     def wavefoot(self, obj):
-        price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
+        price = obj.market_price
         if obj.is_closed == True:
             if obj.noted == 'Cắt lỗ':
                 ratio = round(obj.ratio_cutloss*-1,2)
