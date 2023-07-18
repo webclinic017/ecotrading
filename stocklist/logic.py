@@ -161,7 +161,7 @@ def filter_stock_muanual( risk = 0.03):
                 if back_test:
                     data['rating'] = back_test.rating_total
                     data['fundamental'] = fa.fundamental_rating
-                    if data['rating'] > 50:
+                    if data['rating'] > 50 and data['fundamental']> 50:
                         buy_today.append(data)
     # tạo lệnh mua tự động
     buy_today.sort(key=lambda x: x['rating'], reverse=True)
