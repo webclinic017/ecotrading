@@ -112,7 +112,7 @@ def get_stock_price_and_save():
     get_info_stock_price_filter()
     signal = Signaldaily.objects.all()
     for stock in signal:
-        price = StockPriceFilter.objects.filter(ticker = stock.ticker).first()
+        price = StockPriceFilter.objects.filter(ticker = stock.ticker).order_by('-date_time').first()
         stock.market_price = price.close
         stock.save()
         
