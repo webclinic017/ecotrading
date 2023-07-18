@@ -103,7 +103,7 @@ def breakout_strategy_otmed(df, risk):
         lambda x: x['close'][::-1].rolling(window=x['param_sma'].astype(int).values[0]).mean()[::-1]).reset_index(drop=True)
     df = df.groupby('ticker', group_keys=False).apply(add_test_value)
     df['tsi'].fillna(method='ffill', inplace=True)
-    buy =(df['close'] > df['sma']) & (df['close'] > df['tsi']) & (df['volume'] > df['mavol']*df['param_multiply_volumn']) & (df['mavol'] > 100000) & (df['high']/df['close']-1 < df['param_rate_of_increase']) & (df['close']/df['pre_close']-1 > df['param_change_day'])
+    buy =(df['close'] > 5) & (df['close'] > df['sma']) & (df['close'] > df['tsi']) & (df['volume'] > df['mavol']*df['param_multiply_volumn']) & (df['mavol'] > 100000) & (df['high']/df['close']-1 < df['param_rate_of_increase']) & (df['close']/df['pre_close']-1 > df['param_change_day'])
     cut_loss = df['close'] <= df['close']*(1-df['param_ratio_cutloss'])
     df['signal'] = np.where(buy, 'buy', 'newtral')
     return df
