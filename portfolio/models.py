@@ -325,7 +325,7 @@ def check_status_order(pk):
 
 class BotTelegram (models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name= 'Tên')
-    token = models.CharField(max_length=100, unique=True, verbose_name= 'Token')
+    token = models.CharField(max_length=100, verbose_name= 'Token')
     description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
     owner = models.ForeignKey(User,on_delete=models.CASCADE, verbose_name= 'Chủ bot')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
