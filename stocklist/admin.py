@@ -27,36 +27,6 @@ class SignaldailyAdmin(admin.ModelAdmin):
         # Trả về kết quả tìm kiếm
         return queryset, False
 
-    # @admin.display(description="Giá hiện tại")
-    # def market_price(self, obj):
-    #     price = StockPriceFilter.objects.filter(ticker = obj.ticker).order_by('-date_time').first().close
-    #     return price
-    
-    
-    @admin.display(description="Điểm kỹ thuật")
-    def rating_total(self, obj):
-        point = OverviewBacktest.objects.filter(ticker = obj.ticker).first().rating_total
-        return point
-    
-    @admin.display(description="% tăng/giảm")
-    def wavefoot(self, obj):
-        price = obj.market_price
-        if obj.is_closed == True:
-            if obj.noted == 'cutloss':
-                ratio = round(obj.ratio_cutloss*-1,2)
-            elif obj.noted =='takeprofit':    
-                ratio = round(obj.ratio_cutloss*2,2)
-            else:
-                ratio = 0
-        else:
-            ratio = round((price/ obj.close - 1) * 100, 2)
-        return ratio
-    
-    @admin.display(description="Điểm cơ bản") 
-    def rating_fundamental(self, obj):
-        fa = StockFundamentalData.objects.filter(ticker = obj.ticker).first()
-        return fa.fundamental_rating
-    
     def view_transactions(self, obj):
         url = reverse('admin:stocklist_overviewbacktest_changelist') + f'?ticker={obj.ticker}'
         return format_html('<a href="{}">Xem kiểm định</a>', url)

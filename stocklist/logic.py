@@ -114,8 +114,19 @@ def get_stock_price_and_save():
     for stock in signal:
         price = StockPriceFilter.objects.filter(ticker = stock.ticker).order_by('-date_time').first()
         stock.market_price = price.close
+        if stock.is_closed == True:
+            if stock.noted == 'cutloss':
+                stock.wavefoot = round(stock.ratio_cutloss*-1,2)
+            elif stock.noted =='takeprofit':    
+                stock.wavefoot = round(stock.ratio_cutloss*2,2)
+            else:
+                stock.wavefoot = 0
+        else:
+            stock.wavefoot = round((price/ stock.close - 1) * 100, 2)
+        stock.rating_total = OverviewBacktest.objects.filter(ticker = stock.ticker).first().rating_total
+        stock.rating_fundamental = StockFundamentalData.objects.filter(ticker = stock.ticker).first().fundamental_rating
         stock.save()
-        
+   
 
 def filter_stock_muanual( risk = 0.03):
     print('đang chạy')

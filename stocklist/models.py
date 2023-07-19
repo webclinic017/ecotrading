@@ -41,6 +41,9 @@ class Signaldaily(models.Model):
     noted = models.CharField(max_length=20, choices=STATUS, null=True, blank=True, verbose_name='Trạng thái')
     date_closed_deal = models.DateField(null=True, blank=True)
     market_price = models.FloatField(default=0, verbose_name = 'Giá thị trường')
+    wavefoot = models.FloatField(default=0, verbose_name = '% tăng giảm')
+    rating_total = models.FloatField(default=0,verbose_name = 'Điểm kỹ thuật')
+    rating_fundamental= models.FloatField(default=0,verbose_name = 'Điểm cơ bản')
     
     class Meta:
         verbose_name = 'Tín hiệu giao dịch'
@@ -57,7 +60,7 @@ class Signaldaily(models.Model):
 def create_cutloss_signal(sender, instance, created, **kwargs):
     if not created:
         signal  = Signaldaily.objects.filter(ticker=instance.ticker, strategy=1,is_closed=False )  
-        bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk') 
+        external_room = ChatGroupTelegram.objects.filter(type = 'external',is_signal =True,rank ='1' )
         for stock in signal:
             stock.cutloss_price = round(stock.close*(100-stock.ratio_cutloss)/100,2)
             stock.take_profit_price = round(stock.close*(1+stock.ratio_cutloss/100*2),2)
@@ -65,16 +68,26 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
                 stock.is_closed = True
                 stock.noted = 'cutloss'
                 stock.date_closed_deal = datetime.now().date()
-                bot.send_message(
-                    chat_id='-870288807', 
-                    text=f"Đã CẮT LỖ tín hiệu mua {stock.ticker}")
+                for group in external_room:
+                    bot = Bot(token=group.token.token)
+                    try:
+                        bot.send_message(
+                            chat_id=group.chat_id, #room Khách hàng
+                            text=f"Đã CẮT LỖ tín hiệu mua {stock.ticker}")  
+                    except:
+                        pass
             elif stock.take_profit_price<= instance.close:
                 stock.is_closed = True
                 stock.noted = 'takeprofit'
                 stock.date_closed_deal = datetime.now().date()
-                bot.send_message(
-                    chat_id='-870288807', 
-                    text=f"Đã CHỐT LỜI tín hiệu mua {stock.ticker}")
+                for group in external_room:
+                    bot = Bot(token=group.token.token)
+                    try:
+                        bot.send_message(
+                            chat_id=group.chat_id, #room Khách hàng
+                            text=f"Đã CHỐT LỜI tín hiệu mua {stock.ticker}")
+                    except:
+                        pass
             stock.save()
 
 
