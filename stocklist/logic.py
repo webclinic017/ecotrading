@@ -122,7 +122,7 @@ def get_stock_price_and_save():
             else:
                 stock.wavefoot = 0
         else:
-            stock.wavefoot = round((price/ stock.close - 1) * 100, 2)
+            stock.wavefoot = round((stock.market_price/ stock.close - 1) * 100, 2)
         stock.rating_total = OverviewBacktest.objects.filter(ticker = stock.ticker).first().rating_total
         stock.rating_fundamental = StockFundamentalData.objects.filter(ticker = stock.ticker).first().fundamental_rating
         stock.save()
