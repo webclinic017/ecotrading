@@ -62,33 +62,37 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
         signal  = Signaldaily.objects.filter(ticker=instance.ticker, strategy=1,is_closed=False )  
         external_room = ChatGroupTelegram.objects.filter(type = 'external',is_signal =True,rank ='1' )
         for stock in signal:
-            stock.cutloss_price = round(stock.close*(100-stock.ratio_cutloss)/100,2)
-            stock.take_profit_price = round(stock.close*(1+stock.ratio_cutloss/100*2),2)
-            if stock.cutloss_price >= instance.close:
+            exit_price = stock.cutloss_price
+            noted = 'cutloss'
+            if stock.take_profit_price<= instance.close:
+                exit_price = stock.take_profit_price
+                stock.take_profit_price = stock.take_profit_price + stock.ratio_cutloss*stock.close
+                noted = 'takeprofit'
+            if exit_price >= instance.close:
                 stock.is_closed = True
-                stock.noted = 'cutloss'
+                stock.noted = noted
                 stock.date_closed_deal = datetime.now().date()
+                stock.save()
                 for group in external_room:
-                    bot = Bot(token=group.token.token)
-                    try:
-                        bot.send_message(
-                            chat_id=group.chat_id, #room Khách hàng
-                            text=f"Đã CẮT LỖ tín hiệu mua {stock.ticker}")  
-                    except:
-                        pass
-            elif stock.take_profit_price<= instance.close:
-                stock.is_closed = True
-                stock.noted = 'takeprofit'
-                stock.date_closed_deal = datetime.now().date()
-                for group in external_room:
-                    bot = Bot(token=group.token.token)
-                    try:
-                        bot.send_message(
-                            chat_id=group.chat_id, #room Khách hàng
-                            text=f"Đã CHỐT LỜI tín hiệu mua {stock.ticker}")
-                    except:
-                        pass
-            stock.save()
+                    # bot = Bot(token=group.token.token)
+                    bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
+                    if stock.noted == 'cutloss':
+                        try:
+                            bot.send_message(
+                                chat_id=group.chat_id, #room Khách hàng
+                                text=f"Đã CẮT LỖ tín hiệu mua {stock.ticker}")  
+                        except:
+                            pass
+                    else:
+                        try:
+                            bot.send_message(
+                                chat_id=group.chat_id, #room Khách hàng
+                                text=f"Đã CHỐT LỜI tín hiệu mua {stock.ticker}")
+                        except:
+                            pass
+            
+            
+            
 
 
 @receiver(post_save, sender=DividendManage)
@@ -104,7 +108,7 @@ def adjust_dividend(sender, instance, created, **kwargs):
             stock.save()
             bot.send_message(
                     chat_id='-870288807', 
-                    text=f"Đã điều chỉnh tín hiệu cổ phiếu {stock} khi có quyền cổ tức phát sinh")    
+                    text=f"Đã điều chỉnh tín hiệu cổ phiếu {stock.ticker}, mua ngày {stock.date} khi có quyền cổ tức phát sinh")    
     
            
 

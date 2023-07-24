@@ -205,14 +205,13 @@ def filter_stock_daily(risk=0.03):
                 pass
     else:
         for ticker in buy_today[:max_trade]:
-                close_price = StockPriceFilter.objects.filter(ticker = ticker['ticker']).order_by('-date').first().close
+                price = StockPriceFilter.objects.filter(ticker = ticker['ticker']).order_by('-date').first().close
                 risk = account.ratio_risk
                 nav = account.net_cash_flow +account.total_profit_close
                 R = risk*nav  
-                price= round(close_price*(1+0.002),0)
-                cut_loss_price  =  round(price - price*ticker['ratio_cutloss'],2)
+                cut_loss_price = round(price*(100-ticker['ratio_cutloss'])/100,2)
+                take_profit_price = round(price*(1+ticker['ratio_cutloss']/100*2),2)
                 qty= math.floor(R/(price*ticker['ratio_cutloss']*1000))
-                take_profit_price = round((price + 2*price*ticker['ratio_cutloss']),2)
                 try:
                         created_transation = Transaction.objects.create(
                             account= account,
@@ -248,7 +247,10 @@ def filter_stock_daily(risk=0.03):
                 milestone =ticker['milestone'],
                 signal = ticker['signal'],
                 ratio_cutloss = round(ticker['ratio_cutloss'],2),
-                strategy = strategy
+                strategy = strategy,
+                take_profit_price = take_profit_price,
+                cutloss_price =cut_loss_price
+
              )
     return          
 
