@@ -70,6 +70,14 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
                 stock.exit_price = stock.take_profit_price
                 stock.take_profit_price = stock.take_profit_price + stock.ratio_cutloss*stock.close/100
                 stock.save()
+                for group in external_room:
+                        bot = Bot(token=group.token.token)
+                        try:
+                            bot.send_message(
+                                chat_id=group.chat_id, #room Khách hàng
+                                text=f"Tín hiệu {stock.ticker} lời vượt 2R, giá chốt lời được nâng thêm 1R là {stock.take_profit_price} ")  
+                        except:
+                            pass
             if stock.exit_price >= instance.close:
                 stock.is_closed = True
                 stock.date_closed_deal = datetime.now().date()
