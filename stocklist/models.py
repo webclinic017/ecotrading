@@ -44,7 +44,7 @@ class Signaldaily(models.Model):
     wavefoot = models.FloatField(default=0, verbose_name = '% tăng giảm')
     rating_total = models.FloatField(default=0,verbose_name = 'Điểm kỹ thuật')
     rating_fundamental= models.FloatField(default=0,verbose_name = 'Điểm cơ bản')
-    exit_price =models.FloatField(null=True, blank=True,verbose_name = 'Giá thị trường')
+    exit_price =models.FloatField(null=True, blank=True,verbose_name = 'Giá đóng')
     
     class Meta:
         verbose_name = 'Tín hiệu giao dịch'
@@ -63,6 +63,9 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
         signal  = Signaldaily.objects.filter(ticker=instance.ticker, strategy=1,is_closed=False )  
         external_room = ChatGroupTelegram.objects.filter(type = 'external',is_signal =True,rank ='1' )
         for stock in signal:
+            stock.market_price = instance.close
+            stock.wavefoot = round((stock.market_price/ stock.close - 1) * 100, 2)
+            stock.save()
             if stock.take_profit_price<= instance.close:
                 stock.exit_price = stock.take_profit_price
                 stock.take_profit_price = stock.take_profit_price + stock.ratio_cutloss*stock.close/100
@@ -72,6 +75,7 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
                 stock.date_closed_deal = datetime.now().date()
                 if stock.exit_price >stock.cutloss_price:
                     stock.noted ='takeprofit'
+                    stock.wavefoot = round(stock.ratio_cutloss*-1,2)
                     for group in external_room:
                         bot = Bot(token=group.token.token)
                         try:
@@ -82,6 +86,7 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
                             pass
                 else:
                     stock.noted ='cutloss'
+                    stock.wavefoot = round(stock.ratio_cutloss*2,2)
                     for group in external_room:
                         bot = Bot(token=group.token.token)
                         try:
