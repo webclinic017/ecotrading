@@ -108,11 +108,8 @@ def breakout_strategy_otmed(df, risk):
     df['signal'] = np.where(buy, 'buy', 'newtral')
     return df
 
-def get_stock_price_and_save():
-    get_info_stock_price_filter()
     
-   
-
+    
 def filter_stock_muanual( risk = 0.03):
     print('đang chạy')
     strategy= StrategyTrading.objects.filter(name = 'Breakout', risk = risk).first()
