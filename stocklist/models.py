@@ -50,12 +50,9 @@ class Signaldaily(models.Model):
         verbose_name = 'Tín hiệu giao dịch'
         verbose_name_plural = 'Tín hiệu giao dịch'
     
-    
 
     def __str__(self):
         return str(self.ticker) + str(self.strategy)
-    
-    
     
 @receiver(post_save, sender=StockPriceFilter)
 def create_cutloss_signal(sender, instance, created, **kwargs):
@@ -64,18 +61,20 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
         external_room = ChatGroupTelegram.objects.filter(type = 'external',is_signal =True,rank ='1' )
         for stock in signal:
             stock.market_price = instance.close
-            stock.wavefoot = round((stock.market_price/ stock.close - 1) * 100, 2)
+            stock.wavefoot = round((stock.market_price/stock.close - 1) * 100, 2)
             stock.save()
             if stock.take_profit_price<= instance.close:
                 stock.exit_price = stock.take_profit_price
                 stock.take_profit_price = stock.take_profit_price + stock.ratio_cutloss*stock.close/100
                 stock.save()
                 for group in external_room:
-                        bot = Bot(token=group.token.token)
+                        # bot = Bot(token=group.token.token)
+                        bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
                         try:
                             bot.send_message(
-                                chat_id=group.chat_id, #room Khách hàng
-                                text=f"Tín hiệu {stock.ticker} lời vượt 2R, giá chốt lời được nâng thêm 1R là {stock.take_profit_price} ")  
+                                # chat_id=group.chat_id, #room Khách hàng
+                                chat_id='-870288807',
+                                text=f"Tín hiệu {stock.ticker} tại ngày {stock.date} lời vượt 2R, giá chốt lời được nâng thêm 1R là {stock.take_profit_price} ")  
                         except:
                             pass
             if stock.exit_price >= instance.close:
@@ -105,9 +104,6 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
                             pass
                 stock.save()
             
-            
-            
-
 
 @receiver(post_save, sender=DividendManage)
 def adjust_dividend(sender, instance, created, **kwargs):

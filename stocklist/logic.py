@@ -214,17 +214,6 @@ def filter_stock_daily(risk=0.03):
                         chat_id='-870288807', #room nội bộ
                         text=f"Tự động giao dịch {ticker['ticker']} theo chiến lược breakout thất bại, lỗi {e}   ")    
         for ticker in buy_today[:max_signal]:
-           # gửi tín hiệu vào telegram
-            for group in external_room:
-                bot = Bot(token=group.token.token)
-                try:
-                    bot.send_message(
-                    chat_id=group.chat_id, 
-                    text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
-                except:
-                    pass
-
-        for ticker in buy_today:
             created = Signaldaily.objects.create(
                 ticker = ticker['ticker'],
                 close = ticker['close'],
@@ -239,6 +228,15 @@ def filter_stock_daily(risk=0.03):
                 rating_total = ticker['rating'],
                 rating_fundamental = ticker['fundamental'] 
              )
+           # gửi tín hiệu vào telegram
+            for group in external_room:
+                bot = Bot(token=group.token.token)
+                try:
+                    bot.send_message(
+                    chat_id=group.chat_id, 
+                    text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
+                except:
+                    pass
     return          
 
 
