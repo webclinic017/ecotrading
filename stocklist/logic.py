@@ -250,6 +250,7 @@ def filter_stock_daily(risk=0.03):
                 strategy = strategy,
                 take_profit_price = take_profit_price,
                 cutloss_price =cut_loss_price
+                exit_price = cut_loss_price
 
              )
     return          
