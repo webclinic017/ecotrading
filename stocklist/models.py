@@ -65,7 +65,7 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
             stock.save()
             if stock.take_profit_price<= instance.close:
                 stock.exit_price = stock.take_profit_price
-                stock.take_profit_price = stock.take_profit_price + stock.ratio_cutloss*stock.close/100
+                stock.take_profit_price = round(stock.take_profit_price + stock.ratio_cutloss*stock.close/100,2)
                 stock.save()
                 for group in external_room:
                         bot = Bot(token=group.token.token)
