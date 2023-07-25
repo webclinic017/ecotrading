@@ -68,13 +68,13 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
                 stock.take_profit_price = stock.take_profit_price + stock.ratio_cutloss*stock.close/100
                 stock.save()
                 for group in external_room:
-                        # bot = Bot(token=group.token.token)
-                        bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
+                        bot = Bot(token=group.token.token)
+                        # bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
                         try:
                             bot.send_message(
-                                # chat_id=group.chat_id, #room Khách hàng
-                                chat_id='-870288807',
-                                text=f"Tín hiệu {stock.ticker} tại ngày {stock.date} đã vượt mốc chốt lời, giá chốt lời mới được nâng thêm 1R là {stock.take_profit_price} ")  
+                                chat_id=group.chat_id, #room Khách hàng
+                                # chat_id='-870288807',
+                                text=f"Tín hiệu {stock.ticker} mua tại ngày {stock.date} đã vượt mốc chốt lời, giá chốt lời mới được nâng thêm 1R là {stock.take_profit_price} ")  
                         except:
                             pass
             if stock.exit_price >= instance.close:
@@ -83,15 +83,17 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
                 stock.wavefoot = round((stock.exit_price/stock.close-1)*100,2)
                 if stock.wavefoot > 0:
                     stock.noted ='takeprofit'
+                    note = 'CHỐT LỜI'
                 else:
                     stock.noted ='cutloss'
+                    note = 'CẮT LỖ'
                 stock.save()
                 for group in external_room:
                     bot = Bot(token=group.token.token)
                     try:
                         bot.send_message(
                             chat_id=group.chat_id, #room Khách hàng
-                            text=f"Đã {stock.noted} tín hiệu mua {stock.ticker} tại ngày{stock.date} với tỷ lệ lợi nhuận là {stock.wavefoot}%")  
+                            text=f"Đã {note} tín hiệu mua {stock.ticker} mua tại ngày{stock.date} với tỷ lệ lợi nhuận là {stock.wavefoot}%")  
                     except:
                         pass
                 
