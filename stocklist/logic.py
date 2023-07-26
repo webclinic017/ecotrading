@@ -224,10 +224,10 @@ def filter_stock_daily(risk=0.03):
                         try:
                             bot.send_message(
                             chat_id=group.chat_id, 
-                            text=f"Tín hiệu mua {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%, điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}" )   
+                            text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}" )   
                         except:
                             pass
-                        
+
             except Exception as e:
                         # chat_id = account.bot.chat_id
                         bot = Bot(token=account.bot.token)
