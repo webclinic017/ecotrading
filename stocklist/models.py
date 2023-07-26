@@ -77,9 +77,13 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
                                 text=f"Tín hiệu {stock.ticker} mua tại ngày {stock.date} đã vượt mốc chốt lời, giá chốt lời mới được nâng thêm 1R là {stock.take_profit_price} ")  
                         except:
                             pass
-            if stock.exit_price >= instance.close:
+            new_time = time(00, 00, 0)
+            today = datetime.now().date() 
+            date_signal = datetime.combine(stock.date, new_time)
+            date_check = difine_date_stock_on_account(date_signal).date()
+            if stock.exit_price >= instance.close and today >=date_check:
                 stock.is_closed = True
-                stock.date_closed_deal = datetime.now().date()
+                stock.date_closed_deal = today
                 stock.wavefoot = round((stock.exit_price/stock.close-1)*100,2)
                 if stock.wavefoot > 0:
                     stock.noted ='takeprofit'

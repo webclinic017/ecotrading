@@ -175,8 +175,7 @@ def filter_stock_daily(risk=0.03):
     external_room = ChatGroupTelegram.objects.filter(type = 'external',is_signal =True,rank ='1' )
     num_stock = len(buy_today)
     max_signal = min(num_stock, 5)
-    max_trade =min(num_stock, 3)
-    if max_trade ==0:
+    if max_signal ==0:
         for group in external_room:
             bot = Bot(token=group.token.token)
             try:
@@ -186,16 +185,16 @@ def filter_stock_daily(risk=0.03):
             except:
                 pass
     else:
-        for ticker in buy_today[:max_trade]:
-                price = StockPriceFilter.objects.filter(ticker = ticker['ticker']).order_by('-date').first().close
-                risk = account.ratio_risk
-                nav = account.net_cash_flow +account.total_profit_close
-                R = risk*nav  
-                cut_loss_price = round(price*(100-ticker['ratio_cutloss'])/100,2)
-                take_profit_price = round(price*(1+ticker['ratio_cutloss']/100*2),2)
-                qty= math.floor(R/(price*ticker['ratio_cutloss']*1000))
-                try:
-                        created_transation = Transaction.objects.create(
+        for ticker in buy_today[:max_signal]:
+            price = StockPriceFilter.objects.filter(ticker = ticker['ticker']).order_by('-date').first().close
+            risk = account.ratio_risk
+            nav = account.net_cash_flow +account.total_profit_close
+            R = risk*nav  
+            cut_loss_price = round(price*(100-ticker['ratio_cutloss'])/100,2)
+            take_profit_price = round(price*(1+ticker['ratio_cutloss']/100*2),2)
+            qty= math.floor(R/(price*ticker['ratio_cutloss']*1000))
+            try:
+                created_transation = Transaction.objects.create(
                             account= account,
                             stock= ticker['ticker'],
                             position='buy',
@@ -204,36 +203,37 @@ def filter_stock_daily(risk=0.03):
                             cut_loss_price =cut_loss_price,
                             take_profit_price=take_profit_price,
                             description = 'Auto trade' )
-                except Exception as e:
+                        
+                created = Signaldaily.objects.create(
+                        ticker = ticker['ticker'],
+                        close = ticker['close'],
+                        date = ticker['date'],
+                        milestone =ticker['milestone'],
+                        signal = ticker['signal'],
+                        ratio_cutloss = round(ticker['ratio_cutloss'],2),
+                        strategy = strategy,
+                        take_profit_price = take_profit_price,
+                        cutloss_price =cut_loss_price,
+                        exit_price = cut_loss_price,
+                        rating_total = ticker['rating'],
+                        rating_fundamental = ticker['fundamental'] 
+                    )
+                
+                for group in external_room:
+                        bot = Bot(token=group.token.token)
+                        try:
+                            bot.send_message(
+                            chat_id=group.chat_id, 
+                            text=f"Tín hiệu mua {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%, điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}" )   
+                        except:
+                            pass
+                        
+            except Exception as e:
                         # chat_id = account.bot.chat_id
                         bot = Bot(token=account.bot.token)
                         bot.send_message(
                         chat_id='-870288807', #room nội bộ
-                        text=f"Tự động giao dịch {ticker['ticker']} theo chiến lược breakout thất bại, lỗi {e}   ")    
-        for ticker in buy_today[:max_signal]:
-            created = Signaldaily.objects.create(
-                ticker = ticker['ticker'],
-                close = ticker['close'],
-                date = ticker['date'],
-                milestone =ticker['milestone'],
-                signal = ticker['signal'],
-                ratio_cutloss = round(ticker['ratio_cutloss'],2),
-                strategy = strategy,
-                take_profit_price = take_profit_price,
-                cutloss_price =cut_loss_price,
-                exit_price = cut_loss_price,
-                rating_total = ticker['rating'],
-                rating_fundamental = ticker['fundamental'] 
-             )
-           # gửi tín hiệu vào telegram
-            for group in external_room:
-                bot = Bot(token=group.token.token)
-                try:
-                    bot.send_message(
-                    chat_id=group.chat_id, 
-                    text=f"Tín hiệu mua {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
-                except:
-                    pass
+                        text=f"Tự động giao dịch {ticker['ticker']} theo chiến lược breakout thất bại, lỗi {e}   ")        
     return          
 
 
