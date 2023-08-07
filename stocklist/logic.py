@@ -65,6 +65,28 @@ def add_test_value(group):
 def calculate_sma(group):
     return group['close'].rolling(window=group['param_sma']).mean()
 
+def accumulation_model(ticker, period=5):
+    stock_prices = StockPriceFilter.objects.filter(ticker =ticker).values()
+    df = pd.DataFrame(stock_prices) 
+    df = df.sort_values(by='date', ascending=True).reset_index(drop=True)
+    # Tính toán đường trung bình động với số điểm dữ liệu window
+    df['sma'] = talib.EMA(df['close'], timeperiod=period)
+    #Tính toán độ dốc của đường trung bình động
+    df['gradients'] = np.gradient(df['sma'])
+    df = df.sort_values(by='date', ascending=False).reset_index(drop=True)
+    gradients = df['gradients'].to_numpy()
+    # Xác định mô hình tích lũy
+    len_sideway =[]
+    for item in gradients[1:]:
+        sideway=True
+        if item >0.1 or item <-0.1:
+            sideway= False
+            break
+        else:
+            len_sideway.append(item)
+    return len(len_sideway)
+
+
 def breakout_strategy(df, period, num_raw=None):
     df = df.drop(df[(df['open'] == 0) & (df['close'] == 0)& (df['volume'] == 0)].index)
     df = df.groupby('ticker', group_keys=False).apply(lambda x: x.sort_values('date', ascending=False).head(num_raw) if num_raw is not None else x.sort_values('date', ascending=False))
@@ -154,6 +176,7 @@ def filter_stock_muanual( risk = 0.03):
                 if back_test:
                     data['rating'] = back_test.rating_total
                     data['fundamental'] = fa.fundamental_rating
+                    data['accumulation'] = accumulation_model(ticker=data['ticker'], period=5)
                     if data['rating'] > 50 and data['fundamental']> 50:
                         buy_today.append(data)
     # tạo lệnh mua tự động
@@ -216,7 +239,9 @@ def filter_stock_daily(risk=0.03):
                         cutloss_price =cut_loss_price,
                         exit_price = cut_loss_price,
                         rating_total = ticker['rating'],
-                        rating_fundamental = ticker['fundamental'] 
+                        rating_fundamental = ticker['fundamental'] ,
+                        accumulation = ticker['accumulation']
+                    
                     )
                 
                 for group in external_room:
@@ -224,7 +249,7 @@ def filter_stock_daily(risk=0.03):
                         try:
                             bot.send_message(
                             chat_id=group.chat_id, 
-                            text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}" )   
+                            text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
                         except:
                             pass
 

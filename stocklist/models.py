@@ -45,6 +45,7 @@ class Signaldaily(models.Model):
     rating_total = models.FloatField(default=0,verbose_name = 'Điểm kỹ thuật')
     rating_fundamental= models.FloatField(default=0,verbose_name = 'Điểm cơ bản')
     exit_price =models.FloatField(null=True, blank=True,verbose_name = 'Giá đóng')
+    accumulation = models.IntegerField(null=True, blank=True,verbose_name = 'Ngày tích lũy')
     
     class Meta:
         verbose_name = 'Tín hiệu giao dịch'
