@@ -80,10 +80,15 @@ class StrategyTradingAdmin(admin.ModelAdmin):
     model = StrategyTrading
     list_display = ['name','risk','nav','commission', 'period']
 
+class FundamentalAnalysisAdmin(admin.StackedInline):
+    model = FundamentalAnalysis
+
 class StockFundamentalDataAdmin(admin.ModelAdmin):
     model= StockFundamentalData
     list_display = ['ticker','p_e','p_b','roa','roe','dept_ratio','growth_rating','stable_rating','valuation_rating','fundamental_rating']
     search_fields = ['ticker',]
+    inlines=[FundamentalAnalysisAdmin,]
+
 
 admin.site.register(StockFundamentalData,StockFundamentalDataAdmin)
 admin.site.register(StrategyTrading, StrategyTradingAdmin)

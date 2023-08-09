@@ -305,9 +305,20 @@ class StockFundamentalData(models.Model):
     def __str__(self):
         return self.ticker
     
-    
+class FundamentalAnalysis(models.Model):
+    ticker = models.ForeignKey(StockFundamentalData,on_delete=models.CASCADE, null=True, blank=True,verbose_name = 'Cổ phiếu' )
+    source = models.CharField(max_length=100,null=True, blank=True,verbose_name = 'Nguồn')
+    modified_date = models.DateTimeField(auto_now=True ,verbose_name = 'Ngày tạo')
+    info = models.TextField(max_length=500, verbose_name = 'Nội dung')
+    valuation = models.FloatField(null=True, blank=True, verbose_name = 'Định giá')
 
     
+    class Meta:
+        verbose_name = 'Báo cáo phân tích'
+        verbose_name_plural = 'Báo cáo phân tích'
+
+   
+
 def save_fa():
     fa = StockFundamentalData.objects.all()
     for self in fa:

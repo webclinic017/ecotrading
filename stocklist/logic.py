@@ -87,6 +87,14 @@ def accumulation_model(ticker, period=5):
     return len(len_sideway)
 
 
+def accumulation_model_df(ticker, period=5):
+    stock_prices = StockPriceFilter.objects.filter(ticker =ticker).values()
+    df = pd.DataFrame(stock_prices) 
+    df = df.sort_values(by='date', ascending=True).reset_index(drop=True)
+    df['sma'] = talib.EMA(df['close'], timeperiod=5)
+    df['gradients'] = np.gradient(df['sma'])
+    df['count'] = df['gradients'].rolling(window=5).apply(lambda x: (x < 1).sum(), raw=True)
+
 def breakout_strategy(df, period, num_raw=None):
     df = df.drop(df[(df['open'] == 0) & (df['close'] == 0)& (df['volume'] == 0)].index)
     df = df.groupby('ticker', group_keys=False).apply(lambda x: x.sort_values('date', ascending=False).head(num_raw) if num_raw is not None else x.sort_values('date', ascending=False))

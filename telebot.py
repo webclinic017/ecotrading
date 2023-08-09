@@ -1,35 +1,49 @@
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Dispatcher
 import os
-from telegram import Update
-from django.http import HttpResponse
-import requests
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ecotrading.settings")
+import django
+django.setup()
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+import logging
+from django.apps import apps
+from stocklist.models import FundamentalAnalysis
 
-
-
-
-# khởi tạo đối tượng Updater và Dispatcher
+# khởi tạo đối tượng Updater
 updater = Updater(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk', use_context=True)
 dispatcher = updater.dispatcher
 
-# định nghĩa hàm xử lý command /start
+# Thiết lập logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+# Xử lý khi nhận lệnh /start
 def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Hello, I'm a bot!")
+    update.message.reply_text('Xin chào! Gửi mã cổ phiếu để nhận thông tin tương ứng.')
 
-def port(update, context):
-    response = requests.get('http://103.176.251.105/get-port/')
-    port = response.json()['port']
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f"Port is {port}")
+# Xử lý khi nhận tin nhắn văn bản
+def reply_to_message(update, context):
+    ticker = update.message.text
+    FundamentalAnalysisModel = apps.get_model('stocklist', 'FundamentalAnalysis')
+    try:
+        analysis = FundamentalAnalysisModel.objects.filter(ticker__ticker=ticker).order_by('-modified_date').first()
+        if analysis:
+            response = f'Thông tin cổ phiếu {ticker}:\n'
+            response += f'{analysis.info}. Định giá {analysis.valuation} (Nguồn {analysis.source})\n'
+        else:
+            response = f'Không tìm thấy thông tin cho mã cổ phiếu {ticker}.'
+    except FundamentalAnalysisModel.DoesNotExist:
+        response = f'Không tìm thấy thông tin cho mã cổ phiếu {ticker}.'
 
-def signal(update, context):
-    response = requests.get('http://103.176.251.105/get-signal/')
-    signal = response.json()
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f"Danh sách là {signal}")
+    update.message.reply_text(response)
 
-# đăng ký command handler cho command /start
-start_handler1 = CommandHandler('start', start)
-start_handler2 = CommandHandler('port', port)
-dispatcher.add_handler(start_handler1)
-dispatcher.add_handler(start_handler2)
+# Đăng ký handler cho lệnh /start
+start_handler = CommandHandler('start', start)
+dispatcher.add_handler(start_handler)
 
-# start polling để nhận tin nhắn từ người dùng
+# Đăng ký handler cho tin nhắn văn bản
+reply_handler = MessageHandler(Filters.text & ~Filters.command, reply_to_message)
+dispatcher.add_handler(reply_handler)
+
+# Khởi chạy bot
 updater.start_polling()
+
+# Dừng bot khi nhấn Ctrl-C
+updater.idle()

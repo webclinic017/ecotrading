@@ -574,7 +574,6 @@ def get_signal(request):
 
 
 
-
 def get_qty_buy(request):
     if request.method == 'POST':
         nav = float(request.POST['nav'])
