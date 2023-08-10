@@ -21,6 +21,7 @@ def start(update, context):
 # Xử lý khi nhận tin nhắn văn bản
 def reply_to_message(update, context):
     ticker = update.message.text
+    ticker = ticker.upper()
     FundamentalAnalysisModel = apps.get_model('stocklist', 'FundamentalAnalysis')
     try:
         analysis = FundamentalAnalysisModel.objects.filter(ticker__ticker=ticker).order_by('-modified_date').first()

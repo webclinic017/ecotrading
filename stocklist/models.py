@@ -309,7 +309,7 @@ class FundamentalAnalysis(models.Model):
     ticker = models.ForeignKey(StockFundamentalData,on_delete=models.CASCADE, null=True, blank=True,verbose_name = 'Cổ phiếu' )
     source = models.CharField(max_length=100,null=True, blank=True,verbose_name = 'Nguồn')
     modified_date = models.DateTimeField(auto_now=True ,verbose_name = 'Ngày tạo')
-    info = models.TextField(max_length=1000, verbose_name = 'Nội dung')
+    info = models.TextField(max_length=2000, verbose_name = 'Nội dung')
     valuation = models.FloatField(null=True, blank=True, verbose_name = 'Định giá')
 
     
