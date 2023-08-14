@@ -6,6 +6,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 import logging
 from django.apps import apps
 from stocklist.logic import *
+import re
 
 
 # Thiết lập logging
@@ -13,26 +14,37 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 # Lấy danh sách các room có điều kiện
 external_room = ChatGroupTelegram.objects.filter(type='external', is_signal=True, rank='1')
+def contains_ticker(text):
+    # Sử dụng biểu thức chính quy để kiểm tra xem tin nhắn có chứa các từ 'thông tin', 'báo cáo', 'phân tích'
+    # và sau đó là một mã cổ phiếu có đúng 3 kí tự viết liền nhau hay không.
+    pattern = r'@([A-Z]{3})'
+    match = re.search(pattern, text)
+    if match:
+        ticker =  match.group(1).upper()  # Trả về mã cổ phiếu nếu có, hoặc None nếu không.
+        return ticker
+    return None
 
 def start(update, context):
     update.message.reply_text('Xin chào! Gửi mã cổ phiếu để nhận thông tin tương ứng.')
 
-def ticker(update, context):
-
-    text = update.message.text[1:]  # Lấy phần sau lệnh /ticker
-    ticker = text.strip().upper()
+def reply_to_message(update, context):
+    ticker = update.message.text
+    ticker = contains_ticker(ticker)
     FundamentalAnalysisModel = apps.get_model('stocklist', 'FundamentalAnalysis')
     try:
-        analysis = FundamentalAnalysisModel.objects.filter(ticker__ticker=ticker).order_by('-modified_date').first()
-        if analysis:
-            response = f'Thông tin cổ phiếu {ticker}:\n'
-            response += f'{analysis.info}. Định giá {analysis.valuation} (Nguồn {analysis.source})\n'
-        else:
-            response = f'Không tìm thấy thông tin cho mã cổ phiếu {ticker}.'
+        if ticker:
+            analysis = FundamentalAnalysisModel.objects.filter(ticker__ticker=ticker).order_by('-modified_date').first()
+            if analysis:
+                response = f'Thông tin cổ phiếu {ticker}:\n'
+                response += f'{analysis.info}. Định giá {analysis.valuation} (Nguồn {analysis.source})\n'
+            else:
+                response = f'Không tìm thấy thông tin cho mã cổ phiếu {ticker}.'
     except FundamentalAnalysisModel.DoesNotExist:
-        response = f'Không tìm thấy thông tin cho mã cổ phiếu {ticker}.'
+        pass
+        # response = f'Không tìm thấy thông tin cho mã cổ phiếu {ticker}.'
 
     update.message.reply_text(response)
+
 
 
 for group in external_room:
@@ -44,8 +56,8 @@ for group in external_room:
         # Đăng ký handler cho lệnh /start và tin nhắn văn bản
         start_handler = CommandHandler('start', start)
         dispatcher.add_handler(start_handler)
-        ticker_handler = CommandHandler('ticker', ticker)  # Thêm command handler cho lệnh /ticker
-        dispatcher.add_handler(ticker_handler)
+        reply_handler = MessageHandler(Filters.text & ~Filters.command, reply_to_message)
+        dispatcher.add_handler(reply_handler)
 
         # Khởi chạy bot
         updater.start_polling()
