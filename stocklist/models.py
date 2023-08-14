@@ -311,7 +311,7 @@ class FundamentalAnalysis(models.Model):
     modified_date = models.DateTimeField(auto_now=True ,verbose_name = 'Ngày tạo')
     info = models.TextField(max_length=2000, verbose_name = 'Nội dung')
     valuation = models.FloatField(null=True, blank=True, verbose_name = 'Định giá')
-
+    date = models.DateField(null=True, blank=True, verbose_name = 'Ngày báo cáo')
     
     class Meta:
         verbose_name = 'Báo cáo phân tích'

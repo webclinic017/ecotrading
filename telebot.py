@@ -36,7 +36,9 @@ def reply_to_message(update, context):
             analysis = FundamentalAnalysisModel.objects.filter(ticker__ticker=ticker).order_by('-modified_date').first()
             if analysis:
                 response = f'Thông tin cổ phiếu {ticker}:\n'
-                response += f'{analysis.info}. Định giá {analysis.valuation} (Nguồn {analysis.source})\n'
+                response += f'Ngày báo cáo {analysis.date}. P/E: {analysis.ticker.p_e}, P/B: {analysis.ticker.p_b}, Định giá {analysis.valuation}:\n'
+                response += f'{analysis.info}.\n'
+                response += f'Nguồn {analysis.source}'
             else:
                 response = f'Không tìm thấy thông tin cho mã cổ phiếu {ticker}.'
     except FundamentalAnalysisModel.DoesNotExist:
