@@ -17,10 +17,10 @@ external_room = ChatGroupTelegram.objects.filter(type='external', is_signal=True
 def start(update, context):
     update.message.reply_text('Xin chào! Gửi mã cổ phiếu để nhận thông tin tương ứng.')
 
-def reply_to_message(update, context):
+def ticker(update, context):
 
-    ticker = update.message.text
-    ticker = ticker.upper()
+    text = update.message.text[1:]  # Lấy phần sau lệnh /ticker
+    ticker = text.strip().upper()
     FundamentalAnalysisModel = apps.get_model('stocklist', 'FundamentalAnalysis')
     try:
         analysis = FundamentalAnalysisModel.objects.filter(ticker__ticker=ticker).order_by('-modified_date').first()
@@ -44,8 +44,8 @@ for group in external_room:
         # Đăng ký handler cho lệnh /start và tin nhắn văn bản
         start_handler = CommandHandler('start', start)
         dispatcher.add_handler(start_handler)
-        reply_handler = MessageHandler(Filters.text & ~Filters.command, reply_to_message)
-        dispatcher.add_handler(reply_handler)
+        ticker_handler = CommandHandler('ticker', ticker)  # Thêm command handler cho lệnh /ticker
+        dispatcher.add_handler(ticker_handler)
 
         # Khởi chạy bot
         updater.start_polling()
