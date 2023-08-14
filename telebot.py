@@ -5,21 +5,20 @@ django.setup()
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 import logging
 from django.apps import apps
-from stocklist.models import FundamentalAnalysis
+from stocklist.logic import *
 
-# khởi tạo đối tượng Updater
-updater = Updater(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk', use_context=True)
-dispatcher = updater.dispatcher
 
 # Thiết lập logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-# Xử lý khi nhận lệnh /start
+# Lấy danh sách các room có điều kiện
+external_room = ChatGroupTelegram.objects.filter(type='external', is_signal=True, rank='1')
+
 def start(update, context):
     update.message.reply_text('Xin chào! Gửi mã cổ phiếu để nhận thông tin tương ứng.')
 
-# Xử lý khi nhận tin nhắn văn bản
 def reply_to_message(update, context):
+
     ticker = update.message.text
     ticker = ticker.upper()
     FundamentalAnalysisModel = apps.get_model('stocklist', 'FundamentalAnalysis')
@@ -35,16 +34,24 @@ def reply_to_message(update, context):
 
     update.message.reply_text(response)
 
-# Đăng ký handler cho lệnh /start
-start_handler = CommandHandler('start', start)
-dispatcher.add_handler(start_handler)
 
-# Đăng ký handler cho tin nhắn văn bản
-reply_handler = MessageHandler(Filters.text & ~Filters.command, reply_to_message)
-dispatcher.add_handler(reply_handler)
+for group in external_room:
+    try:
+        # Khởi tạo đối tượng Updater cho từng bot
+        updater = Updater(token=group.token.token, use_context=True)
+        dispatcher = updater.dispatcher
 
-# Khởi chạy bot
-updater.start_polling()
+        # Đăng ký handler cho lệnh /start và tin nhắn văn bản
+        start_handler = CommandHandler('start', start)
+        dispatcher.add_handler(start_handler)
+        reply_handler = MessageHandler(Filters.text & ~Filters.command, reply_to_message)
+        dispatcher.add_handler(reply_handler)
 
-# Dừng bot khi nhấn Ctrl-C
+        # Khởi chạy bot
+        updater.start_polling()
+
+    except Exception as e:
+        print(f"Error initializing bot for group {group.chat_id}: {e}")
+
+# Dừng chương trình khi nhấn Ctrl-C
 updater.idle()
