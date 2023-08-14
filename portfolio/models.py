@@ -33,10 +33,10 @@ def get_all_info_stock_price():
     count = 0
     for i in range (0,len(a)):
         ticker=a[i]['sym']
-        open=float(a[i]['ope'])
-        low_price=float(a[i]['low'])
-        high_price = float(a[i]['hig'])
-        close=float(a[i]['mat'])
+        open=float(a[i]['ope'].replace(',', ''))
+        low_price=float(a[i]['low'].replace(',', ''))
+        high_price = float(a[i]['hig'].replace(',', ''))
+        close=float(a[i]['mat'].replace(',', ''))
         volume=float(a[i]['tmv'].replace(',', '') )*10
         StockPrice.objects.create(
             ticker=ticker,
@@ -69,10 +69,10 @@ def get_info_stock_price_filter():
     count = 0
     for i in range (0,len(a)):
         ticker=a[i]['sym']
-        open=float(a[i]['ope'])
-        low_price=float(a[i]['low'])
-        high_price = float(a[i]['hig'])
-        close=float(a[i]['mat'])
+        open=float(a[i]['ope'].replace(',', ''))
+        low_price=float(a[i]['low'].replace(',', ''))
+        high_price = float(a[i]['hig'].replace(',', ''))
+        close=float(a[i]['mat'].replace(',', ''))
         volume=float(a[i]['tmv'].replace(',', '') )*10
         created = StockPriceFilter.objects.update_or_create(
                 ticker=ticker,
@@ -107,10 +107,10 @@ def get_list_stock_price():
     date_time = difine_time_craw_stock_price(date_time)
     for i in range (0,len(a)):
         ticker=a[i]['sym']
-        open=float(a[i]['ope'])
-        low_price=float(a[i]['low'])
-        high_price = float(a[i]['hig'])
-        close=float(a[i]['mat'])
+        open=float(a[i]['ope'].replace(',', ''))
+        low_price=float(a[i]['low'].replace(',', ''))
+        high_price = float(a[i]['hig'].replace(',', ''))
+        close=float(a[i]['mat'].replace(',', ''))
         volume=float(a[i]['tmv'].replace(',', '') )*10
         StockPriceFilter.objects.update_or_create(
                 ticker=ticker,
