@@ -17,11 +17,11 @@ external_room = ChatGroupTelegram.objects.filter(type='external', is_signal=True
 def contains_ticker(text):
     # Sử dụng biểu thức chính quy để kiểm tra xem tin nhắn có chứa các từ 'thông tin', 'báo cáo', 'phân tích'
     # và sau đó là một mã cổ phiếu có đúng 3 kí tự viết liền nhau hay không.
-    pattern = r'@([A-Z]{3})'
+    pattern = r'@([A-Za-z]{3})'
     match = re.search(pattern, text)
     if match:
         ticker =  match.group(1).upper()  # Trả về mã cổ phiếu nếu có, hoặc None nếu không.
-        return ticker.upper()
+        return ticker
     return None
 
 def start(update, context):
@@ -41,13 +41,12 @@ def reply_to_message(update, context):
                 response += f'Nguồn {analysis.source}'
             else:
                 response = f'Không tìm thấy thông tin cho mã cổ phiếu {ticker}.'
+            update.message.reply_text(response)
     except FundamentalAnalysisModel.DoesNotExist:
         pass
-        # response = f'Không tìm thấy thông tin cho mã cổ phiếu {ticker}.'
+        
 
-    update.message.reply_text(response)
-
-
+    
 
 for group in external_room:
     try:
