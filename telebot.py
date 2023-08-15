@@ -21,11 +21,11 @@ def contains_ticker(text):
     match = re.search(pattern, text)
     if match:
         ticker =  match.group(1).upper()  # Trả về mã cổ phiếu nếu có, hoặc None nếu không.
-        return ticker
+        return ticker.upper()
     return None
 
 def start(update, context):
-    update.message.reply_text('Xin chào! Gửi mã cổ phiếu để nhận thông tin tương ứng.')
+    update.message.reply_text('Xin chào! Gửi mã cổ phiếu theo cú pháp @XYZ để nhận thông tin tương ứng.')
 
 def reply_to_message(update, context):
     ticker = update.message.text

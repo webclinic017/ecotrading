@@ -351,4 +351,23 @@ def check_dividend():
         i.save()
         
     
- 
+def check_update_analysis_and_send_notifications():
+    # Lọc các bản ghi có modified_date max trong cùng ticker
+    filtered_records = []
+    # Lấy danh sách các ticker và modified_date max
+    latest_records = FundamentalAnalysis.objects.values('ticker').annotate(max_modified_date=Max('modified_date'))
+    for record in latest_records:
+        ticker = record['ticker']
+        max_modified_date = record['max_modified_date']
+        ticker_records = FundamentalAnalysis.objects.filter(ticker=ticker, modified_date=max_modified_date)
+        filtered_records.extend(ticker_records)
+    # Lọc các record có modified_date max có ngày nhỏ hơn ngày hiện tại - 90 ngày
+    current_date = datetime.now()
+    threshold_date = current_date - timedelta(days=90)
+    records_to_notify = [record for record in filtered_records if record.modified_date <= threshold_date]
+    for record in records_to_notify:
+        bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
+        bot.send_message(
+                chat_id='-870288807', 
+                text=f"Cổ phiếu {record.ticker} đã quá 3 tháng chưa có cập nhật thông tin mới, hãy cập nhật ngay nhé Vũ/Thạch ơi!!!" )   
+        
