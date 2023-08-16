@@ -87,16 +87,28 @@ def accumulation_model(ticker, period=5):
     return len(len_sideway)
 
 
-def accumulation_model_df(ticker, period=5):
-    stock_prices = StockPriceFilter.objects.filter(ticker =ticker).values()
-    df = pd.DataFrame(stock_prices) 
-    df = df.sort_values(by='date', ascending=True).reset_index(drop=True)
-    df['sma'] = talib.EMA(df['close'], timeperiod=5)
-    df['gradients'] = np.gradient(df['sma'])
-    df['count'] = df['gradients'].rolling(window=5).apply(lambda x: (x < 1).sum(), raw=True)
+def accumulation_model_df(df):
+    df = df.sort_values(by=['ticker', 'date'], ascending=True).reset_index(drop=True)
+    df['ema'] = df.groupby('ticker')['close'].transform(lambda x: talib.EMA(x, timeperiod=5))
+    df['gradients'] = df.groupby('ticker')['ema'].transform(lambda x: np.gradient(x))
+    df['len_sideway'] = 0
+    threshold = 0.1
+    current_ticker = None
+    current_count = 0
+    for index, row in df.iterrows():
+        if current_ticker != row['ticker']:
+            current_ticker = row['ticker']
+            current_count = 0  
+        if abs(row['gradients']) <= threshold:
+            current_count += 1
+        else:
+            current_count = 0
+        df.at[index, 'len_sideway'] = current_count
+    return df
 
 def breakout_strategy(df, period, num_raw=None):
     df = df.drop(df[(df['open'] == 0) & (df['close'] == 0)& (df['volume'] == 0)].index)
+    df = accumulation_model_df(df)
     df = df.groupby('ticker', group_keys=False).apply(lambda x: x.sort_values('date', ascending=False).head(num_raw) if num_raw is not None else x.sort_values('date', ascending=False))
     df['res'] = df.groupby('ticker')['high'].transform(lambda x: x[::-1].rolling(window=period).max()[::-1])
     df['sup'] = df.groupby('ticker')['low'].transform(lambda x: x[::-1].rolling(window=period).min()[::-1])
@@ -105,6 +117,7 @@ def breakout_strategy(df, period, num_raw=None):
     df = df.groupby('ticker', group_keys=False).apply(add_test_value)
     df['tsi'].fillna(method='ffill', inplace=True)
     df['pre_close'] = df.groupby('ticker')['close'].shift(-1)
+    df['len_sideway'] = df.groupby('ticker')['len_sideway'].shift(-1)
     return df
 
 def breakout_strategy_otmed(df, risk):

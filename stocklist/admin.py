@@ -72,7 +72,7 @@ class RatingStrategyAdmin(admin.ModelAdmin):
 
 class ParamsOptimizeAdmin(admin.ModelAdmin):  
     model = ParamsOptimize
-    list_display = ['strategy','ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma']
+    list_display = ['strategy','ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma','len_sideway']
     search_fields = ['ticker']
     list_filter = ['strategy',]
 

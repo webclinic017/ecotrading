@@ -273,6 +273,7 @@ class ParamsOptimize(models.Model):
     change_day = models.FloatField(default=0.015, verbose_name = 'Tỷ lệ nến')
     ratio_cutloss= models.FloatField(default=0.05 , verbose_name = 'Tỷ lệ cắt lỗ')
     sma = models.FloatField(default=20 , verbose_name = 'Trung bình giá')
+    len_sideway  =models.IntegerField(default=0 , verbose_name = 'Ngày tích lũy')
 
     def __str__(self):
         return self.ticker

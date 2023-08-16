@@ -45,6 +45,7 @@ dict_params = {
         'risk': 0.03,
         'ratio_cutloss':0.05,
         'sma':20,
+        'len_sideway':5,
             }
 
 
@@ -64,6 +65,7 @@ class PandasData(btfeed.PandasData):
         ('tsi', 'tsi'),
         ('mavol', 'mavol'),
         ('pre_close', 'pre_close'),
+        ('len_sideway','len_sideway'),
 
     )
 
@@ -96,7 +98,8 @@ class breakout_otm(bt.SignalStrategy):
         ('change_day', dict_params['change_day'] ),#thay đổi giữa giá đóng cửa và giá cao nhất
         ('risk', dict_params['risk']),
         ('ratio_cutloss',dict_params['ratio_cutloss'] ),
-        ('sma',dict_params['sma'] )
+        ('sma',dict_params['sma'] ),
+        ('len_sideway',dict_params['len_sideway'] )
     )
     def __init__(self, ticker, save_deal, strategy):
         #khai báo biến
@@ -113,6 +116,7 @@ class breakout_otm(bt.SignalStrategy):
         self.buy_price2 = self.data.high/self.data.close-1 < self.params.change_day
         self.buy_price3 = self.data.close/self.data.pre_close-1 > self.params.rate_of_increase
         self.buy_price4= self.data.close > self.sma
+        self.buy_price5 = self.data.len_sideway >= self.params.len_sideway
         #plot view
         tsi = bt.indicators.SimpleMovingAverage(self.data.tsi, period=1)
         tsi.plotinfo.plotname = 'tsi'
@@ -253,7 +257,7 @@ def run_backtest(risk, begin_list, end_list):
             stock_prices = StockPrice.objects.filter(ticker=ticker).values()
             df = pd.DataFrame(stock_prices)
             df = breakout_strategy(df, strategy.period)
-            df = df.drop(['id','res','sup'], axis=1) 
+            df = df.drop(['id','res','sup','gradients','ema'], axis=1) 
             df = df.sort_values('date', ascending=True).reset_index(drop=True)  # Sửa 'stock' thành biến stock để sử dụng giá trị stock được truyền vào hàm
             df = df.fillna(0.0001)
             data = PandasData(dataname=df)
@@ -265,6 +269,7 @@ def run_backtest(risk, begin_list, end_list):
             risk_values = [risk]   
             ratio_cutloss = [0.05,0.07,0.1]
             sma = [20,50] 
+            len_sideway = [3,5,10]
             #####test
             # multiply_volumn_values = [x / 2 for x in range(2, 3)]
             # rate_of_increase_values = [0.01]  # tăng so với phiên trước đó
@@ -273,7 +278,7 @@ def run_backtest(risk, begin_list, end_list):
             # ratio_cutloss = [0.05,0.06]
             # sma =[20]
             # Tạo danh sách các giá trị tham số
-            param_values = [multiply_volumn_values, rate_of_increase_values, change_day_values, risk_values, ratio_cutloss, sma]
+            param_values = [multiply_volumn_values, rate_of_increase_values, change_day_values, risk_values, ratio_cutloss, sma,len_sideway]
             # Tạo tất cả các tổ hợp tham số
             param_combinations = list(product(*param_values))
 
@@ -302,6 +307,7 @@ def run_backtest(risk, begin_list, end_list):
                         'change_day':best_params[2],
                         'ratio_cutloss':best_params[4],
                         'sma':best_params[5],
+                        'len_sideway':best_params[6],
                 }
                 obj, created = ParamsOptimize.objects.update_or_create(strategy = strategy,ticker=ticker, defaults=params_data)
                 print('Đã tạo param')
@@ -317,7 +323,8 @@ def run_backtest(risk, begin_list, end_list):
                                     change_day=params_data['change_day'], 
                                     risk= risk,
                                     ratio_cutloss = params_data['ratio_cutloss'],
-                                    sma = params_data['sma'],)
+                                    sma = params_data['sma'],
+                                    len_sideway  =params_data['len_sideway'])
 
                 
                 # Thiết lập thông số về kích thước vốn ban đầu và phí giao dịch
