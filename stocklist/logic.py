@@ -246,8 +246,7 @@ def filter_stock_daily(risk=0.03):
                             qty=qty,
                             cut_loss_price =cut_loss_price,
                             take_profit_price=take_profit_price,
-                            description = 'Auto trade' )
-                        
+                            description = 'Auto trade' )     
                 created = Signaldaily.objects.create(
                         ticker = ticker['ticker'],
                         close = ticker['close'],
@@ -262,18 +261,16 @@ def filter_stock_daily(risk=0.03):
                         rating_total = ticker['rating'],
                         rating_fundamental = ticker['fundamental'] ,
                         accumulation = ticker['accumulation']
-                    
                     )
-                
                 for group in external_room:
                         bot = Bot(token=group.token.token)
                         try:
                             analysis = FundamentalAnalysis.objects.filter(ticker__ticker=ticker['ticker']).order_by('-modified_date').first()
                             if analysis and analysis.modified_date >= (datetime.now() - timedelta(days=6 * 30)):
-                                response = f'Thông tin cổ phiếu {ticker}:\n'
-                                response += f'Ngày báo cáo {analysis.date}. P/E: {analysis.ticker.p_e}, P/B: {analysis.ticker.p_b}, Định giá {analysis.valuation}:\n'
-                                response += f'{analysis.info}.\n'
-                                response += f'Nguồn {analysis.source}'
+                                response = f"Thông tin cổ phiếu {ticker['ticker']}:\n"
+                                response += f"Ngày báo cáo {analysis.date}. P/E: {analysis.ticker.p_e}, P/B: {analysis.ticker.p_b}, Định giá {analysis.valuation}:\n"
+                                response += f"{analysis.info}.\n"
+                                response += f"Nguồn {analysis.source}"
                                 bot.send_message(
                                 chat_id=group.chat_id,
                                 text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
@@ -286,7 +283,6 @@ def filter_stock_daily(risk=0.03):
                                 text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
                         except:
                             pass
-
             except Exception as e:
                         # chat_id = account.bot.chat_id
                         bot = Bot(token=account.bot.token)
