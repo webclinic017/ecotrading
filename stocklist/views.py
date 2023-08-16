@@ -54,7 +54,7 @@ dict_params = {
 # test chiến lược
 
 class PandasData(btfeed.PandasData):
-    lines = ('tsi', 'mavol','pre_close' )  
+    lines = ('tsi', 'mavol','pre_close','len_sideway' )  
     params = (
         ('datetime', 'date_time'),
         ('open', 'open'),
