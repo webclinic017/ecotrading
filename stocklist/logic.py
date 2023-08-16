@@ -155,7 +155,7 @@ def breakout_strategy_otmed(df, risk):
     
 def filter_stock_muanual( risk = 0.03):
     print('đang chạy')
-    strategy= StrategyTrading.objects.filter(name = 'Breakout', risk = risk).first()
+    strategy= StrategyTrading.objects.filter(name = 'Breakout ver 0.1', risk = risk).first()
     now = datetime.today()
     date_filter = now.date()
     # Lấy ngày giờ gần nhất trong StockPriceFilter
