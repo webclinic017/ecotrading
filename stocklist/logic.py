@@ -212,7 +212,7 @@ def filter_stock_muanual( risk = 0.03):
      
 
 def filter_stock_daily(risk=0.03):
-    strategy = StrategyTrading.objects.filter(risk = risk, name ='Breakout').first()
+    strategy = StrategyTrading.objects.filter(risk = risk, name ='Breakout ver 0.1').first()
     buy_today = filter_stock_muanual(risk)
     date_filter = datetime.today().date() 
     account = Account.objects.get(name ='Bot_Breakout')

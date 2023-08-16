@@ -243,8 +243,8 @@ def run_backtest(risk, begin_list, end_list):
         'nav': 10000000,
         'commission' : 0.0015,
         'period':20}
-    created = StrategyTrading.objects.update_or_create(name='Breakout',risk = risk, defaults=strategy_data)
-    strategy = StrategyTrading.objects.filter(name='Breakout',risk = risk).first()
+    created = StrategyTrading.objects.update_or_create(name='Breakout ver 0.2',risk = risk, defaults=strategy_data)
+    strategy = StrategyTrading.objects.filter(name='Breakout ver 0.2',risk = risk).first()
     stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
     stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
     # stock_test = define_stock_not_test(strategy)
