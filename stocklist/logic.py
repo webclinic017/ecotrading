@@ -121,7 +121,7 @@ def breakout_strategy(df, period, num_raw=None):
     return df
 
 def breakout_strategy_otmed(df, risk):
-    strategy= StrategyTrading.objects.filter(name = 'Breakout', risk = risk).first()
+    strategy= StrategyTrading.objects.filter(name = 'Breakout ver 0.1', risk = risk).first()
     period = strategy.period
     num_raw =period + 5
     backtest = ParamsOptimize.objects.filter(strategy = strategy).values('ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma')
