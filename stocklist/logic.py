@@ -99,10 +99,14 @@ def accumulation_model_df(df):
         if current_ticker != row['ticker']:
             current_ticker = row['ticker']
             current_count = 0  
-        if abs(row['gradients']) <= threshold:
+            limit_count = 0
+        if abs(row['gradients']) > threshold:
+            limit_count += 1
+        else:            
             current_count += 1
-        else:
+        if limit_count > 2:
             current_count = 0
+            limit_count = 0
         df.at[index, 'len_sideway'] = current_count
     return df
 
