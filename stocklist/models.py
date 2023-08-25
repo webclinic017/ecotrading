@@ -98,7 +98,7 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
                     try:
                         bot.send_message(
                             chat_id=group.chat_id, #room Khách hàng
-                            text=f"Đã {note} tín hiệu mua {stock.ticker} mua tại ngày {stock.date} với tỷ lệ lợi nhuận là {stock.wavefoot}%")  
+                            text=f"Có tín hiệu {note} cho cổ phiếu {stock.ticker} mua tại ngày {stock.date} với tỷ lệ lợi nhuận là {stock.wavefoot}%")  
                     except:
                         pass
                 
