@@ -128,20 +128,21 @@ def breakout_strategy_otmed(df, risk):
     strategy= StrategyTrading.objects.filter(name = 'Breakout ver 0.1', risk = risk).first()
     period = strategy.period
     num_raw =period + 5
-    backtest = ParamsOptimize.objects.filter(strategy = strategy).values('ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma')
+    backtest = ParamsOptimize.objects.filter(strategy = strategy).values('ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma','len_sideway')
     df_param = pd.DataFrame(backtest)
     df['mean_vol'] = df.groupby('ticker')['volume'].transform('mean')
     df =df.loc[df['mean_vol']>100000].reset_index(drop=True)
     df = df.drop(['id', 'mean_vol'], axis=1)
     df['param_sma'] = df['ticker'].map(df_param.set_index('ticker')['sma'])
     df = df.drop(df[(df['open'] == 0) & (df['close'] == 0) & (df['volume'] == 0) | pd.isna(df['param_sma'])].index)
+    df = accumulation_model_df(df)
     df = df.groupby('ticker', group_keys=False).apply(lambda x: x.sort_values('date', ascending=False).head(num_raw) if num_raw is not None else x.sort_values('date', ascending=False))
     df =df.reset_index(drop =True)
     df['param_multiply_volumn'] = df['ticker'].map(df_param.set_index('ticker')['multiply_volumn'])
     df['param_change_day'] = df['ticker'].map(df_param.set_index('ticker')['change_day'])
     df['param_rate_of_increase'] = df['ticker'].map(df_param.set_index('ticker')['rate_of_increase'])
     df['param_ratio_cutloss'] = df['ticker'].map(df_param.set_index('ticker')['ratio_cutloss'])
-    
+    df['param_len_sideway'] = df['ticker'].map(df_param.set_index('ticker')['len_sideway'])
     df['res'] = df.groupby('ticker')['high'].transform(lambda x: x[::-1].rolling(window=period).max()[::-1])
     df['sup'] = df.groupby('ticker')['low'].transform(lambda x: x[::-1].rolling(window=period).min()[::-1])
     df['mavol'] = df.groupby('ticker')['volume'].transform(lambda x: x[::-1].rolling(window=period).mean()[::-1])
@@ -150,7 +151,13 @@ def breakout_strategy_otmed(df, risk):
         lambda x: x['close'][::-1].rolling(window=x['param_sma'].astype(int).values[0]).mean()[::-1]).reset_index(drop=True)
     df = df.groupby('ticker', group_keys=False).apply(add_test_value)
     df['tsi'].fillna(method='ffill', inplace=True)
-    buy =(df['close'] > 5) & (df['close'] > df['sma']) & (df['close'] > df['tsi']) & (df['volume'] > df['mavol']*df['param_multiply_volumn']) & (df['mavol'] > 100000) & (df['high']/df['close']-1 < df['param_rate_of_increase']) & (df['close']/df['pre_close']-1 > df['param_change_day'])
+    buy = (df['close'] > 5) & 
+            (df['close'] > df['sma']) & 
+            (df['close'] > df['tsi']) & 
+            (df['volume'] > df['mavol']*df['param_multiply_volumn']) & 
+            (df['mavol'] > 100000) & (df['high']/df['close']-1 < df['param_rate_of_increase']) & 
+            (df['close']/df['pre_close']-1 > df['param_change_day']) &
+            (df['len_sideway']> df['param_len_sideway'])
     cut_loss = df['close'] <= df['close']*(1-df['param_ratio_cutloss'])
     df['signal'] = np.where(buy, 'buy', 'newtral')
     return df
