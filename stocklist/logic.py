@@ -90,6 +90,9 @@ def accumulation_model(ticker, period=5):
 def accumulation_model_df(df):
     df = df.sort_values(by=['ticker', 'date'], ascending=True).reset_index(drop=True)
     df['ema'] = df.groupby('ticker')['close'].transform(lambda x: talib.EMA(x, timeperiod=5))
+    ema_counts = df.groupby("ticker")["ema"].count()
+    tickers_with_4_ema_rows = ema_counts[ema_counts <= 4].index.tolist()
+    df= df[~df['ticker'].isin(tickers_with_4_ema_rows)]
     df['gradients'] = df.groupby('ticker')['ema'].transform(lambda x: np.gradient(x))
     df['len_sideway'] = 0
     threshold = 0.1
