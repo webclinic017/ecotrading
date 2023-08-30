@@ -125,7 +125,7 @@ def breakout_strategy(df, period, num_raw=None):
     return df
 
 def breakout_strategy_otmed(df, risk):
-    strategy= StrategyTrading.objects.filter(name = 'Breakout ver 0.1', risk = risk).first()
+    strategy= StrategyTrading.objects.filter(name = 'Breakout ver 0.2', risk = risk).first()
     period = strategy.period
     num_raw =period + 5
     backtest = ParamsOptimize.objects.filter(strategy = strategy).values('ticker','multiply_volumn','rate_of_increase','change_day','ratio_cutloss','sma','len_sideway')
@@ -178,7 +178,7 @@ def filter_stock_muanual( risk = 0.03):
     # chuyển đổi df theo chiến lược
     df = breakout_strategy_otmed(df, risk)
     df['milestone'] = np.where(df['signal']== 'buy',df['res'],0)
-    df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker','close', 'date', 'signal','milestone','param_ratio_cutloss']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
+    df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker','close', 'date', 'signal','milestone','param_ratio_cutloss','len_sideway']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
     signal_today = df_signal.loc[df_signal['date']==date_filter].reset_index(drop=True)
     bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
     buy_today =[]
@@ -191,6 +191,7 @@ def filter_stock_muanual( risk = 0.03):
             data['signal'] = 'Mua mới'
             data['milestone'] = row['milestone']
             data['ratio_cutloss'] = round(row['param_ratio_cutloss']*100,0)
+            data['accumulation'] = row['len_sideway']
             signal_previous = Signaldaily.objects.filter(ticker=data['ticker'],strategy=strategy ,is_closed =False ).order_by('-date').first()
             if signal_previous:
                 data['signal'] = 'Tăng tỷ trọng'
@@ -202,7 +203,6 @@ def filter_stock_muanual( risk = 0.03):
                 if back_test:
                     data['rating'] = back_test.rating_total
                     data['fundamental'] = fa.fundamental_rating
-                    data['accumulation'] = accumulation_model(ticker=data['ticker'], period=5)
                     if data['rating'] > 50 and data['fundamental']> 50:
                         buy_today.append(data)
     # tạo lệnh mua tự động
@@ -211,7 +211,7 @@ def filter_stock_muanual( risk = 0.03):
            # gửi tín hiệu vào telegram
             bot.send_message(
                 chat_id='-870288807', 
-                text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}% " )   
+                text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
     print('Cổ phiếu là:', buy_today)
     return buy_today
      
