@@ -289,7 +289,13 @@ def run_backtest(risk, begin_list, end_list):
                         'ratio_cutloss':best_params[2],
                         'pattern_rating':best_params[3],
                 }
-                obj, created = ParamsOptimize.objects.update_or_create(strategy = strategy,ticker=ticker, defaults=params_data)
+                params_save = {
+                        'param1': best_params[0],  
+                        'param2': best_params[1],  
+                        'param3':best_params[2],
+                        'param4':best_params[3],
+                }
+                obj, created = ParamsOptimize.objects.update_or_create(strategy = strategy,ticker=ticker, defaults=params_save)
                 print('Đã tạo param')
 
                 # Tạo một phiên giao dịch Backtrader mới
