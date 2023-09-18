@@ -268,7 +268,7 @@ class RatingStrategy(models.Model):
 class ParamsOptimize(models.Model):  
     ticker = models.CharField(max_length=15,  verbose_name = 'Cổ phiếu' )  
     strategy = models.ForeignKey(StrategyTrading,on_delete=models.CASCADE, null=True, blank=True,verbose_name = 'Chiến lược' )
-    param1 = models.FloatField(default=2, verbose_name='Cấp nhân khối lượng', help_text='Giá trị mặc định là 2') #mul
+    param1 = models.FloatField(default=2, verbose_name='Cấp nhân khối lượng') #mul
     param2 = models.FloatField(default=0.03 , verbose_name = 'Biến động tăng') #rate of
     param3 = models.FloatField(default=0.015, verbose_name = 'Tỷ lệ nến') #change
     param4= models.FloatField(default=0.05 , verbose_name = 'Tỷ lệ cắt lỗ') #ratio_cut
