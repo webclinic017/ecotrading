@@ -230,7 +230,7 @@ def define_stock_not_test(strategy):
     
 
 
-def run_backtest(risk, begin_list, end_list):
+def run_backtest_tenisball(risk, begin_list, end_list):
     strategy_data = {
         'name': 'Tenisball_ver0.1',
         'risk': risk,   
