@@ -387,4 +387,18 @@ def check_update_analysis_and_send_notifications():
         bot.send_message(
                 chat_id='-870288807', 
                 text=f"Cổ phiếu {record.ticker} đã quá 3 tháng chưa có cập nhật thông tin mới, hãy cập nhật ngay nhé Vũ/Thạch ơi!!!" )   
-        
+
+
+def tenisball_strategy(df):
+    df = df.sort_values('date', ascending=True)
+    df['Morning_Star'] = talib.CDLMORNINGSTAR(df['open'], df['high'], df['low'], df['close'])
+    df['Bullish_Harami'] = talib.CDLHARAMI(df['open'], df['high'], df['low'], df['close'])
+    df['Piercing_Line'] = talib.CDLPIERCING(df['open'], df['high'], df['low'], df['close'])
+    df['Hammer'] = talib.CDLHAMMER(df['open'], df['high'], df['low'], df['close'])
+    df['Bullish_Engulfing'] = talib.CDLENGULFING(df['open'], df['high'], df['low'], df['close'])
+    df['pattern_rating']= df['Morning_Star']+df['Bullish_Harami'] +df['Piercing_Line']+df['Hammer']+df['Bullish_Engulfing']
+    df['ma200'] = df['close'].rolling(window=200).mean()
+    df['mavol'] = df['volume'].rolling(window=200).mean()
+    df['top'] = df['high'].rolling(window=5).max()
+    df = df.sort_values('date', ascending=False)
+    return df

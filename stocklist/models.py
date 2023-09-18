@@ -268,12 +268,12 @@ class RatingStrategy(models.Model):
 class ParamsOptimize(models.Model):  
     ticker = models.CharField(max_length=15,  verbose_name = 'Cổ phiếu' )  
     strategy = models.ForeignKey(StrategyTrading,on_delete=models.CASCADE, null=True, blank=True,verbose_name = 'Chiến lược' )
-    multiply_volumn = models.FloatField(default=2, verbose_name = 'Cấp nhân khối lượng')
-    rate_of_increase = models.FloatField(default=0.03 , verbose_name = 'Biến động tăng')
-    change_day = models.FloatField(default=0.015, verbose_name = 'Tỷ lệ nến')
-    ratio_cutloss= models.FloatField(default=0.05 , verbose_name = 'Tỷ lệ cắt lỗ')
-    sma = models.FloatField(default=20 , verbose_name = 'Trung bình giá')
-    len_sideway  =models.IntegerField(default=0 , verbose_name = 'Ngày tích lũy')
+    param1 = models.FloatField(default=2, verbose_name='Cấp nhân khối lượng', help_text='Giá trị mặc định là 2') #mul
+    param2 = models.FloatField(default=0.03 , verbose_name = 'Biến động tăng') #rate of
+    param3 = models.FloatField(default=0.015, verbose_name = 'Tỷ lệ nến') #change
+    param4= models.FloatField(default=0.05 , verbose_name = 'Tỷ lệ cắt lỗ') #ratio_cut
+    param5 = models.FloatField(default=20 , verbose_name = 'Trung bình giá') #sma
+    param6  =models.IntegerField(default=0 , verbose_name = 'Ngày tích lũy') #len
 
     def __str__(self):
         return self.ticker
@@ -281,6 +281,23 @@ class ParamsOptimize(models.Model):
     class Meta:
         verbose_name = 'Thông số tối ưu'
         verbose_name_plural = 'Thông số tối ưu'
+    
+    def get_strategy_help_text(self):
+        # Định nghĩa logic tùy chỉnh dựa trên giá trị strategy
+        if self.strategy.name == 'Breakout ver 0.2_0.03':
+            return 'Giải thích tùy chỉnh cho chiến lược A'
+        elif self.strategy.name == 'another_strategy_value':
+            return 'Giải thích tùy chỉnh cho chiến lược B'
+        else:
+            return 'Giải thích mặc định nếu strategy không khớp'
+
+    def save(self, *args, **kwargs):
+        # Cập nhật giá trị help_text bằng cách gọi get_strategy_help_text
+        self.fields['strategy'].help_text = self.get_strategy_help_text()
+        super(ParamsOptimize, self).save(*args, **kwargs)
+
+
+
 
 class StockFundamentalData(models.Model):
     ticker = models.CharField(max_length=15,  verbose_name = 'Cổ phiếu' ) 
