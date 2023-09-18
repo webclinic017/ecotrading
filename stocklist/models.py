@@ -282,20 +282,7 @@ class ParamsOptimize(models.Model):
         verbose_name = 'Thông số tối ưu'
         verbose_name_plural = 'Thông số tối ưu'
     
-    def get_strategy_help_text(self):
-        # Định nghĩa logic tùy chỉnh dựa trên giá trị strategy
-        if self.strategy.name == 'Breakout ver 0.2_0.03':
-            return 'Giải thích tùy chỉnh cho chiến lược A'
-        elif self.strategy.name == 'another_strategy_value':
-            return 'Giải thích tùy chỉnh cho chiến lược B'
-        else:
-            return 'Giải thích mặc định nếu strategy không khớp'
-
-    def save(self, *args, **kwargs):
-        # Cập nhật giá trị help_text bằng cách gọi get_strategy_help_text
-        self.fields['strategy'].help_text = self.get_strategy_help_text()
-        super(ParamsOptimize, self).save(*args, **kwargs)
-
+    
 
 
 
