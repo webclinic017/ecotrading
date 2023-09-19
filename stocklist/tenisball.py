@@ -256,10 +256,10 @@ def run_backtest_tenisball(risk, begin_list, end_list):
             data = PandasData(dataname=df)
             #Chạy tối ưu hóa param
             # Khởi tạo các giá trị tham số muốn tối ưu
-            ma_backtest = [20,30,40,50]#0
+            ma_backtest = [20,30,40,50,100]#0
             ratio_backtest=[0.9,0.93,0.95, 0.97,0.99] #1
             ratio_cutloss = [0.05,0.07,0.1]#2
-            pattern_rating = [100,200] #3
+            pattern_rating = [0,100] #3
             # Tạo danh sách các giá trị tham số
             param_values = [ma_backtest,ratio_backtest, ratio_cutloss, pattern_rating]
             # Tạo tất cả các tổ hợp tham số
