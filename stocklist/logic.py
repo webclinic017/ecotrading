@@ -396,7 +396,10 @@ def tenisball_strategy(df):
     df['Piercing_Line'] = talib.CDLPIERCING(df['open'], df['high'], df['low'], df['close'])
     df['Hammer'] = talib.CDLHAMMER(df['open'], df['high'], df['low'], df['close'])
     df['Bullish_Engulfing'] = talib.CDLENGULFING(df['open'], df['high'], df['low'], df['close'])
-    df['pattern_rating']= df['Morning_Star']+df['Bullish_Harami'] +df['Piercing_Line']+df['Hammer']+df['Bullish_Engulfing']
+    df['Dragonfly_Doji'] = talib.CDLDRAGONFLYDOJI(df['open'], df['high'], df['low'], df['close'])
+    df['Morning_Star_Doji'] = talib.CDLMORNINGDOJISTAR(df['open'], df['high'], df['low'], df['close'])
+    df['Inverted_Hammer'] = talib.CDLINVERTEDHAMMER(df['open'], df['high'], df['low'], df['close'])
+    df['pattern_rating']= df['Morning_Star']+df['Bullish_Harami'] +df['Piercing_Line']+df['Hammer']+df['Bullish_Engulfing']+df['Dragonfly_Doji']+df['Morning_Star_Doji']+df['Inverted_Hammer']
     df['ma200'] = df['close'].rolling(window=200).mean()
     df['mavol'] = df['volume'].rolling(window=200).mean()
     df['top'] = df['high'].rolling(window=5).max()

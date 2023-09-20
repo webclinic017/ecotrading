@@ -240,7 +240,7 @@ def run_backtest_tenisball(risk, begin_list, end_list):
     created = StrategyTrading.objects.update_or_create(name=strategy_data['name'],risk = risk, defaults=strategy_data)
     strategy = StrategyTrading.objects.filter(name=strategy_data['name'],risk = risk).first()
     stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
-    stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
+    stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 50000]
     # stock_test = define_stock_not_test(strategy)
     list_bug =[]
     for item in stock_test[begin_list:end_list]:
@@ -259,7 +259,7 @@ def run_backtest_tenisball(risk, begin_list, end_list):
             ma_backtest = [20,30,40,50,100]#0
             ratio_backtest=[0.9,0.93,0.95, 0.97,0.99] #1
             ratio_cutloss = [0.05,0.07,0.1]#2
-            pattern_rating = [0,100] #3
+            pattern_rating = [100,200] #3
             # Tạo danh sách các giá trị tham số
             param_values = [ma_backtest,ratio_backtest, ratio_cutloss, pattern_rating]
             # Tạo tất cả các tổ hợp tham số
@@ -305,10 +305,11 @@ def run_backtest_tenisball(risk, begin_list, end_list):
                 # thêm chiến lược thông số đã được tối ưu
                 cerebro.addstrategy(tenisball_otm, ticker,True,strategy,
                                     ma_backtest= params_data['ma_backtest'], 
+                                    ratio_backtest = params_data['ratio_backtest'],
                                     ratio_cutloss=params_data['ratio_cutloss'], 
                                     pattern_rating=params_data['pattern_rating'], 
                                     risk= risk,
-                                    ratio_backtest = params_data['ratio_backtest'],)
+                                    )
 
                 # Thiết lập thông số về kích thước vốn ban đầu và phí giao dịch
                 cerebro.broker.setcash(strategy.nav)  # Số dư ban đầu
