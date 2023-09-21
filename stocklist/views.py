@@ -34,7 +34,7 @@ def get_qty_buy(request):
         price = float(request.POST['price'])
         risk = 0.03
         R = risk * nav
-        ratio_cutloss = ParamsOptimize.objects.filter(ticker=ticker).first().ratio_cutloss
+        ratio_cutloss = ParamsOptimize.objects.filter(ticker=ticker).first().param4
         qty = math.floor(int(R / (price * ratio_cutloss )))
         return JsonResponse({'qty': '{:,.0f}'.format(qty)})
 
