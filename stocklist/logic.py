@@ -241,7 +241,7 @@ def tenisball_strategy_otmed(df, risk):
     buy_minvol =df['mavol'] > 100000
     buy_pattern= df['pattern_rating'] >= df['param_pattern_rating']
     buy_backtest_ma = df['close'] >= df['param_ma_backtest'] *df['param_ratio_backtest']
-    buy = buy_trend == True and buy_decrease==True and buy_minvol==True and buy_pattern == True and buy_backtest_ma ==True
+    buy =  buy_trend & buy_decrease & buy_minvol & buy_pattern & buy_backtest_ma
     # cut_loss = df['close'] <= df['close']*(1-df['param_ratio_cutloss'])
     df['signal'] = np.where(buy, 'buy', 'newtral')
     return df
