@@ -219,7 +219,7 @@ def tenisball_strategy_otmed(df, risk):
     backtest = ParamsOptimize.objects.filter(strategy = strategy).values('ticker','param1','param2','param3','param4')
     df_param = pd.DataFrame(backtest)
     df = df.sort_values('date', ascending=True)
-    df = df.drop(['id'], axis=1)
+    df = df.drop(['id','date_time'], axis=1)
     df['param_ma_backtest'] = df['ticker'].map(df_param.set_index('ticker')['param1'])
     df['param_ratio_backtest'] = df['ticker'].map(df_param.set_index('ticker')['param2'])
     df['param_ratio_cutloss'] = df['ticker'].map(df_param.set_index('ticker')['param3'])
@@ -324,7 +324,7 @@ def filter_stock_daily(risk=0.03):
             try:
                 bot.send_message(
                     chat_id=group.chat_id, #room Khách hàng
-                    text=f"Không có cổ phiếu thỏa mãn tiêu chí breakout được lọc trong ngày {date_filter} ")  
+                    text=f"Không có cổ phiếu thỏa mãn tiêu chí được lọc trong ngày {date_filter} ")  
             except:
                 pass
     else:
@@ -372,14 +372,14 @@ def filter_stock_daily(risk=0.03):
                                 response += f"Nguồn {analysis.source}"
                                 bot.send_message(
                                 chat_id=group.chat_id,
-                                text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
+                                text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
                                 bot.send_message(
                                 chat_id=group.chat_id,
                                 text=response)   
                             else:
                                 bot.send_message(
                                 chat_id=group.chat_id,
-                                text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
+                                text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
                         except:
                             pass
             except Exception as e:
