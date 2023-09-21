@@ -134,7 +134,7 @@ def breakout_strategy_otmed(df, risk):
     backtest = ParamsOptimize.objects.filter(strategy = strategy).values('ticker','param1','param2','param3','param4','param5','param6')
     df_param = pd.DataFrame(backtest)
     df['mean_vol'] = df.groupby('ticker')['volume'].transform('mean')
-    df =df.loc[df['mean_vol']>100000].reset_index(drop=True)
+    df =df.loc[df['mean_vol']>50000].reset_index(drop=True)
     df = df.drop(['id', 'mean_vol'], axis=1)
     df['param_sma'] = df['ticker'].map(df_param.set_index('ticker')['param5'])
     df = df.drop(df[(df['open'] == 0) & (df['close'] == 0) & (df['volume'] == 0) | pd.isna(df['param_sma'])].index)
@@ -155,39 +155,23 @@ def breakout_strategy_otmed(df, risk):
     df = df.groupby('ticker', group_keys=False).apply(add_test_value)
     df['tsi'].fillna(method='ffill', inplace=True)
     buy = (df['close'] > 5) & (df['close'] > df['sma']) & (df['close'] > df['tsi']) & (df['volume'] > df['mavol']*df['param_multiply_volumn']) &  (df['mavol'] > 100000) & (df['high']/df['close']-1 < df['param_rate_of_increase']) & (df['close']/df['pre_close']-1 > df['param_change_day']) &(df['len_sideway']> df['param_len_sideway'])
-    cut_loss = df['close'] <= df['close']*(1-df['param_ratio_cutloss'])
+    # cut_loss = df['close'] <= df['close']*(1-df['param_ratio_cutloss'])
     df['signal'] = np.where(buy, 'buy', 'newtral')
     return df
 
-    
-    
-def filter_stock_muanual( risk = 0.03):
-    print('đang chạy')
-    strategy= StrategyTrading.objects.filter(name = 'Breakout ver 0.1', risk = risk).first()
-    now = datetime.today()
-    date_filter = now.date()
-    # Lấy ngày giờ gần nhất trong StockPriceFilter
-    latest_update = StockPriceFilter.objects.all().order_by('-date').first().date_time
-    # Tính khoảng thời gian giữa now và latest_update (tính bằng giây)
-    time_difference = (now - latest_update).total_seconds()
-    # Kiểm tra điều kiện để thực hiện hàm get_info_stock_price_filter()
-    if 0 <= now.weekday() <= 4 and 9 <= now.hour <= 15 and time_difference > 900:
-        get_info_stock_price_filter()
-        print('tải data xong')
-        save_fa_valuation()
-    stock_prices = StockPriceFilter.objects.all().values()
-    # lọc ra top cổ phiếu có vol>100k
-    df = pd.DataFrame(stock_prices)  
-    # chuyển đổi df theo chiến lược
+
+
+
+def date_filter_breakout_strategy(df, risk, date_filter, strategy):
     df = breakout_strategy_otmed(df, risk)
     df['milestone'] = np.where(df['signal']== 'buy',df['res'],0)
     df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker','close', 'date', 'signal','milestone','param_ratio_cutloss','len_sideway']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
     signal_today = df_signal.loc[df_signal['date']==date_filter].reset_index(drop=True)
-    bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
     buy_today =[]
     if len(signal_today) > 0:
         for index, row in signal_today.iterrows():
             data = {}
+            data['strategy'] = 'breakout'
             data['ticker'] = row['ticker']
             data['close'] = row['close']
             data['date'] = row['date']
@@ -210,6 +194,112 @@ def filter_stock_muanual( risk = 0.03):
                         buy_today.append(data)
     # tạo lệnh mua tự động
     buy_today.sort(key=lambda x: x['rating'], reverse=True)
+    return buy_today
+
+def tenisball_strategy(df):
+    df = df.sort_values('date', ascending=True)
+    df['Morning_Star'] = talib.CDLMORNINGSTAR(df['open'], df['high'], df['low'], df['close'])
+    df['Bullish_Harami'] = talib.CDLHARAMI(df['open'], df['high'], df['low'], df['close'])
+    df['Piercing_Line'] = talib.CDLPIERCING(df['open'], df['high'], df['low'], df['close'])
+    df['Hammer'] = talib.CDLHAMMER(df['open'], df['high'], df['low'], df['close'])
+    df['Bullish_Engulfing'] = talib.CDLENGULFING(df['open'], df['high'], df['low'], df['close'])
+    df['Dragonfly_Doji'] = talib.CDLDRAGONFLYDOJI(df['open'], df['high'], df['low'], df['close'])
+    df['Morning_Star_Doji'] = talib.CDLMORNINGDOJISTAR(df['open'], df['high'], df['low'], df['close'])
+    df['Inverted_Hammer'] = talib.CDLINVERTEDHAMMER(df['open'], df['high'], df['low'], df['close'])
+    df['pattern_rating']= df['Morning_Star']+df['Bullish_Harami'] +df['Piercing_Line']+df['Hammer']+df['Bullish_Engulfing']+df['Dragonfly_Doji']+df['Morning_Star_Doji']+df['Inverted_Hammer']
+    df['ma200'] = df['close'].rolling(window=200).mean()
+    df['mavol'] = df['volume'].rolling(window=200).mean()
+    df['top'] = df['high'].rolling(window=5).max()
+    df = df.sort_values('date', ascending=False)
+    return df
+
+def tenisball_strategy_otmed(df, risk):
+    strategy= StrategyTrading.objects.filter(name = 'Tenisball_ver0.1', risk = risk).first()
+    period = strategy.period
+    backtest = ParamsOptimize.objects.filter(strategy = strategy).values('ticker','param1','param2','param3','param4')
+    df_param = pd.DataFrame(backtest)
+    df = df.sort_values('date', ascending=True)
+    df = df.drop(['id'], axis=1)
+    df['param_ma_backtest'] = df['ticker'].map(df_param.set_index('ticker')['param1'])
+    df['param_ratio_backtest'] = df['ticker'].map(df_param.set_index('ticker')['param2'])
+    df['param_ratio_cutloss'] = df['ticker'].map(df_param.set_index('ticker')['param3'])
+    df['param_pattern_rating'] = df['ticker'].map(df_param.set_index('ticker')['param4'])
+    df['Morning_Star'] = talib.CDLMORNINGSTAR(df['open'], df['high'], df['low'], df['close'])
+    df['Bullish_Harami'] = talib.CDLHARAMI(df['open'], df['high'], df['low'], df['close'])
+    df['Piercing_Line'] = talib.CDLPIERCING(df['open'], df['high'], df['low'], df['close'])
+    df['Hammer'] = talib.CDLHAMMER(df['open'], df['high'], df['low'], df['close'])
+    df['Bullish_Engulfing'] = talib.CDLENGULFING(df['open'], df['high'], df['low'], df['close'])
+    df['Dragonfly_Doji'] = talib.CDLDRAGONFLYDOJI(df['open'], df['high'], df['low'], df['close'])
+    df['Morning_Star_Doji'] = talib.CDLMORNINGDOJISTAR(df['open'], df['high'], df['low'], df['close'])
+    df['Inverted_Hammer'] = talib.CDLINVERTEDHAMMER(df['open'], df['high'], df['low'], df['close'])
+    df['pattern_rating']= df['Morning_Star']+df['Bullish_Harami'] +df['Piercing_Line']+df['Hammer']+df['Bullish_Engulfing']+df['Dragonfly_Doji']+df['Morning_Star_Doji']+df['Inverted_Hammer']
+    df['ma200'] = df['close'].rolling(window=200).mean()
+    df['top'] = df['high'].rolling(window=5).max()
+    df['mavol'] = df['volume'].rolling(window=20).mean()
+    buy_trend = df['close'] > df['ma200']
+    buy_decrease = df['close'] < df['top']
+    buy_minvol =df['mavol'] > 100000
+    buy_pattern= df['pattern_rating'] >= df['param_pattern_rating']
+    buy_backtest_ma = df['close'] >= df['param_ma_backtest'] *df['param_ratio_backtest']
+    buy = buy_trend == True and buy_decrease==True and buy_minvol==True and buy_pattern == True and buy_backtest_ma ==True
+    # cut_loss = df['close'] <= df['close']*(1-df['param_ratio_cutloss'])
+    df['signal'] = np.where(buy, 'buy', 'newtral')
+    return df
+
+def date_filter_tenisball_strategy(df, risk, date_filter, strategy):
+    df = tenisball_strategy_otmed(df, risk)
+    df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker','close', 'date', 'signal','param_ratio_cutloss']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
+    signal_today = df_signal.loc[df_signal['date']==date_filter].reset_index(drop=True)
+    buy_today =[]
+    if len(signal_today) > 0:
+        for index, row in signal_today.iterrows():
+            data = {}
+            data['strategy'] = 'tenisball'
+            data['ticker'] = row['ticker']
+            data['close'] = row['close']
+            data['date'] = row['date']
+            data['signal'] = 'Mua mới'
+            data['ratio_cutloss'] = round(row['param_ratio_cutloss']*100,0)
+            signal_previous = Signaldaily.objects.filter(ticker=data['ticker'],strategy=strategy ,is_closed =False ).order_by('-date').first()
+            if signal_previous:
+                data['signal'] = 'Tăng tỷ trọng'
+            lated_signal = Signaldaily.objects.filter(ticker=data['ticker'],strategy=strategy , date = date_filter).order_by('-date').first()
+            #check nếu không có tín hiệu nào trước đó hoặc tín hiệu đã có nhưng ngược với tín hiệu hiện tại 
+            if lated_signal is None:
+                back_test= OverviewBacktest.objects.filter(ticker=data['ticker'],strategy=strategy).first()
+                fa = StockFundamentalData.objects.filter(ticker =data['ticker'] ).first()
+                if back_test:
+                    data['rating'] = back_test.rating_total
+                    data['fundamental'] = fa.fundamental_rating
+                    if data['rating'] > 50 and data['fundamental']> 50:
+                        buy_today.append(data)
+    # tạo lệnh mua tự động
+    buy_today.sort(key=lambda x: x['rating'], reverse=True)
+    return buy_today
+
+def filter_stock_muanual( risk = 0.03):
+    print('đang chạy')
+    strategy_breakout= StrategyTrading.objects.filter(name = 'Breakout ver 0.2', risk = risk).first()
+    strategy_tenisball= StrategyTrading.objects.filter(name = 'Tenisball_ver0.1', risk = risk).first()
+    now = datetime.today()
+    date_filter = now.date()
+    # Lấy ngày giờ gần nhất trong StockPriceFilter
+    latest_update = StockPriceFilter.objects.all().order_by('-date').first().date_time
+    # Tính khoảng thời gian giữa now và latest_update (tính bằng giây)
+    time_difference = (now - latest_update).total_seconds()
+    # Kiểm tra điều kiện để thực hiện hàm get_info_stock_price_filter()
+    if 0 <= now.weekday() <= 4 and 9 <= now.hour <= 15 and time_difference > 900:
+        get_info_stock_price_filter()
+        print('tải data xong')
+        save_fa_valuation()
+    bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
+    stock_prices = StockPriceFilter.objects.all().values()
+    # lọc ra top cổ phiếu có vol>100k
+    df = pd.DataFrame(stock_prices)  
+    # chuyển đổi df theo chiến lược
+    breakout_buy_today = date_filter_breakout_strategy(df, risk, date_filter, strategy_breakout)
+    tenisball_buy_today = date_filter_tenisball_strategy(df, risk, date_filter, strategy_tenisball)
+    buy_today = breakout_buy_today+tenisball_buy_today
     for ticker in buy_today:
            # gửi tín hiệu vào telegram
             bot.send_message(
@@ -218,6 +308,7 @@ def filter_stock_muanual( risk = 0.03):
     print('Cổ phiếu là:', buy_today)
     return buy_today
      
+
 
 def filter_stock_daily(risk=0.03):
     strategy = StrategyTrading.objects.filter(risk = risk, name ='Breakout ver 0.1').first()
@@ -389,19 +480,3 @@ def check_update_analysis_and_send_notifications():
                 text=f"Cổ phiếu {record.ticker} đã quá 3 tháng chưa có cập nhật thông tin mới, hãy cập nhật ngay nhé Vũ/Thạch ơi!!!" )   
 
 
-def tenisball_strategy(df):
-    df = df.sort_values('date', ascending=True)
-    df['Morning_Star'] = talib.CDLMORNINGSTAR(df['open'], df['high'], df['low'], df['close'])
-    df['Bullish_Harami'] = talib.CDLHARAMI(df['open'], df['high'], df['low'], df['close'])
-    df['Piercing_Line'] = talib.CDLPIERCING(df['open'], df['high'], df['low'], df['close'])
-    df['Hammer'] = talib.CDLHAMMER(df['open'], df['high'], df['low'], df['close'])
-    df['Bullish_Engulfing'] = talib.CDLENGULFING(df['open'], df['high'], df['low'], df['close'])
-    df['Dragonfly_Doji'] = talib.CDLDRAGONFLYDOJI(df['open'], df['high'], df['low'], df['close'])
-    df['Morning_Star_Doji'] = talib.CDLMORNINGDOJISTAR(df['open'], df['high'], df['low'], df['close'])
-    df['Inverted_Hammer'] = talib.CDLINVERTEDHAMMER(df['open'], df['high'], df['low'], df['close'])
-    df['pattern_rating']= df['Morning_Star']+df['Bullish_Harami'] +df['Piercing_Line']+df['Hammer']+df['Bullish_Engulfing']+df['Dragonfly_Doji']+df['Morning_Star_Doji']+df['Inverted_Hammer']
-    df['ma200'] = df['close'].rolling(window=200).mean()
-    df['mavol'] = df['volume'].rolling(window=200).mean()
-    df['top'] = df['high'].rolling(window=5).max()
-    df = df.sort_values('date', ascending=False)
-    return df
