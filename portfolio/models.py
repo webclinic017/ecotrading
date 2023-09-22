@@ -94,7 +94,7 @@ def get_info_stock_price_filter():
         delete = 0
         if len_date >201:
             delete = StockPriceFilter.objects.filter(date=mindate).delete()
-    return f"Tạo mới tổng {count} cổ phiếu, và xóa {delete[0]} cổ phiếu cũ " 
+    return f"Tạo mới tổng {count} cổ phiếu, và xóa {delete} cổ phiếu cũ " 
 
 def get_list_stock_price():
     list_stock = list(Transaction.objects.values_list('stock', flat=True).distinct())

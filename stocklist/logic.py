@@ -391,8 +391,6 @@ def filter_stock_daily(risk=0.03):
     return          
 
 
-
-
 def save_event_stock(stock):
     list_event =[]
     linkbase= 'https://www.stockbiz.vn/MarketCalendar.aspx?Symbol='+ stock
