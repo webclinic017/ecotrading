@@ -836,6 +836,10 @@ class DateNotTrading(models.Model):
     description = models.TextField(max_length=255, blank=True)
     def __str__(self):
         return str(self.date) 
+    
+class SectorListName(models.Model):
+    ticker = models.CharField(max_length=10)
+    name = models.CharField(max_length=100)
 
 class SectorPrice(models.Model):
     ticker = models.CharField(max_length=10)
