@@ -837,5 +837,16 @@ class DateNotTrading(models.Model):
     def __str__(self):
         return str(self.date) 
 
-
+class SectorPrice(models.Model):
+    ticker = models.CharField(max_length=10)
+    date = models.DateField()#auto_now_add=True)
+    open = models.FloatField()
+    high =models.FloatField()
+    low = models.FloatField()
+    close = models.FloatField()
+    volume =models.FloatField()
+    date_time = models.DateTimeField(default=datetime.now)
+    
+    def __str__(self):
+        return str(self.ticker) +str("_")+ str(self.date)
 
