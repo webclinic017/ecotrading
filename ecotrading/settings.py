@@ -174,6 +174,7 @@ CRONJOBS = [
     ('30 15 * * 1-5', 'portfolio.models.get_all_info_stock_price'), # Chạy lúc 15:30 từ thứ 2 đến thứ 6
     ('00 0 * * 1-5', 'stocklist.logic.check_dividend'),# chạy lúc 7 giờ sáng
     ('00 0 * * 1-5', 'stocklist.check_update_analysis_and_send_notifications'),# chạy lúc 7 giờ sáng
+    ('00 0 * * 1-5', 'webdata.save_data'),# chạy lúc 7 giờ sáng
     ('30 2 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 9h30 sáng
     ('30 4 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 11h30 sáng
     ('00 7 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 14h00 trưa
