@@ -4,19 +4,21 @@ import datetime
 import pandas as pd
 from posgress import *
 import pandas_datareader.data as web
+import numpy as np
 
 
 
     # tỷ giá
 dolar_index = yf.Ticker("DX-Y.NYB")
 usd_vnd =yf.Ticker("VND=X")
-# Lãi suất
+# Lãi suất: ^TNX: bond year 10
 bond_year_10 = yf.Ticker("^TNX")
-#Giá hàng hóa
+#Giá hàng hóa CL=F: crude_oil = yf.Ticker("CL=F")
 crude_oil = yf.Ticker("CL=F")
 gold = yf.Ticker("GC=F")
 #Chỉ số chứng khoán
 dow_jones =yf.Ticker("^DJI")
+sp_500 = yf.Ticker("^GSPC")
 nikkei = yf.Ticker("^N225")
 FTSE_100= yf.Ticker("^FTSE")
 hangsheng =yf.Ticker("^HSI")
@@ -24,12 +26,33 @@ vnindex = yf.Ticker("^VNINDEX.VN")
 dax = yf.Ticker("^GDAXI")
 
 def marco_data_daily(start_date, end_date):  
-    tickers = ["DX-Y.NYB", "VND=X", "^TNX", "CL=F", "GC=F", "^DJI", "^N225", "^FTSE", "^HSI"]
+    tickers = ["DX-Y.NYB", "VND=X", "^TNX", "CL=F", "GC=F", "^DJI","^GSPC", "^N225", "^FTSE", "^HSI"]
     # Tải dữ liệu cho tất cả các ticker trong danh sách
     data = yf.download(tickers, start=start_date, end=end_date)
     stacked_data = data['Adj Close'].stack()
     stacked_data = stacked_data.reset_index()
-    stacked_data.columns = ['Date', 'Ticker', 'Close']
+    stacked_data.columns = ['date', 'ticker', 'close']
+    bondy10_y2 = web.DataReader(['T10Y2Y'], 'fred', start_date, end_date).reset_index()
+    bondy10_y2['ticker']= 'T10Y2Y'
+    bondy10_y2.rename(columns={'T10Y2Y': 'close','DATE':'date'}, inplace=True)
+    stacked_data = pd.concat([stacked_data,bondy10_y2], axis=0) 
+    conditions = [
+        (stacked_data['ticker'] == 'DX-Y.NYB'),
+        (stacked_data['ticker'] == 'VND=X'),
+        (stacked_data['ticker'] == '^TNX'),
+        (stacked_data['ticker'] == 'CL=F'),
+        (stacked_data['ticker'] == 'GC=F'),
+        (stacked_data['ticker'] == '^DJI'),
+        (stacked_data['ticker'] == '^GSPC'),
+        (stacked_data['ticker'] == '^N225'),
+        (stacked_data['ticker'] == '^HSI'),
+        (stacked_data['ticker'] == '^FTSE'),
+        (stacked_data['ticker'] == '^GDAXI'),
+        (stacked_data['ticker'] == 'T10Y2Y')
+            ]
+    values = ['Dolar index', 'USD/VND', 'Bond year 10', 'Crude oil','Gold','Dow Jones','S&P 500','Nikkei 225','Hang Seng','FTSE 100','DAX','Bond 10Y-2Y']
+    # Sử dụng np.select để tạo cột 'name'
+    stacked_data['name'] = np.select(conditions, values, default=None)
     final_data = stacked_data
     # In ra dữ liệu
     return final_data
@@ -93,7 +116,7 @@ def marco_data_monthly():
 
 def save_data():
     end_date = datetime.datetime.now().date()
-    start_date = end_date - datetime.timedelta(days= 730) 
+    start_date = end_date - datetime.timedelta(days= 1800) 
     df_marco_daily = marco_data_daily(start_date, end_date)
     df_marco_daily.to_sql('tbdailymarco', engine(0), if_exists='replace', index=False)
     df_yearly_macro= marco_data_yearly()
