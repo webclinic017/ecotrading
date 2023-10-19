@@ -121,7 +121,7 @@ def auto_news_omo():
             status_total_volume_omo ='Bơm ròng'
         else:
             status_total_volume_omo ='Hút ròng'
-        message = f"Ngày {dict_omo['date'].date()} NHNN đã {dict_omo['status']} {abs(dict_omo['volume'])}k tỷ. Tổng kết trong 30 ngày qua, NHNN đã {status_total_volume_omo} {total_volume_omo}k tỷ với lãi suất bình quân {average_rate_omo}%")
+        message = f"Ngày {dict_omo['date'].date()} NHNN đã {dict_omo['status']} {abs(dict_omo['volume'])}k tỷ. Tổng kết trong 30 ngày qua, NHNN đã {status_total_volume_omo} {total_volume_omo}k tỷ với lãi suất bình quân {average_rate_omo}%"
         for group in external_room:
             bot = Bot(token=group.token.token)
             try:
