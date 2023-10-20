@@ -137,7 +137,8 @@ def auto_news_stock_worlds():
     start_date = date - datetime.timedelta(days=2)
     query_get_df_index = f"select * from tbdailymarco where date >= '{start_date}'"
     df_data = read_sql_to_df(0,query_get_df_index)
-    df_data = df_data[(df_data['ticker'] != "^FTSE")].reset_index()
+    df_data = df_data[(df_data['ticker'] != "^FTSE")&(df_data['ticker'] != "T10Y2Y")]
+    df_data = df_data.sort_values(by=['ticker', 'date']).reset_index()
     # df_vnindex = df_data[(df_data['ticker'] == "VNINDEX")]
     df_data['change_day'] = round(df_data.groupby('ticker')['close'].diff(),2)
     df_data['change_day_percent'] = round((df_data['change_day'] / df_data['close'].shift(1)) * 100,2)

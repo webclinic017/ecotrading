@@ -50,7 +50,7 @@ def marco_data_daily(start_date, end_date):
         (stacked_data['ticker'] == '^GDAXI'),
         (stacked_data['ticker'] == 'T10Y2Y')
             ]
-    values = ['Dolar index', 'USD/VND', 'Bond year 10', 'Crude oil','Gold','Dow Jones','S&P 500','Nikkei 225','Hang Seng','FTSE 100','DAX','Bond 10Y-2Y']
+    values = ['Dolar index', 'USD/VND', 'Bond US 10Y', 'Crude oil','Gold','Dow Jones','S&P 500','Nikkei 225','Hang Seng','FTSE 100','DAX','Bond 10Y-2Y']
     # Sử dụng np.select để tạo cột 'name'
     stacked_data['name'] = np.select(conditions, values, default=None)
     final_data = stacked_data
