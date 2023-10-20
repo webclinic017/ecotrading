@@ -1,14 +1,33 @@
 import os
+import re
 import pandas as pd
 from portfolio.models import SectorPrice, SectorListName
 from posgress import *
 import datetime
 from telegram import Bot
 from portfolio.models import ChatGroupTelegram
+from bs4 import BeautifulSoup
+import requests
 
 date = datetime.datetime.today().date()
 bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
 external_room = ChatGroupTelegram.objects.filter(type = 'external',is_signal =True,rank ='1' )
+
+def round_number(number):
+    rounded_number = round(number, -6)
+    result = '{:,}'.format(int(str(rounded_number)[:-8]))
+    return result
+
+def status(number):
+    if number >0:
+            status ='Mua ròng'
+    else:
+            status ='Bán ròng'
+    return status
+
+
+
+
 
 def auto_news_daily():
     bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
@@ -48,8 +67,37 @@ def auto_news_daily():
     # Lấy danh sách các ticker có giá trị close nhỏ hơn hoặc bằng min
     low_close_tickers = df[(df['close'] <= df['min'])& (df['close'] != 100)& (df['close'] != 0)]
     low_close_sector = low_close_tickers['name'].tolist()
-    # Cập nhật diễn biến ngành
-    if len(df_lated)>0 and len(selected_row) >0:
+
+    data_fr =[]
+    linkbase= 'https://www.stockbiz.vn/ForeignerTradingStats.aspx?Type=1'
+    r = requests.get(linkbase)
+    soup = BeautifulSoup(r.text,'html.parser')
+    table = soup.find('table', class_='dataTable')
+    rows = table.find_all('td') 
+    columns = ["date", "buy_volume", "%_buy_volume", "sell_volume", "%_sell_volume", "net_volume", "buy_value", "%_buy_value", "sell_value", "%_sell_value","net_value"]
+
+    for td in rows:
+        row = td.get_text(strip=True)
+        data_fr.append(row)
+    data_fr = data_fr[13:]
+    num_columns = len(columns)
+    num_data = len(data_fr)
+    num_rows = num_data // num_columns
+    # Chia dữ liệu thành các dòng
+    data_rows = [data_fr[i:i + num_columns] for i in range(0, num_data, num_columns)]
+    # Tạo DataFrame từ dữ liệu và cột
+    df_fr = pd.DataFrame(data_rows, columns=columns)
+    df_fr['date'] = pd.to_datetime(df_fr['date'], format='%d/%m/%Y')
+    numeric_columns = columns[1:]  # Lấy tất cả cột sau cột 'Ngày'
+    df_fr[numeric_columns] = df_fr[numeric_columns].replace('[\.,%]', '', regex=True).astype(float)
+    total_volume = round(df_fr['net_value'].sum(),0)
+    result_month_value = round_number(total_volume)
+    df_fr_lated = df_fr[df_fr['date'] == (date).strftime('%Y-%m-%d')]
+    today_value = df_fr_lated['net_value'].values[0]
+    result_today_value = round_number(today_value)
+    message = ""
+    
+    if len(selected_row) >0:
         data_vnindex = selected_row.to_dict(orient='records')[0]
         if data_vnindex['change_day_percent'] >= 1.5:
             data_vnindex['status']  = 'Tăng mạnh'
@@ -61,9 +109,10 @@ def auto_news_daily():
             data_vnindex['status']  = 'Giảm mạnh'    
         elif data_vnindex['change_day_percent'] ==0:
             data_vnindex['status']  = 'Không biến động' 
-        message = ""
+    
         message += f"Thị trường ngày {data_vnindex['date']}, chỉ số VNINDEX {data_vnindex['status']} {round(abs(data_vnindex['change_day']),2)} điểm ({round(data_vnindex['change_day_percent'],2)}%) chốt tại mốc {data_vnindex['close']}." + "\n"
-
+        message += f"Nước ngoài đã {status(today_value)} {result_today_value}k tỷ. Tổng kết trong một tháng, nước ngoài đã {status(total_volume)} {result_month_value}k tỷ" + "\n"
+        
         if len(top_5_tickers) > 0:
             message += "- Các ngành tăng mạnh nhất là " + ", ".join(top_sector) + "\n"
 
@@ -84,6 +133,7 @@ def auto_news_daily():
                     text=message)
             except:
                 pass
+    return 
         
 
         # if len(top_5_tickers)>0:
