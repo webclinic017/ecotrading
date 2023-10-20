@@ -158,7 +158,7 @@ def auto_news_daily():
 def auto_news_omo():    
     query_get_df_omo = f"select * from tbomovietnam where date > '{date - datetime.timedelta(days=30)}'"
     df_omo = read_sql_to_df(0,query_get_df_omo)
-    total_volume_omo = df_omo['volume'].sum()
+    total_volume_omo = round(df_omo['volume'].sum(),2)
     average_rate_omo = round(df_omo['rate'].mean(),2)
     df_omo_lated = df_omo[df_omo['date'] == (date).strftime('%Y-%m-%d')]
     if len(df_omo_lated) >0:
