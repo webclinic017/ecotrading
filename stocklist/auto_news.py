@@ -111,7 +111,7 @@ def auto_news_daily():
             data_vnindex['status']  = 'Không biến động' 
     
         message += f"Thị trường ngày {data_vnindex['date']}, chỉ số VNINDEX {data_vnindex['status']} {round(abs(data_vnindex['change_day']),2)} điểm ({round(data_vnindex['change_day_percent'],2)}%) chốt tại mốc {data_vnindex['close']}." + "\n"
-        message += f"Nước ngoài đã {status(today_value)} {result_today_value}k tỷ. Tổng kết trong một tháng, nước ngoài đã {status(total_volume)} {result_month_value}k tỷ" + "\n"
+        message += f"Nước ngoài đã {status(today_value)} {result_today_value} tỷ. Tổng kết trong một tháng, nước ngoài đã {status(total_volume)} {result_month_value} tỷ" + "\n"
         
         if len(top_5_tickers) > 0:
             message += "- Các ngành tăng mạnh nhất là " + ", ".join(top_sector) + "\n"
