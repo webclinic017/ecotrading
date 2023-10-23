@@ -29,7 +29,7 @@ def status(number):
 
 
 
-def auto_news_daily():
+# def auto_news_daily():
     bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
     sector_name =SectorListName.objects.all().values()
     df_sector_name = pd.DataFrame(sector_name)
