@@ -37,6 +37,33 @@ def status(number):
     return status
 
 
+def get_omo_info():
+    linkbase= 'https://www.sbv.gov.vn/webcenter/portal/vi/menu/trangchu/hdtttt/ttm'
+    r = requests.get(linkbase)
+    soup = BeautifulSoup(r.text,'html.parser')
+    data=[]
+    rows = soup.find_all('td') 
+    for td in rows:
+        data.append(td.get_text(strip=True))
+    x = data.index('KẾT QUẢ ĐẤU THẦU THỊ TRƯỜNG MỞ')
+    y = data.index('Ghi chú:')
+    data_new =data[x:y]
+    data_new = [x for x in data_new if x != '']
+    date_string  = data_new[1]
+    # Tách thành phần ngày, tháng và năm từ chuỗi
+    date_components = date_string.split()
+    day = int(date_components[1])
+    month = int(date_components[3])
+    year = int(date_components[5])
+    # Tạo đối tượng date
+    date = datetime.datetime(year, month, day).date()
+    volume_omo = float(data_new[-1])/(-1000)
+    rate_omo = float(data_new[-3].replace(',', '.'))
+    insert_query = f"INSERT INTO tbomovietnam (date,rate,volume) VALUES ('{date}', {rate_omo},{volume_omo})"
+    if date:
+        execute_query(0, insert_query)
+    return date,volume_omo,rate_omo
+
 
 
 
@@ -170,31 +197,31 @@ def auto_news_daily():
 
 
     # OMO
-def auto_news_omo():    
+def auto_news_omo(): 
+    data = get_omo_info()   
     query_get_df_omo = f"select * from tbomovietnam where date > '{date - datetime.timedelta(days=30)}'"
     df_omo = read_sql_to_df(0,query_get_df_omo)
     total_volume_omo = round(df_omo['volume'].sum(),2)
     average_rate_omo = round(df_omo['rate'].mean(),2)
-    df_omo_lated = df_omo[df_omo['date'] == (date).strftime('%Y-%m-%d')]
-    if len(df_omo_lated) >0:
-        dict_omo = df_omo_lated.to_dict(orient='records')[0]
-        if dict_omo['volume'] >0:
-            dict_omo['status'] ='Bơm ròng'
+    if data:
+        if data[2] >0:
+            status_today ='Bơm ròng'
         else:
-            dict_omo['status'] ='Hút ròng'
+            status_today ='Hút ròng'
         if total_volume_omo >0:
             status_total_volume_omo ='Bơm ròng'
         else:
             status_total_volume_omo ='Hút ròng'
-        message = f"Ngày {dict_omo['date'].date()} NHNN đã {dict_omo['status']} {abs(dict_omo['volume'])}k tỷ. Tổng kết trong 30 ngày qua, NHNN đã {status_total_volume_omo} {total_volume_omo}k tỷ với lãi suất bình quân {average_rate_omo}%"
-        for group in external_room:
-            bot = Bot(token=group.token.token)
-            try:
-                bot.send_message(
-                    chat_id=group.chat_id, #room Khách hàng
-                    text=message)
-            except:
-                pass
+        message = f"Ngày {data[0]} NHNN đã {status_today} {abs(data[1])}k tỷ, lãi suất {data[2]}. Tổng kết trong 30 ngày qua, NHNN đã {status_total_volume_omo} {total_volume_omo}k tỷ với lãi suất bình quân {average_rate_omo}%"
+        # for group in external_room:
+        #     bot = Bot(token=group.token.token)
+        #     try:
+        #         bot.send_message(
+        #             chat_id=group.chat_id, #room Khách hàng
+        #             text=message)
+        #     except:
+        #         pass
+        return message
        
 
 
@@ -221,14 +248,14 @@ def auto_news_stock_worlds():
         message = "Điểm tin tài chính thế giới:" + "\n"
         for index, row in df_sent_message.iterrows():
             message += f"- {row['name']} {row['status']} {row['change_day']} điểm ({row['change_day_percent']}%) chốt tại {round(row['close'],2)}"+ "\n"
-        # for group in external_room:
-        #     bot = Bot(token=group.token.token)
-        #     try:
-        #         bot.send_message(
-        #             chat_id=group.chat_id, #room Khách hàng
-        #             text=message)
-        #     except:
-        #         pass
+        for group in external_room:
+            bot = Bot(token=group.token.token)
+            try:
+                bot.send_message(
+                    chat_id=group.chat_id, #room Khách hàng
+                    text=message)
+            except:
+                pass
         return message
         
         
