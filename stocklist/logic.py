@@ -255,6 +255,7 @@ def date_filter_tenisball_strategy(df, risk, date_filter, strategy):
         for index, row in signal_today.iterrows():
             data = {}
             data['strategy'] = 'tenisball'
+            data['accumulation'] = 0
             data['ticker'] = row['ticker']
             data['close'] = row['close']
             data['date'] = row['date']
@@ -300,18 +301,17 @@ def filter_stock_muanual( risk = 0.03):
     breakout_buy_today = date_filter_breakout_strategy(df, risk, date_filter, strategy_breakout)
     tenisball_buy_today = date_filter_tenisball_strategy(df, risk, date_filter, strategy_tenisball)
     buy_today = breakout_buy_today+tenisball_buy_today
-    for ticker in buy_today:
-           # gửi tín hiệu vào telegram
-            bot.send_message(
-                chat_id='-870288807', 
-                text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
-    print('Cổ phiếu là:', buy_today)
+    # for ticker in buy_today:
+    #        # gửi tín hiệu vào telegram
+    #         bot.send_message(
+    #             chat_id='-870288807', 
+    #             text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
+    # print('Cổ phiếu là:', buy_today)
     return buy_today
      
 
 
 def filter_stock_daily(risk=0.03):
-    strategy = StrategyTrading.objects.filter(risk = risk, name ='Breakout ver 0.1').first()
     buy_today = filter_stock_muanual(risk)
     date_filter = datetime.today().date() 
     account = Account.objects.get(name ='Bot_Breakout')
@@ -336,6 +336,17 @@ def filter_stock_daily(risk=0.03):
             cut_loss_price = round(price*(100-ticker['ratio_cutloss'])/100,2)
             take_profit_price = round(price*(1+ticker['ratio_cutloss']/100*2),2)
             qty= math.floor(R/(price*ticker['ratio_cutloss']*1000))
+            analysis = FundamentalAnalysis.objects.filter(ticker__ticker=ticker['ticker']).order_by('-modified_date').first()
+            response = ''
+            if ticker['strategy'] =='tenisball':
+                response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']} , tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}"
+            else:
+                response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}"
+            if analysis and analysis.modified_date >= (datetime.now() - timedelta(days=6 * 30)):
+                response +=f"Thông tin cổ phiếu {ticker['ticker']}:\n"
+                response += f"Ngày báo cáo {analysis.date}. P/E: {analysis.ticker.p_e}, P/B: {analysis.ticker.p_b}, Định giá {analysis.valuation}:\n"
+                response += f"{analysis.info}.\n"
+                response += f"Nguồn {analysis.source}"
             try:
                 created_transation = Transaction.objects.create(
                             account= account,
@@ -346,6 +357,7 @@ def filter_stock_daily(risk=0.03):
                             cut_loss_price =cut_loss_price,
                             take_profit_price=take_profit_price,
                             description = 'Auto trade' )     
+                
                 created = Signaldaily.objects.create(
                         ticker = ticker['ticker'],
                         close = ticker['close'],
@@ -353,7 +365,7 @@ def filter_stock_daily(risk=0.03):
                         milestone =ticker['milestone'],
                         signal = ticker['signal'],
                         ratio_cutloss = round(ticker['ratio_cutloss'],2),
-                        strategy = strategy,
+                        strategy = ticker['strategy'],
                         take_profit_price = take_profit_price,
                         cutloss_price =cut_loss_price,
                         exit_price = cut_loss_price,
@@ -364,22 +376,9 @@ def filter_stock_daily(risk=0.03):
                 for group in external_room:
                         bot = Bot(token=group.token.token)
                         try:
-                            analysis = FundamentalAnalysis.objects.filter(ticker__ticker=ticker['ticker']).order_by('-modified_date').first()
-                            if analysis and analysis.modified_date >= (datetime.now() - timedelta(days=6 * 30)):
-                                response = f"Thông tin cổ phiếu {ticker['ticker']}:\n"
-                                response += f"Ngày báo cáo {analysis.date}. P/E: {analysis.ticker.p_e}, P/B: {analysis.ticker.p_b}, Định giá {analysis.valuation}:\n"
-                                response += f"{analysis.info}.\n"
-                                response += f"Nguồn {analysis.source}"
-                                bot.send_message(
+                            bot.send_message(
                                 chat_id=group.chat_id,
-                                text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
-                                bot.send_message(
-                                chat_id=group.chat_id,
-                                text=response)   
-                            else:
-                                bot.send_message(
-                                chat_id=group.chat_id,
-                                text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
+                                text= response)    
                         except:
                             pass
             except Exception as e:

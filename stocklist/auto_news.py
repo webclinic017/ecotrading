@@ -153,7 +153,7 @@ def auto_news_daily():
         today_value = df_fr_lated['net_value'].values[0]
         result_today_value = round_number(today_value)
     
-        message += f"Nước ngoài đã {status(today_value)} {result_today_value} tỷ. Tổng kết trong một tháng, nước ngoài đã {status(total_volume)} {result_month_value} tỷ" + "\n"
+        message += f"Nước ngoài đã {status(today_value)} trên HOSE {result_today_value} tỷ. Tổng kết trong một tháng, nước ngoài đã {status(total_volume)} {result_month_value} tỷ" + "\n"
         
         if len(top_5_tickers) > 0:
             message += "- Các ngành tăng mạnh nhất là " + ", ".join(top_sector) + "\n"

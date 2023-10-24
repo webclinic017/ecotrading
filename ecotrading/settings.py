@@ -171,7 +171,7 @@ CRONTAB_TIMEZONE = 'Asia/Ho_Chi_Minh'
 
 CRONJOBS = [
     ('50 7 * * 1-5', 'stocklist.logic.filter_stock_daily'), # Chạy lúc 14:50 từ thứ 2 đến thứ 6
-    ('46 7 * * 1-5', 'stocklist.auto_news.auto_news_daily()'), # Chạy lúc 14:46 từ thứ 2 đến thứ 6
+    ('30 8 * * 1-5', 'stocklist.auto_news.auto_news_daily()'), # Chạy lúc 15:30 từ thứ 2 đến thứ 6
     ('00 10 * * 1-5', 'stocklist.auto_news.auto_news_omo()'), # Chạy lúc 17:00 từ thứ 2 đến thứ 6
     ('30 15 * * 1-5', 'portfolio.models.get_all_info_stock_price'), # Chạy lúc 15:30 từ thứ 2 đến thứ 6
     ('00 0 * * 1-5', 'stocklist.logic.check_dividend'),# chạy lúc 7 giờ sáng
