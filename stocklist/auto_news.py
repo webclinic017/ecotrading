@@ -9,6 +9,25 @@ from portfolio.models import ChatGroupTelegram, DateNotTrading
 from bs4 import BeautifulSoup
 import requests
 
+def list_stock_by_sector(name,df_stock_sector,df_transaction):
+    df_stock = df_stock_sector[df_stock_sector['name']==name]
+    merged_df = df_stock.merge(df_transaction, left_on='stock', right_on='ticker', how='left')[['stock', 'value']]
+    merged_df = merged_df.sort_values(by='value', ascending=False)
+    final_df =merged_df[merged_df['value']>0]
+    top_3_stocks = final_df.head(3)['stock'].to_list()
+    return top_3_stocks
+
+def print_text(message,list_sector,df_stock_sector,df_transaction):
+    list_stock = [list_stock_by_sector(sector,df_stock_sector,df_transaction) for sector in list_sector]
+    # Duyệt qua từng sector và danh sách stock tương ứng
+    for sector, stocks in zip(list_sector, list_stock):
+        stock_string = ", ".join(stocks)
+        message += f" {sector} ({stock_string}),"
+    # Loại bỏ dấu phẩy cuối cùng và in ra biến message
+    message = message.rstrip(",") + "." + "\n"
+    return message
+
+
 
 
 def difine_previous_trading_date(date):
@@ -56,13 +75,13 @@ def get_omo_info():
     month = int(date_components[3])
     year = int(date_components[5])
     # Tạo đối tượng date
-    date = datetime.datetime(year, month, day).date()
+    date_omo = datetime.datetime(year, month, day).date()
     volume_omo = float(data_new[-1])/(-1000)
     rate_omo = float(data_new[-3].replace(',', '.'))
-    insert_query = f"INSERT INTO tbomovietnam (date,rate,volume) VALUES ('{date}', {rate_omo},{volume_omo})"
-    if date:
+    insert_query = f"INSERT INTO tbomovietnam (date,rate,volume) VALUES ('{date_omo}', {rate_omo},{volume_omo})"
+    if date_omo==date:
         execute_query(0, insert_query)
-    return date,volume_omo,rate_omo
+    return date_omo,volume_omo,rate_omo
 
 
 
@@ -98,6 +117,15 @@ def auto_news_daily():
         message += f"Thị trường ngày {date}, chỉ số VNINDEX {status_vnindex} {change_vnindex} điểm ({change_day_percent_vnindex}%) chốt tại mốc {today_close_vnindex}." + "\n"
     
         #tính chỉ số ngành
+        query_get_df_transation = f"select * from portfolio_stockpricefilter  where date ='{date}'"    
+        df_transaction = read_sql_to_df(1,query_get_df_transation)
+        df_transaction['value']=df_transaction['close']*df_transaction['volume']
+        query_get_df_stock_sector = f"select * from tbliststockbysectoricb "    
+        df_stock_sector = read_sql_to_df(0,query_get_df_stock_sector)
+
+        
+
+
         df_sector = df_data[df_data['ticker'].str.len() == 4]
         df_sector = df_sector.sort_values(by=['ticker', 'date'])
         grouped = df_sector.groupby('ticker')['close'].agg(['min', 'max', 'mean']).reset_index()
@@ -152,20 +180,26 @@ def auto_news_daily():
         df_fr_lated = df_fr[df_fr['date'] == (date).strftime('%Y-%m-%d')]
         today_value = df_fr_lated['net_value'].values[0]
         result_today_value = round_number(today_value)
+
+        
     
         message += f"Nước ngoài đã {status(today_value)} trên HOSE {result_today_value} tỷ. Tổng kết trong một tháng, nước ngoài đã {status(total_volume)} {result_month_value} tỷ" + "\n"
         
         if len(top_5_tickers) > 0:
-            message += "- Các ngành tăng mạnh nhất là " + ", ".join(top_sector) + "\n"
+            text_top_5_tickers = "- Các ngành tăng mạnh nhất là " 
+            message += print_text(text_top_5_tickers,top_sector,df_stock_sector,df_transaction)
 
         if len(bottom_5_tickers) > 0:
-            message += "- Các ngành giảm mạnh nhất là " + ", ".join(bottom_sector) + "\n"
+            text_bottom_5_tickers = "- Các ngành giảm mạnh nhất là "
+            message += print_text(text_bottom_5_tickers,bottom_sector,df_stock_sector,df_transaction)
 
         if len(high_close_tickers) > 0:
-            message += "- Các ngành đã vượt đỉnh 1 năm là " + ", ".join(high_close_sector) + "\n"
+            text_high_close_sector = "- Các ngành đã vượt đỉnh 1 năm là "
+            message += print_text(text_high_close_sector,high_close_sector,df_stock_sector,df_transaction)
 
         if len(low_close_tickers) > 0:
-            message += "- Các ngành đã thủng đáy 1 năm là " + ", ".join(low_close_sector)
+            text_low_close_sector = "- Các ngành đã thủng đáy 1 năm là "
+            message += print_text(text_low_close_sector,low_close_sector,df_stock_sector,df_transaction)
 
         for group in external_room:
             bot = Bot(token=group.token.token)
@@ -178,24 +212,7 @@ def auto_news_daily():
     return message
         
 
-        # if len(top_5_tickers)>0:
-        #     bot.send_message(
-        #         chat_id='-870288807', 
-        #         text="Các ngành tăng mạnh nhất là " + ", ".join(top_sector) )
-        # if len(bottom_5_tickers )>0:
-        #     bot.send_message(
-        #         chat_id='-870288807', 
-        #         text="Các ngành giảm mạnh nhất là " + ", ".join(bottom_sector ) )
-        # if len(high_close_tickers)>0:
-        #     bot.send_message(
-        #         chat_id='-870288807', 
-        #         text="Các ngành đã vượt đỉnh 1 năm là " + ", ".join(high_close_sector) )
-        # if len(low_close_tickers)>0:
-        #     bot.send_message(
-        #         chat_id='-870288807', 
-        #         text="Các ngành đã thủng đáy 1 năm là " + ", ".join(low_close_sector) )
-
-
+       
     # OMO
 def auto_news_omo(): 
     data = get_omo_info()   
@@ -203,7 +220,7 @@ def auto_news_omo():
     df_omo = read_sql_to_df(0,query_get_df_omo)
     total_volume_omo = round(df_omo['volume'].sum(),2)
     average_rate_omo = round(df_omo['rate'].mean(),2)
-    if data:
+    if data[0] ==date:
         if data[2] >0:
             status_today ='Bơm ròng'
         else:
@@ -213,14 +230,14 @@ def auto_news_omo():
         else:
             status_total_volume_omo ='Hút ròng'
         message = f"Ngày {data[0]} NHNN đã {status_today} {abs(data[1])}k tỷ, lãi suất {data[2]}. Tổng kết trong 30 ngày qua, NHNN đã {status_total_volume_omo} {total_volume_omo}k tỷ với lãi suất bình quân {average_rate_omo}%"
-        # for group in external_room:
-        #     bot = Bot(token=group.token.token)
-        #     try:
-        #         bot.send_message(
-        #             chat_id=group.chat_id, #room Khách hàng
-        #             text=message)
-        #     except:
-        #         pass
+        for group in external_room:
+            bot = Bot(token=group.token.token)
+            try:
+                bot.send_message(
+                    chat_id=group.chat_id, #room Khách hàng
+                    text=message)
+            except:
+                pass
         return message
        
 
@@ -245,7 +262,7 @@ def auto_news_stock_worlds():
         selected_row.loc[selected_row['change_day_percent'] <= -1.5, 'status'] = 'Giảm mạnh'
         selected_row.loc[selected_row['change_day_percent'] ==0, 'status'] = 'Không biến động'
         df_sent_message = selected_row[abs(selected_row['change_day_percent']) >= 1]
-        message = "Điểm tin tài chính thế giới:" + "\n"
+        message = "Tài chính nổi bật thế giới:" + "\n"
         for index, row in df_sent_message.iterrows():
             message += f"- {row['name']} {row['status']} {row['change_day']} điểm ({row['change_day_percent']}%) chốt tại {round(row['close'],2)}"+ "\n"
         for group in external_room:
