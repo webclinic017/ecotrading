@@ -6,6 +6,10 @@ from django.utils.html import format_html
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 
+
+class SectorPriceAdmin (admin.ModelAdmin):
+    model = SectorPrice
+
 class ChatGroupTelegramAdmin(admin.StackedInline):
     model = ChatGroupTelegram
 
@@ -101,4 +105,5 @@ admin.site.register(Transaction,TransactionAdmin)
 admin.site.register(Account,AccountAdmin)
 admin.site.register(DateNotTrading)
 admin.site.register(BotTelegram,BotTelegramAdmin)
-# admin.site.register(StockPrice)
+
+admin.site.register(SectorPrice,SectorPriceAdmin)
