@@ -76,7 +76,7 @@ def get_omo_info():
     year = int(date_components[5])
     # Tạo đối tượng date
     date_omo = datetime.datetime(year, month, day).date()
-    volume_omo = float(data_new[-1])/(-1000)
+    volume_omo = float(data_new[-1].replace('.', ''))/(-1000)
     rate_omo = float(data_new[-3].replace(',', '.'))
     insert_query = f"INSERT INTO tbomovietnam (date,rate,volume) VALUES ('{date_omo}', {rate_omo},{volume_omo})"
     if date_omo==date:
@@ -220,7 +220,7 @@ def auto_news_omo():
     df_omo = read_sql_to_df(0,query_get_df_omo)
     total_volume_omo = round(df_omo['volume'].sum(),2)
     average_rate_omo = round(df_omo['rate'].mean(),2)
-    if data[0] ==date:
+    if data[0] ==date and abs(data[1])>=20:
         if data[2] >0:
             status_today ='Bơm ròng'
         else:
