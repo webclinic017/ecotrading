@@ -123,9 +123,6 @@ def auto_news_daily():
         query_get_df_stock_sector = f"select * from tbliststockbysectoricb "    
         df_stock_sector = read_sql_to_df(0,query_get_df_stock_sector)
 
-        
-
-
         df_sector = df_data[df_data['ticker'].str.len() == 4]
         df_sector = df_sector.sort_values(by=['ticker', 'date'])
         grouped = df_sector.groupby('ticker')['close'].agg(['min', 'max', 'mean']).reset_index()
@@ -287,4 +284,79 @@ def auto_news_stock_worlds():
 # top ngành đảo chiều giảm giá dài hạn
 # top ngành về đáy 1 năm
 # top ngành vượt đỉnh 1 năm
+
+def static_above_ma():
+    query_get_df_transation = f"select ticker,date, close from portfolio_stockpricefilter order by ticker,date"    
+    df_transaction = read_sql_to_df(1,query_get_df_transation)
+    df_transaction ['MA200'] = df_transaction .groupby('ticker')['close'].rolling(window=200).mean().reset_index(0, drop=True)
+    df_transaction ['MA100'] = df_transaction .groupby('ticker')['close'].rolling(window=100).mean().reset_index(0, drop=True)
+    df_transaction ['MA50'] = df_transaction .groupby('ticker')['close'].rolling(window=50).mean().reset_index(0, drop=True)
+
+    data_for_day = df_transaction[(df_transaction['date'].dt.date == date) & (df_transaction['close'] > 0)]
+    if data_for_day.shape[0] > 0:
+        count_ma200 = round((data_for_day['close'] > data_for_day['MA200']).sum() / data_for_day.shape[0] * 100, 2)
+        count_ma100 = round((data_for_day['close'] > data_for_day['MA100']).sum() / data_for_day.shape[0] * 100, 2)
+        count_ma50 = round((data_for_day['close'] > data_for_day['MA50']).sum() / data_for_day.shape[0] * 100, 2)
+    else:
+        count_ma200 = 0
+        count_ma100 = 0
+        count_ma50 = 0
+
+    if len(data_for_day)>0:
+        insert_query = f"INSERT INTO tbstockmarketvnstaticma (date,count_ma200,count_ma100,count_ma50) VALUES ('{date}', {count_ma200},{count_ma100},{count_ma50})"
+        execute_query(0, insert_query)
+    return date, count_ma200,count_ma100,count_ma50
+
+def auto_news_static_ma():
+    data= static_above_ma()
+    previous_date = difine_previous_trading_date(date)
+    query_get_data= f"select * from tbstockmarketvnstaticma where date >= '{previous_date.strftime('%Y-%m-%d')}'"
+    df_data = read_sql_to_df(0,query_get_data)
+    df_data = df_data.sort_values(by='date')
+    # Tính phần trăm thay đổi cho từng cột (count_ma200, count_ma100, count_ma50)
+    df_data['percent_change_ma200'] = round(df_data['count_ma200'].pct_change() * 100,2)
+    df_data['percent_change_ma100'] = round(df_data['count_ma100'].pct_change() * 100,2)
+    df_data['percent_change_ma50'] = round(df_data['count_ma50'].pct_change() * 100,2)
+    df_final = df_data[df_data['date']==date]
+    if len(df_final)>0:
+        data = df_final.to_dict(orient='records')[0]
+        message = "Thống kê chỉ báo trung bình trên toàn thị trường:" + "\n"
+        message += f"- Có {data['count_ma200']}% cổ phiếu nằm trên đường trung bình 200 phiên, thay đổi {data['percent_change_ma200']}% so với phiên trước đó "+ "\n"
+        message += f"- Có {data['count_ma100']}% cổ phiếu nằm trên đường trung bình 100 phiên, thay đổi {data['percent_change_ma100']}% so với phiên trước đó "+ "\n"
+        message += f"- Có {data['count_ma50']}% cổ phiếu nằm trên đường trung bình 50 phiên, thay đổi {data['percent_change_ma50']}% so với phiên trước đó "+ "\n"
+        for group in external_room:
+                bot = Bot(token=group.token.token)
+                try:
+                    bot.send_message(
+                        chat_id=group.chat_id, #room Khách hàng
+                        text=message)
+                except:
+                    pass
+        return message
+    
+
+
+
+
+# for date_check in df_transaction[df_transaction['close'] > 0]['date'].dt.date.unique():
+#     result = {}
+#     # Lọc dữ liệu cho ngày hiện tại
+#     data_for_day = df_transaction[(df_transaction['date'].dt.date == date_check) & (df_transaction['close'] > 0)]
+#     # Đếm số lượng ticker có 'close' > 'MA200' cho ngày hiện tại và tính tỷ lệ
+#     result['date'] = date_check
+#     if data_for_day.shape[0] > 0:
+#         result['count_ma200'] = round((data_for_day['close'] > data_for_day['MA200']).sum() / data_for_day.shape[0] * 100, 2)
+#         result['ccount_ma100'] = round((data_for_day['close'] > data_for_day['MA100']).sum() / data_for_day.shape[0] * 100, 2)
+#         result['count_ma50'] = round((data_for_day['close'] > data_for_day['MA50']).sum() / data_for_day.shape[0] * 100, 2)
+#     else:
+#         result['count_ma200'] = 0
+#         result['ccount_ma200'] = 0
+#         result['count_ma50'] = 0
+#     insert_data.append(result)
+
+# # Kết quả
+# print(insert_data)
+
+
+
 
