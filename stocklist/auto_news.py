@@ -76,7 +76,8 @@ def get_omo_info():
     year = int(date_components[5])
     # Tạo đối tượng date
     date_omo = datetime.datetime(year, month, day).date()
-    volume_omo = float(data_new[-1].replace('.', ''))/(-1000)
+    volume_omo = data_new[-1].replace('.', '')
+    volume_omo = float(volume_omo.replace(',', '.')) / (-1000)
     rate_omo = float(data_new[-3].replace(',', '.'))
     insert_query = f"INSERT INTO tbomovietnam (date,rate,volume) VALUES ('{date_omo}', {rate_omo},{volume_omo})"
     if date_omo==date:
@@ -84,6 +85,60 @@ def get_omo_info():
     return date_omo,volume_omo,rate_omo
 
 
+def static_above_ma():
+    query_get_df_transation = f"select ticker,date, close from portfolio_stockpricefilter order by ticker,date"    
+    df_transaction = read_sql_to_df(1,query_get_df_transation)
+    df_transaction ['MA200'] = df_transaction .groupby('ticker')['close'].rolling(window=200).mean().reset_index(0, drop=True)
+    df_transaction ['MA100'] = df_transaction .groupby('ticker')['close'].rolling(window=100).mean().reset_index(0, drop=True)
+    df_transaction ['MA50'] = df_transaction .groupby('ticker')['close'].rolling(window=50).mean().reset_index(0, drop=True)
+    df_transaction ['MA20'] = df_transaction .groupby('ticker')['close'].rolling(window=20).mean().reset_index(0, drop=True)
+    data_for_day = df_transaction[(df_transaction['date'].dt.date == date) & (df_transaction['close'] > 0)]
+    if data_for_day.shape[0] > 0:
+        count_ma200 = round((data_for_day['close'] > data_for_day['MA200']).sum() / data_for_day.shape[0] * 100, 2)
+        count_ma100 = round((data_for_day['close'] > data_for_day['MA100']).sum() / data_for_day.shape[0] * 100, 2)
+        count_ma50 = round((data_for_day['close'] > data_for_day['MA50']).sum() / data_for_day.shape[0] * 100, 2)
+        count_ma20 = round((data_for_day['close'] > data_for_day['MA20']).sum() / data_for_day.shape[0] * 100, 2)
+    else:
+        count_ma200 = 0
+        count_ma100 = 0
+        count_ma50 = 0
+        count_ma20 = 0
+    query_get_vnindex = f"select close from portfolio_sectorprice where date = '{date}' and ticker = 'VNINDEX' " 
+    vnindex = query_data(1,query_get_vnindex)
+    if vnindex:
+        close = vnindex[0][0]
+    if len(data_for_day)>0:
+        insert_query = f"INSERT INTO tbstockmarketvnstaticma (date,count_ma200,count_ma100,count_ma50,count_ma20, vnindex) VALUES ('{date}', {count_ma200},{count_ma100},{count_ma50},{count_ma20},{close})"
+        execute_query(0, insert_query)
+    return date, count_ma200,count_ma100,count_ma50,count_ma20, close
+
+def auto_news_static_ma():
+    data= static_above_ma()
+    previous_date = difine_previous_trading_date(date)
+    query_get_data= f"select * from tbstockmarketvnstaticma where date >= '{previous_date.strftime('%Y-%m-%d')}'"
+    df_data = read_sql_to_df(0,query_get_data)
+    df_data = df_data.sort_values(by='date')
+    # Tính phần trăm thay đổi cho từng cột (count_ma200, count_ma100, count_ma50)
+    df_data['percent_change_ma200'] = round(df_data['count_ma200'].pct_change() * 100,2)
+    df_data['percent_change_ma100'] = round(df_data['count_ma100'].pct_change() * 100,2)
+    df_data['percent_change_ma50'] = round(df_data['count_ma50'].pct_change() * 100,2)
+    df_final = df_data[df_data['date']==date]
+    if len(df_final)>0:
+        data = df_final.to_dict(orient='records')[0]
+        message = "Thống kê chỉ báo trung bình trên toàn thị trường:" + "\n"
+        message += f"- Có {data['count_ma200']}% cổ phiếu nằm trên đường trung bình 200 phiên, thay đổi {data['percent_change_ma200']}% so với phiên trước đó "+ "\n"
+        message += f"- Có {data['count_ma100']}% cổ phiếu nằm trên đường trung bình 100 phiên, thay đổi {data['percent_change_ma100']}% so với phiên trước đó "+ "\n"
+        message += f"- Có {data['count_ma50']}% cổ phiếu nằm trên đường trung bình 50 phiên, thay đổi {data['percent_change_ma50']}% so với phiên trước đó "+ "\n"
+        # for group in external_room:
+        #         bot = Bot(token=group.token.token)
+        #         try:
+        #             bot.send_message(
+        #                 chat_id=group.chat_id, #room Khách hàng
+        #                 text=message)
+        #         except:
+        #             pass
+        return message
+    
 
 
 def auto_news_daily():
@@ -197,7 +252,7 @@ def auto_news_daily():
         if len(low_close_tickers) > 0:
             text_low_close_sector = "- Các ngành đã thủng đáy 1 năm là "
             message += print_text(text_low_close_sector,low_close_sector,df_stock_sector,df_transaction)
-
+        message += auto_news_static_ma()
         for group in external_room:
             bot = Bot(token=group.token.token)
             try:
@@ -285,78 +340,41 @@ def auto_news_stock_worlds():
 # top ngành về đáy 1 năm
 # top ngành vượt đỉnh 1 năm
 
-def static_above_ma():
-    query_get_df_transation = f"select ticker,date, close from portfolio_stockpricefilter order by ticker,date"    
-    df_transaction = read_sql_to_df(1,query_get_df_transation)
-    df_transaction ['MA200'] = df_transaction .groupby('ticker')['close'].rolling(window=200).mean().reset_index(0, drop=True)
-    df_transaction ['MA100'] = df_transaction .groupby('ticker')['close'].rolling(window=100).mean().reset_index(0, drop=True)
-    df_transaction ['MA50'] = df_transaction .groupby('ticker')['close'].rolling(window=50).mean().reset_index(0, drop=True)
-
-    data_for_day = df_transaction[(df_transaction['date'].dt.date == date) & (df_transaction['close'] > 0)]
-    if data_for_day.shape[0] > 0:
-        count_ma200 = round((data_for_day['close'] > data_for_day['MA200']).sum() / data_for_day.shape[0] * 100, 2)
-        count_ma100 = round((data_for_day['close'] > data_for_day['MA100']).sum() / data_for_day.shape[0] * 100, 2)
-        count_ma50 = round((data_for_day['close'] > data_for_day['MA50']).sum() / data_for_day.shape[0] * 100, 2)
-    else:
-        count_ma200 = 0
-        count_ma100 = 0
-        count_ma50 = 0
-
-    if len(data_for_day)>0:
-        insert_query = f"INSERT INTO tbstockmarketvnstaticma (date,count_ma200,count_ma100,count_ma50) VALUES ('{date}', {count_ma200},{count_ma100},{count_ma50})"
-        execute_query(0, insert_query)
-    return date, count_ma200,count_ma100,count_ma50
-
-def auto_news_static_ma():
-    data= static_above_ma()
-    previous_date = difine_previous_trading_date(date)
-    query_get_data= f"select * from tbstockmarketvnstaticma where date >= '{previous_date.strftime('%Y-%m-%d')}'"
-    df_data = read_sql_to_df(0,query_get_data)
-    df_data = df_data.sort_values(by='date')
-    # Tính phần trăm thay đổi cho từng cột (count_ma200, count_ma100, count_ma50)
-    df_data['percent_change_ma200'] = round(df_data['count_ma200'].pct_change() * 100,2)
-    df_data['percent_change_ma100'] = round(df_data['count_ma100'].pct_change() * 100,2)
-    df_data['percent_change_ma50'] = round(df_data['count_ma50'].pct_change() * 100,2)
-    df_final = df_data[df_data['date']==date]
-    if len(df_final)>0:
-        data = df_final.to_dict(orient='records')[0]
-        message = "Thống kê chỉ báo trung bình trên toàn thị trường:" + "\n"
-        message += f"- Có {data['count_ma200']}% cổ phiếu nằm trên đường trung bình 200 phiên, thay đổi {data['percent_change_ma200']}% so với phiên trước đó "+ "\n"
-        message += f"- Có {data['count_ma100']}% cổ phiếu nằm trên đường trung bình 100 phiên, thay đổi {data['percent_change_ma100']}% so với phiên trước đó "+ "\n"
-        message += f"- Có {data['count_ma50']}% cổ phiếu nằm trên đường trung bình 50 phiên, thay đổi {data['percent_change_ma50']}% so với phiên trước đó "+ "\n"
-        for group in external_room:
-                bot = Bot(token=group.token.token)
-                try:
-                    bot.send_message(
-                        chat_id=group.chat_id, #room Khách hàng
-                        text=message)
-                except:
-                    pass
-        return message
-    
 
 
 
+# query_get_df_transation = f"select ticker,date, close from portfolio_stockprice where date > '2018-01-01' order by ticker,date"    
+# df_transaction = read_sql_to_df(1,query_get_df_transation)
+# df_transaction = df_transaction.sort_values(by=['ticker', 'date'])
+# df_transaction ['MA200'] = df_transaction .groupby('ticker')['close'].rolling(window=200).mean().reset_index(0, drop=True)
+# df_transaction ['MA100'] = df_transaction .groupby('ticker')['close'].rolling(window=100).mean().reset_index(0, drop=True)
+# df_transaction ['MA50'] = df_transaction .groupby('ticker')['close'].rolling(window=50).mean().reset_index(0, drop=True)
+# df_transaction ['MA20'] = df_transaction .groupby('ticker')['close'].rolling(window=20).mean().reset_index(0, drop=True)
+# data_for_day = df_transaction[(df_transaction['date'].dt.date == date) & (df_transaction['close'] > 0)]
+# df_transaction['date'] = pd.to_datetime(df_transaction['date']).dt.date
 
-# for date_check in df_transaction[df_transaction['close'] > 0]['date'].dt.date.unique():
+# for date_check in df_transaction[df_transaction['close'] > 0]['date'].unique():
 #     result = {}
 #     # Lọc dữ liệu cho ngày hiện tại
-#     data_for_day = df_transaction[(df_transaction['date'].dt.date == date_check) & (df_transaction['close'] > 0)]
+#     data_for_day = df_transaction[(df_transaction['date'] == date_check) & (df_transaction['close'] > 0)]
 #     # Đếm số lượng ticker có 'close' > 'MA200' cho ngày hiện tại và tính tỷ lệ
 #     result['date'] = date_check
 #     if data_for_day.shape[0] > 0:
 #         result['count_ma200'] = round((data_for_day['close'] > data_for_day['MA200']).sum() / data_for_day.shape[0] * 100, 2)
 #         result['ccount_ma100'] = round((data_for_day['close'] > data_for_day['MA100']).sum() / data_for_day.shape[0] * 100, 2)
 #         result['count_ma50'] = round((data_for_day['close'] > data_for_day['MA50']).sum() / data_for_day.shape[0] * 100, 2)
+#         result['count_ma20'] = round((data_for_day['close'] > data_for_day['MA20']).sum() / data_for_day.shape[0] * 100, 2)
 #     else:
 #         result['count_ma200'] = 0
 #         result['ccount_ma200'] = 0
 #         result['count_ma50'] = 0
+#         result['count_ma20'] = 0
 #     insert_data.append(result)
 
+# df =pd.DataFrame(insert_data)
+# df.to_sql()
 # # Kết quả
 # print(insert_data)
 
-
-
+# df.to_sql('tbstockmarketvnstaticma',engine (0) , if_exists='replace', index=False)
 
