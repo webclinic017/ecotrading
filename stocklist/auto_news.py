@@ -122,6 +122,7 @@ def auto_news_static_ma():
     df_data['percent_change_ma200'] = round(df_data['count_ma200'].pct_change() * 100,2)
     df_data['percent_change_ma100'] = round(df_data['count_ma100'].pct_change() * 100,2)
     df_data['percent_change_ma50'] = round(df_data['count_ma50'].pct_change() * 100,2)
+    df_data['percent_change_ma20'] = round(df_data['count_ma20'].pct_change() * 100,2)
     df_final = df_data[df_data['date']==date]
     if len(df_final)>0:
         data = df_final.to_dict(orient='records')[0]
@@ -129,6 +130,7 @@ def auto_news_static_ma():
         message += f"- Có {data['count_ma200']}% cổ phiếu nằm trên đường trung bình 200 phiên, thay đổi {data['percent_change_ma200']}% so với phiên trước đó "+ "\n"
         message += f"- Có {data['count_ma100']}% cổ phiếu nằm trên đường trung bình 100 phiên, thay đổi {data['percent_change_ma100']}% so với phiên trước đó "+ "\n"
         message += f"- Có {data['count_ma50']}% cổ phiếu nằm trên đường trung bình 50 phiên, thay đổi {data['percent_change_ma50']}% so với phiên trước đó "+ "\n"
+        message += f"- Có {data['count_ma20']}% cổ phiếu nằm trên đường trung bình 20 phiên, thay đổi {data['percent_change_ma20']}% so với phiên trước đó "+ "\n"
         # for group in external_room:
         #         bot = Bot(token=group.token.token)
         #         try:
