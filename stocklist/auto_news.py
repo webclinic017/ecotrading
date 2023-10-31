@@ -80,8 +80,7 @@ def get_omo_info():
     volume_omo = float(volume_omo.replace(',', '.')) / (-1000)
     rate_omo = float(data_new[-3].replace(',', '.'))
     insert_query = f"INSERT INTO tbomovietnam (date,rate,volume) VALUES ('{date_omo}', {rate_omo},{volume_omo})"
-    if date_omo==date:
-        execute_query(0, insert_query)
+    execute_query(0, insert_query)
     return date_omo,volume_omo,rate_omo
 
 
