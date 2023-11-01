@@ -232,7 +232,7 @@ def define_stock_not_test(strategy):
 
 def run_backtest_tenisball(risk, begin_list, end_list):
     strategy_data = {
-        'name': 'Tenisball_ver0.1',
+        'name': 'Tenisball_ver0.2',
         'risk': risk,   
         'nav': 10000000,
         'commission' : 0.0015,
@@ -256,7 +256,7 @@ def run_backtest_tenisball(risk, begin_list, end_list):
             data = PandasData(dataname=df)
             #Chạy tối ưu hóa param
             # Khởi tạo các giá trị tham số muốn tối ưu
-            ma_backtest = [20,30,40,50,100]#0
+            ma_backtest = [10,20,50,100,200]#0
             ratio_backtest=[0.9,0.93,0.95, 0.97,0.99] #1
             ratio_cutloss = [0.05,0.07,0.1]#2
             pattern_rating = [100,200] #3
