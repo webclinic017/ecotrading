@@ -297,6 +297,7 @@ def filter_stock_muanual( risk = 0.03):
     stock_prices = StockPriceFilter.objects.all().values()
     # lọc ra top cổ phiếu có vol>100k
     df = pd.DataFrame(stock_prices)  
+    df['date']= pd.to_datetime(df['date']).dt.date
     # chuyển đổi df theo chiến lược
     breakout_buy_today = date_filter_breakout_strategy(df, risk, date_filter, strategy_breakout)
     tenisball_buy_today = date_filter_tenisball_strategy(df, risk, date_filter, strategy_tenisball)
