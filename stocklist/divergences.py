@@ -50,11 +50,9 @@ def getLowerHighs(data: np.array, order=5, K=2):
       continue
     if highs[i] > highs[i-1]:
       ex_deque.clear()
-
     ex_deque.append(idx)
     if len(ex_deque) == K:
       extrema.append(ex_deque.copy())
-
   return extrema
 
 def getLowerLows(data: np.array, order=5, K=2):
@@ -155,13 +153,25 @@ def RSIDivergenceStrategy(data, P=14, order=5, K=2):
     data = getPeaks(data, key='close', order=order, K=K)
     data['RSI'] = talib.RSI(data['close'].values, timeperiod=20)
     data = getPeaks(data, key='RSI', order=order, K=K)
-    data['signal'] = 0
+    data['signal'] = ''
     for i in range(1, len(data)):
         if not np.isnan(data.at[i, 'RSI']):
             if data.at[i, 'close_lows'] == -1 and data.at[i, 'RSI_lows'] == 1 and data.at[i, 'RSI'] < 50:
-                data.at[i, 'signal'] = 1
+                data.at[i, 'signal'] = 'Bullish Divergence'
             elif data.at[i, 'close_highs'] == 1 and data.at[i, 'RSI_highs'] == -1 and data.at[i, 'RSI'] > 50:
-                data.at[i, 'signal'] = -1
-    data = data.drop(columns = ['close_highs','close_lows','RSI','RSI_highs','RSI_lows'])
-    signal = data.loc[data['signal']!=0]
+                data.at[i, 'signal'] = 'Bearish Divergence'
+            elif data.at[i, 'close_lows'] == 1 and data.at[i, 'RSI_lows'] == -1:
+                data.at[i, 'signal'] = 'Hidden Bullish Divergence'
+            elif data.at[i, 'close_highs'] == -1 and data.at[i, 'RSI_highs'] == 1:
+                data.at[i, 'signal'] = 'Hidden Bearish Divergence'
+    # data = data.drop(columns = ['close_highs','close_lows','RSI','RSI_highs','RSI_lows'])
+    signal = data.loc[data['signal']!='']
     return signal
+
+from portfolio.models import *
+ticker ='PNJ'
+stock_prices = StockPrice.objects.filter(ticker=ticker).values()
+df = pd.DataFrame(stock_prices)
+data = df.drop(columns=['id','date_time','open','low','high','volume'])
+data =  data.sort_values('date').reset_index(drop=True)
+df = RSIDivergenceStrategy(data, P=20, order=5, K=2)
