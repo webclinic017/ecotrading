@@ -288,11 +288,15 @@ def filter_stock_muanual( risk = 0.03):
     latest_update = StockPriceFilter.objects.all().order_by('-date').first().date_time
     # Tính khoảng thời gian giữa now và latest_update (tính bằng giây)
     time_difference = (now - latest_update).total_seconds()
+    close_section = datetime(now.year, now.month, now.day, 15, 0, 0)  # Tạo thời điểm 15:00:00 cùng ngày
+    open_section = datetime(now.year, now.month, now.day, 9, 0, 0)  # Tạo thời điểm 15:00:00 cùng ngày
     # Kiểm tra điều kiện để thực hiện hàm get_info_stock_price_filter()
-    if 0 <= now.weekday() <= 4 and 9 <= now.hour <= 15 and time_difference > 900:
+    if 0 <= now.weekday() <= 4 and open_section <= now <= close_section and time_difference > 900:
         get_info_stock_price_filter()
         print('tải data xong')
         save_fa_valuation()
+    else:
+        print('Không cần tải data')
     bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
     stock_prices = StockPriceFilter.objects.all().values()
     # lọc ra top cổ phiếu có vol>100k
@@ -302,12 +306,12 @@ def filter_stock_muanual( risk = 0.03):
     breakout_buy_today = date_filter_breakout_strategy(df, risk, date_filter, strategy_breakout)
     tenisball_buy_today = date_filter_tenisball_strategy(df, risk, date_filter, strategy_tenisball)
     buy_today = breakout_buy_today+tenisball_buy_today
-    # for ticker in buy_today:
-    #        # gửi tín hiệu vào telegram
-    #         bot.send_message(
-    #             chat_id='-870288807', 
-    #             text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
-    # print('Cổ phiếu là:', buy_today)
+    for ticker in buy_today:
+           # gửi tín hiệu vào telegram
+            bot.send_message(
+                chat_id='-870288807', 
+                text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
+    print('Cổ phiếu là:', buy_today)
     return buy_today
      
 
@@ -358,7 +362,6 @@ def filter_stock_daily(risk=0.03):
                             cut_loss_price =cut_loss_price,
                             take_profit_price=take_profit_price,
                             description = 'Auto trade' )     
-                
                 created = Signaldaily.objects.create(
                         ticker = ticker['ticker'],
                         close = ticker['close'],
@@ -388,7 +391,7 @@ def filter_stock_daily(risk=0.03):
                         bot.send_message(
                         chat_id='-870288807', #room nội bộ
                         text=f"Tự động giao dịch {ticker['ticker']} theo chiến lược breakout thất bại, lỗi {e}   ")        
-    return          
+    return response
 
 
 def save_event_stock(stock):
