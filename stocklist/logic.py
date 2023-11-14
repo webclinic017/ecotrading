@@ -171,7 +171,7 @@ def date_filter_breakout_strategy(df, risk, date_filter, strategy):
     if len(signal_today) > 0:
         for index, row in signal_today.iterrows():
             data = {}
-            data['strategy'] = 'breakout'
+            data['strategy'] = strategy
             data['ticker'] = row['ticker']
             data['close'] = row['close']
             data['date'] = row['date']
@@ -254,7 +254,7 @@ def date_filter_tenisball_strategy(df, risk, date_filter, strategy):
     if len(signal_today) > 0:
         for index, row in signal_today.iterrows():
             data = {}
-            data['strategy'] = 'tenisball'
+            data['strategy'] = strategy
             data['accumulation'] = 0
             data['ticker'] = row['ticker']
             data['close'] = row['close']
@@ -335,12 +335,12 @@ def filter_stock_daily(risk=0.03):
     else:
         for ticker in buy_today[:max_signal]:
             price = StockPriceFilter.objects.filter(ticker = ticker['ticker']).order_by('-date').first().close
-            risk = account.ratio_risk
-            nav = account.net_cash_flow +account.total_profit_close
-            R = risk*nav  
+            # risk = account.ratio_risk
+            # nav = account.net_cash_flow +account.total_profit_close
+            # R = risk*nav  
             cut_loss_price = round(price*(100-ticker['ratio_cutloss'])/100,2)
             take_profit_price = round(price*(1+ticker['ratio_cutloss']/100*2),2)
-            qty= math.floor(R/(price*ticker['ratio_cutloss']*1000))
+            # qty= math.floor(R/(price*ticker['ratio_cutloss']*1000))
             analysis = FundamentalAnalysis.objects.filter(ticker__ticker=ticker['ticker']).order_by('-modified_date').first()
             response = ''
             if ticker['strategy'] =='tenisball':
@@ -353,15 +353,15 @@ def filter_stock_daily(risk=0.03):
                 response += f"{analysis.info}.\n"
                 response += f"Nguồn {analysis.source}"
             try:
-                created_transation = Transaction.objects.create(
-                            account= account,
-                            stock= ticker['ticker'],
-                            position='buy',
-                            price= price,
-                            qty=qty,
-                            cut_loss_price =cut_loss_price,
-                            take_profit_price=take_profit_price,
-                            description = 'Auto trade' )     
+                # created_transation = Transaction.objects.create(
+                #             account= account,
+                #             stock= ticker['ticker'],
+                #             position='buy',
+                #             price= price,
+                #             qty=qty,
+                #             cut_loss_price =cut_loss_price,
+                #             take_profit_price=take_profit_price,
+                #             description = 'Auto trade' )     
                 created = Signaldaily.objects.create(
                         ticker = ticker['ticker'],
                         close = ticker['close'],
@@ -390,8 +390,8 @@ def filter_stock_daily(risk=0.03):
                         bot = Bot(token=account.bot.token)
                         bot.send_message(
                         chat_id='-870288807', #room nội bộ
-                        text=f"Tự động giao dịch {ticker['ticker']} theo chiến lược breakout thất bại, lỗi {e}   ")        
-    return response
+                        text=f"Không gửi được tín hiệu {ticker['ticker']}, lỗi {e}   ")        
+    return 
 
 
 def save_event_stock(stock):
