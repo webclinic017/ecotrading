@@ -120,11 +120,16 @@ def getHHIndex(data: np.array, order=5, K=2):
 def getLHIndex(data: np.array, order=5, K=2):
   extrema = getLowerHighs(data, order, K)
   extrema_lated = extrema[-1][-1]
-  if extrema_lated +order > len(data):
-    extrema.remove(extrema_lated)
+  for i in range(len(extrema) - 1, -1, -1):
+    deq = extrema[i]
+    if extrema_lated in deq:
+        extrema.pop(i)
+        break
   idx = np.array([i[-1]  for i in extrema])
   return idx
   
+
+
 
 def getLLIndex(data: np.array, order=5, K=2):
   extrema = getLowerLows(data, order, K)
@@ -247,7 +252,7 @@ data =  data.sort_values('date').reset_index(drop=True)
 
 
 # df = RSIDivergenceStrategy(data, P=20, order=5, K=2)
-# df.to_csv('PNJ.ver7.csv', index=False)
+# df.to_csv('HPG.csv', index=False)
 
 
 # phải trước đó là đỉnh hoặc đáy cùng loại
