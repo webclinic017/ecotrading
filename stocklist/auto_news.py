@@ -315,17 +315,18 @@ def auto_news_stock_worlds():
         selected_row.loc[selected_row['change_day_percent'] <= -1.5, 'status'] = 'Giảm mạnh'
         selected_row.loc[selected_row['change_day_percent'] ==0, 'status'] = 'Không biến động'
         df_sent_message = selected_row[abs(selected_row['change_day_percent']) >= 1]
-        message = "Tài chính nổi bật thế giới:" + "\n"
-        for index, row in df_sent_message.iterrows():
-            message += f"- {row['name']} {row['status']} {row['change_day']} điểm ({row['change_day_percent']}%) chốt tại {round(row['close'],2)}"+ "\n"
-        for group in external_room:
-            bot = Bot(token=group.token.token)
-            try:
-                bot.send_message(
-                    chat_id=group.chat_id, #room Khách hàng
-                    text=message)
-            except:
-                pass
+        if len(df_sent_message) >0:
+            message = "Tài chính nổi bật thế giới:" + "\n"
+            for index, row in df_sent_message.iterrows():
+                message += f"- {row['name']} {row['status']} {row['change_day']} điểm ({row['change_day_percent']}%) chốt tại {round(row['close'],2)}"+ "\n"
+            for group in external_room:
+                bot = Bot(token=group.token.token)
+                try:
+                    bot.send_message(
+                        chat_id=group.chat_id, #room Khách hàng
+                        text=message)
+                except:
+                    pass
         return message
         
         

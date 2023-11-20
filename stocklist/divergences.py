@@ -108,28 +108,43 @@ def getHigherLows(data: np.array, order=5, K=2):
   return extrema
 
 
-
+# đã có edit, chỉ cộng period 5 vào cho đỉnh cuối cùng
 def getHHIndex(data: np.array, order=5, K=2):
   extrema = getHigherHighs(data, order, K)
-  idx = np.array([i[-1] + order for i in extrema])
-  return idx[np.where(idx<len(data))]
+  extrema_lated = extrema[-1][-1]
+  if extrema_lated +order > len(data):
+    extrema.remove(extrema_lated)
+  idx = np.array([i[-1]  for i in extrema])
+  return idx
 
 def getLHIndex(data: np.array, order=5, K=2):
   extrema = getLowerHighs(data, order, K)
-  idx = np.array([i[-1] + order for i in extrema])
-  return idx[np.where(idx<len(data))]
+  extrema_lated = extrema[-1][-1]
+  if extrema_lated +order > len(data):
+    extrema.remove(extrema_lated)
+  idx = np.array([i[-1]  for i in extrema])
+  return idx
+  
 
 def getLLIndex(data: np.array, order=5, K=2):
   extrema = getLowerLows(data, order, K)
-  idx = np.array([i[-1] + order for i in extrema])
-  return idx[np.where(idx<len(data))]
+  extrema_lated = extrema[-1][-1]
+  if extrema_lated +order > len(data):
+    extrema.remove(extrema_lated)
+  idx = np.array([i[-1]  for i in extrema])
+  return idx
+  
 
 def getHLIndex(data: np.array, order=5, K=2):
   extrema = getHigherLows(data, order, K)
-  idx = np.array([i[-1] + order for i in extrema])
-  return idx[np.where(idx<len(data))]
+  extrema_lated = extrema[-1][-1]
+  if extrema_lated +order > len(data):
+    extrema.remove(extrema_lated)
+  idx = np.array([i[-1]  for i in extrema])
+  return idx
+  
 
-def getPeaks(data, key='close', order=5, K=2):
+def getPeaks(data, key='close', order=5, K=2, P=20):
   data =data.sort_values('date').reset_index(drop = True)
   vals = data[key].values
   hh_idx = getHHIndex(vals, order, K)
@@ -137,36 +152,86 @@ def getPeaks(data, key='close', order=5, K=2):
   ll_idx = getLLIndex(vals, order, K)
   hl_idx = getHLIndex(vals, order, K)
   data[f'{key}_highs'] = np.nan
-  data[f'{key}_highs'][hh_idx] = 1
-  data[f'{key}_highs'][lh_idx] = -1
-  data[f'{key}_highs'] = data[f'{key}_highs'].ffill().fillna(0)
+  data[f'{key}_highs'][hh_idx] = 100
+  data[f'{key}_highs'][lh_idx] = -100
+  data[f'{key}_highs_adjusted'] = np.nan
+  last_100_count = 0
+  last_minus_100_count = 0
+  count =0
+  for i in range(len(data)):
+      if data.loc[i, f'{key}_highs'] == 100:
+          last_100_count += 1
+          last_minus_100_count = 0
+          count =0
+      elif data.loc[i, f'{key}_highs'] == -100:
+          last_minus_100_count += 1
+          last_100_count = 0
+          count =0
+    
+      if last_100_count >= 2 and count <=20:
+          data.loc[i, f'{key}_highs_adjusted'] = 1
+          count +=1 
+
+      elif last_minus_100_count >= 2 and count <=P:
+          data.loc[i, f'{key}_highs_adjusted'] = -1
+          count +=1 
+      else:
+          data.loc[i, f'{key}_highs_adjusted'] = 0
+  
   data[f'{key}_lows'] = np.nan
-  data[f'{key}_lows'][ll_idx] = 1
-  data[f'{key}_lows'][hl_idx] = -1
-  data[f'{key}_lows'] = data[f'{key}_highs'].ffill().fillna(0)
+  data[f'{key}_lows'][ll_idx] = 100
+  data[f'{key}_lows'][hl_idx] = -100
+  data[f'{key}_lows_adjusted'] = np.nan
+  
+  last_100_count = 0
+  last_minus_100_count = 0
+  count =0
+  for i in range(len(data)):
+      if data.loc[i, f'{key}_lows'] == 100:
+          last_100_count += 1
+          last_minus_100_count = 0
+          count =0
+      elif data.loc[i, f'{key}_lows'] == -100:
+          last_minus_100_count += 1
+          last_100_count = 0
+          count =0
+    
+      if last_100_count >= 2 and count <=20:
+          data.loc[i, f'{key}_lows_adjusted'] = 1
+          count +=1 
+
+      elif last_minus_100_count >= 2 and count <=P:
+          data.loc[i, f'{key}_lows_adjusted'] = -1
+          count +=1 
+      else:
+          data.loc[i, f'{key}_lows_adjusted'] = 0
   return data
 
 
 
-def RSIDivergenceStrategy(data, P=14, order=5, K=2):
+
+
+
+
+def RSIDivergenceStrategy(data , order=5, K=2,P=20):
     # Tính toán cực đại của giá và RSI
     data = getPeaks(data, key='close', order=order, K=K)
-    data['RSI'] = talib.RSI(data['close'].values, timeperiod=20)
+    data['RSI'] = talib.RSI(data['close'].values, timeperiod=P)
     data = getPeaks(data, key='RSI', order=order, K=K)
     data['signal'] = ''
     for i in range(1, len(data)):
         if not np.isnan(data.at[i, 'RSI']):
-            if data.at[i, 'close_lows'] == -1 and data.at[i, 'RSI_lows'] == 1 and data.at[i, 'RSI'] < 50:
+            if data.at[i, 'close_lows_adjusted'] == -1 and data.at[i, 'RSI_lows_adjusted'] == 1 and data.at[i, 'RSI'] < 50:
                 data.at[i, 'signal'] = 'Bullish Divergence'
-            elif data.at[i, 'close_highs'] == 1 and data.at[i, 'RSI_highs'] == -1 and data.at[i, 'RSI'] > 50:
+            elif data.at[i, 'close_highs_adjusted'] == 1 and data.at[i, 'RSI_highs_adjusted'] == -1 and data.at[i, 'RSI'] > 50:
                 data.at[i, 'signal'] = 'Bearish Divergence'
-            elif data.at[i, 'close_lows'] == 1 and data.at[i, 'RSI_lows'] == -1:
+            elif data.at[i, 'close_lows_adjusted'] == 1 and data.at[i, 'RSI_lows_adjusted'] == -1:
                 data.at[i, 'signal'] = 'Hidden Bullish Divergence'
-            elif data.at[i, 'close_highs'] == -1 and data.at[i, 'RSI_highs'] == 1:
+            elif data.at[i, 'close_highs_adjusted'] == -1 and data.at[i, 'RSI_highs_adjusted'] == 1:
                 data.at[i, 'signal'] = 'Hidden Bearish Divergence'
-    # data = data.drop(columns = ['close_highs','close_lows','RSI','RSI_highs','RSI_lows'])
-    signal = data.loc[data['signal']!='']
-    return signal
+    # data = data.drop(columns = ['close_highs','close_lows_adjusted','RSI','RSI_highs','RSI_lows'])
+    # signal = data.loc[data['signal']!='']
+    return data
 
 from portfolio.models import *
 ticker ='PNJ'
@@ -174,4 +239,15 @@ stock_prices = StockPrice.objects.filter(ticker=ticker).values()
 df = pd.DataFrame(stock_prices)
 data = df.drop(columns=['id','date_time','open','low','high','volume'])
 data =  data.sort_values('date').reset_index(drop=True)
-df = RSIDivergenceStrategy(data, P=20, order=5, K=2)
+# date_end = datetime.today().date() -timedelta(days =100)
+# date_start = date_end -timedelta(days =300)
+# dataloc = data[(data['date']<date_end) & (data['date']> date_start) ]
+# dataloc =  dataloc.sort_values('date').reset_index(drop=True)
+# data = dataloc['close'].values
+
+
+# df = RSIDivergenceStrategy(data, P=20, order=5, K=2)
+# df.to_csv('PNJ.ver7.csv', index=False)
+
+
+# phải trước đó là đỉnh hoặc đáy cùng loại
