@@ -200,7 +200,7 @@ def date_filter_breakout_strategy(df, risk, date_filter, strategy):
            # gửi tín hiệu vào telegram
             bot.send_message(
                 chat_id='-870288807', 
-                text=f"Tín hiệu {row['signal']} cp {row['ticker']}, chiến lược {row['strategy']}" )   
+                text=f"Tín hiệu {row['signal']} cp {row['ticker']}, chiến lược breakout" )   
     return buy_today
 
 def tenisball_strategy(df):
@@ -288,7 +288,7 @@ def date_filter_tenisball_strategy(df, risk, date_filter, strategy):
            # gửi tín hiệu vào telegram
             bot.send_message(
                 chat_id='-870288807', 
-                text=f"Tín hiệu {row['signal']} cp {row['ticker']}, chiến lược {row['strategy']}" )   
+                text=f"Tín hiệu {row['signal']} cp {row['ticker']}, chiến lược tenisball" )   
     return buy_today
 
 def filter_stock_muanual( risk = 0.03):
