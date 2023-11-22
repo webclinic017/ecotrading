@@ -166,7 +166,7 @@ def date_filter_breakout_strategy(df, risk, date_filter, strategy):
     df = breakout_strategy_otmed(df, risk)
     df['milestone'] = np.where(df['signal']== 'buy',df['res'],0)
     df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker','close', 'date', 'signal','milestone','param_ratio_cutloss','len_sideway']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
-    signal_today = df_signal.loc[df_signal['date']==date_filter].reset_index(drop=True)
+    signal_today = df_signal.loc[pd.to_datetime(df_signal['date']).dt.date==date_filter].reset_index(drop=True)
     buy_today =[]
     if len(signal_today) > 0:
         for index, row in signal_today.iterrows():
@@ -249,7 +249,7 @@ def tenisball_strategy_otmed(df, risk):
 def date_filter_tenisball_strategy(df, risk, date_filter, strategy):
     df = tenisball_strategy_otmed(df, risk)
     df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker','close', 'date', 'signal','param_ratio_cutloss']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
-    signal_today = df_signal.loc[df_signal['date']==date_filter].reset_index(drop=True)
+    signal_today = df_signal.loc[pd.to_datetime(df_signal['date']).dt.date==date_filter].reset_index(drop=True)
     buy_today =[]
     if len(signal_today) > 0:
         for index, row in signal_today.iterrows():
