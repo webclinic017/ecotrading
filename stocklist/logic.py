@@ -13,6 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 
 
+risk =0.03
 
 def save_fa_valuation():
     fa = StockFundamentalData.objects.all()
@@ -194,6 +195,12 @@ def date_filter_breakout_strategy(df, risk, date_filter, strategy):
                         buy_today.append(data)
     # tạo lệnh mua tự động
     buy_today.sort(key=lambda x: x['rating'], reverse=True)
+    bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
+    for index, row in signal_today.iterrows():
+           # gửi tín hiệu vào telegram
+            bot.send_message(
+                chat_id='-870288807', 
+                text=f"Tín hiệu {row['signal']} cp {row['ticker']}, chiến lược {row['strategy']}" )   
     return buy_today
 
 def tenisball_strategy(df):
@@ -276,6 +283,12 @@ def date_filter_tenisball_strategy(df, risk, date_filter, strategy):
                         buy_today.append(data)
     # tạo lệnh mua tự động
     buy_today.sort(key=lambda x: x['rating'], reverse=True)
+    bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
+    for index, row in signal_today.iterrows():
+           # gửi tín hiệu vào telegram
+            bot.send_message(
+                chat_id='-870288807', 
+                text=f"Tín hiệu {row['signal']} cp {row['ticker']}, chiến lược {row['strategy']}" )   
     return buy_today
 
 def filter_stock_muanual( risk = 0.03):
@@ -297,7 +310,7 @@ def filter_stock_muanual( risk = 0.03):
         save_fa_valuation()
     else:
         print('Không cần tải data')
-    bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
+    
     stock_prices = StockPriceFilter.objects.all().values()
     # lọc ra top cổ phiếu có vol>100k
     df = pd.DataFrame(stock_prices)  
@@ -306,11 +319,6 @@ def filter_stock_muanual( risk = 0.03):
     breakout_buy_today = date_filter_breakout_strategy(df, risk, date_filter, strategy_breakout)
     tenisball_buy_today = date_filter_tenisball_strategy(df, risk, date_filter, strategy_tenisball)
     buy_today = breakout_buy_today+tenisball_buy_today
-    for ticker in buy_today:
-           # gửi tín hiệu vào telegram
-            bot.send_message(
-                chat_id='-870288807', 
-                text=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}" )   
     print('Cổ phiếu là:', buy_today)
     return buy_today
      
