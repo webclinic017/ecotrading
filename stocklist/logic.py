@@ -11,6 +11,8 @@ import talib
 import numpy as np
 import requests
 from bs4 import BeautifulSoup
+from stocklist.divergences import *
+from django.db.models import Avg
 
 
 risk =0.03
@@ -291,6 +293,33 @@ def date_filter_tenisball_strategy(df, risk, date_filter, strategy):
                 text=f"Tín hiệu {row['signal']} cp {row['ticker']}, chiến lược tenisball" )   
     return buy_today
 
+
+def detect_divergences(P=20, order=5, K=2):
+    bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
+    stock_source = StockPriceFilter.objects.values('ticker').annotate(avg_volume=Avg('volume'))
+    stock_test= [ticker for ticker in stock_source if ticker['avg_volume'] > 100000]
+    mesage =''
+    for item in stock_test:
+        stock_prices = StockPriceFilter.objects.filter(ticker=item['ticker']).values()
+        df = pd.DataFrame(stock_prices)
+        data = df.drop(columns=['id','date_time','open','low','high','volume'])
+        data =  data.sort_values('date').reset_index(drop=True)
+        df = RSIDivergenceStrategy(data, P, order, K)
+        date_filter = datetime.today().date()
+        df_today = df[(pd.to_datetime(df['date']).dt.date == date_filter) & (df['signal'] !='')]
+        if len(df_today)>0:
+            df_today = df_today[['ticker','signal']].reset_index(drop =True)
+            mesage += f"Cổ phiếu {df_today['ticker'][0]} có tín hiệu {df_today['signal'][0]}"
+        bot.send_message(
+                chat_id='-870288807', 
+                text=mesage)
+    return mesage
+
+
+
+
+# phải trước đó là đỉnh hoặc đáy cùng loại
+
 def filter_stock_muanual( risk = 0.03):
     print('đang chạy')
     strategy_breakout= StrategyTrading.objects.filter(name = 'Breakout ver 0.2', risk = risk).first()
@@ -399,6 +428,7 @@ def filter_stock_daily(risk=0.03):
                         bot.send_message(
                         chat_id='-870288807', #room nội bộ
                         text=f"Không gửi được tín hiệu {ticker['ticker']}, lỗi {e}   ")        
+    detect_divergences(P=20, order=5, K=2)
     return 
 
 
