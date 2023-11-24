@@ -262,7 +262,7 @@ def tenisball_strategy_otmed(df, risk):
 
 def date_filter_tenisball_strategy(df, risk, date_filter, strategy):
     df = tenisball_strategy_otmed(df, risk)
-    df_signal = df.loc[(df['close']>3), ['ticker','close', 'date','param_ratio_cutloss']].sort_values('date', ascending=True)
+    df_signal = df.loc[(df['close']>3)&(df['signal']=='buy'), ['ticker','close', 'date','signal','param_ratio_cutloss']].sort_values('date', ascending=True)
     signal_today = df_signal.loc[pd.to_datetime(df_signal['date']).dt.date==date_filter].reset_index(drop=True)
     buy_today =[]
     if len(signal_today) > 0:
