@@ -245,19 +245,24 @@ def tenisball_strategy_otmed(df, risk):
     df['ma200'] = df['close'].rolling(window=200).mean()
     df['top'] = df['high'].rolling(window=5).max()
     df['mavol'] = df['volume'].rolling(window=20).mean()
-    buy_trend = df['close'] > df['ma200']
-    buy_decrease = df['close'] < df['top']
-    buy_minvol =df['mavol'] > 100000
-    buy_pattern= df['pattern_rating'] >= df['param_pattern_rating']
-    buy_backtest_ma = df['close'] >= df['param_ma_backtest'] *df['param_ratio_backtest']
-    buy =  buy_trend & buy_decrease & buy_minvol & buy_pattern & buy_backtest_ma
+    # buy_trend = df['close'] > df['ma200'] #done
+    # buy_decrease = df['close'] < df['top'] #done
+    # buy_minvol =df['mavol'] > 100000 #done
+    # buy_pattern= df['pattern_rating'] >= df['param_pattern_rating'] #done
+    # buy_backtest_ma = df['close'] >= df['param_ma_backtest'] *df['param_ratio_backtest'] #done
+    signal_df=df[(df['pattern_rating'] >= df['param_pattern_rating'])&(df['mavol']>100000)&(df['close']>df['ma200'])&(df['close'] < df['top'])&(df['close'] >= df['param_ma_backtest'] *df['param_ratio_backtest'])]
+    # buy =  buy_trend & buy_decrease & buy_minvol & buy_pattern & buy_backtest_ma
     # cut_loss = df['close'] <= df['close']*(1-df['param_ratio_cutloss'])
-    df['signal'] = np.where(buy, 'buy', 'newtral')
-    return df
+    # signal_df['signal'] = np.where(buy, 'buy', 'newtral')
+    return signal_df
+
+    
+
+
 
 def date_filter_tenisball_strategy(df, risk, date_filter, strategy):
     df = tenisball_strategy_otmed(df, risk)
-    df_signal = df.loc[(df['signal'] =='buy')&(df['close']>3), ['ticker','close', 'date', 'signal','param_ratio_cutloss']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
+    df_signal = df.loc[(df['close']>3), ['ticker','close', 'date','param_ratio_cutloss']].sort_values('date', ascending=True).drop_duplicates(subset=['ticker']).reset_index(drop=True)
     signal_today = df_signal.loc[pd.to_datetime(df_signal['date']).dt.date==date_filter].reset_index(drop=True)
     buy_today =[]
     if len(signal_today) > 0:
