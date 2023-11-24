@@ -325,10 +325,8 @@ def detect_divergences(P=20, order=5, K=2):
 
 # phải trước đó là đỉnh hoặc đáy cùng loại
 
-def filter_stock_muanual( risk):
+def filter_stock_muanual( risk,strategy_1,strategy_2):
     print('đang chạy')
-    strategy_1='Breakout ver 0.2'
-    strategy_2='Tenisball_ver0.1'
     strategy_breakout= StrategyTrading.objects.filter(name =strategy_1 , risk = risk).first()
     strategy_tenisball= StrategyTrading.objects.filter(name =strategy_2 , risk = risk).first()
     now = datetime.today()
@@ -361,7 +359,9 @@ def filter_stock_muanual( risk):
 
 
 def filter_stock_daily(risk=0.03):
-    buy_today = filter_stock_muanual(risk)
+    strategy_1='Breakout ver 0.2'
+    strategy_2='Tenisball_ver0.1'
+    buy_today = filter_stock_muanual(risk,strategy_1,strategy_2)
     date_filter = datetime.today().date() 
     account = Account.objects.get(name ='Bot_Breakout')
     external_room = ChatGroupTelegram.objects.filter(type = 'external',is_signal =True,rank ='1' )
@@ -387,7 +387,7 @@ def filter_stock_daily(risk=0.03):
             # qty= math.floor(R/(price*ticker['ratio_cutloss']*1000))
             analysis = FundamentalAnalysis.objects.filter(ticker__ticker=ticker['ticker']).order_by('-modified_date').first()
             response = ''
-            if ticker['strategy'] =='tenisball':
+            if ticker['strategy'] == strategy_2:
                 response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']} , tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}"
                 ticker['milestone'] =0
             else:
