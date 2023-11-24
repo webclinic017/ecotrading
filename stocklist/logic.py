@@ -325,10 +325,12 @@ def detect_divergences(P=20, order=5, K=2):
 
 # phải trước đó là đỉnh hoặc đáy cùng loại
 
-def filter_stock_muanual( risk = 0.03):
+def filter_stock_muanual( risk):
     print('đang chạy')
-    strategy_breakout= StrategyTrading.objects.filter(name = 'Breakout ver 0.2', risk = risk).first()
-    strategy_tenisball= StrategyTrading.objects.filter(name = 'Tenisball_ver0.1', risk = risk).first()
+    strategy_1='Breakout ver 0.2'
+    strategy_2='Tenisball_ver0.1'
+    strategy_breakout= StrategyTrading.objects.filter(name =strategy_1 , risk = risk).first()
+    strategy_tenisball= StrategyTrading.objects.filter(name =strategy_2 , risk = risk).first()
     now = datetime.today()
     date_filter = now.date()
     # Lấy ngày giờ gần nhất trong StockPriceFilter
@@ -387,6 +389,7 @@ def filter_stock_daily(risk=0.03):
             response = ''
             if ticker['strategy'] =='tenisball':
                 response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']} , tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}"
+                ticker['milestone'] =0
             else:
                 response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}"
             if analysis and analysis.modified_date >= (datetime.now() - timedelta(days=6 * 30)):
