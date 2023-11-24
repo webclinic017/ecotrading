@@ -389,7 +389,7 @@ def filter_stock_daily(risk=0.03):
             response = ''
             if ticker['strategy'] == strategy_2:
                 response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']} , tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}"
-                ticker['milestone'] =0
+                ticker['accumulation']=0
             else:
                 response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}"
             if analysis and analysis.modified_date >= (datetime.now() - timedelta(days=6 * 30)):
@@ -411,7 +411,7 @@ def filter_stock_daily(risk=0.03):
                         ticker = ticker['ticker'],
                         close = ticker['close'],
                         date = ticker['date'],
-                        milestone =ticker['milestone'],
+                        # milestone =ticker['milestone'],
                         signal = ticker['signal'],
                         ratio_cutloss = round(ticker['ratio_cutloss'],2),
                         strategy = ticker['strategy'],
