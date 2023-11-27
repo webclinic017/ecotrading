@@ -388,10 +388,10 @@ def filter_stock_daily(risk=0.03):
             analysis = FundamentalAnalysis.objects.filter(ticker__ticker=ticker['ticker']).order_by('-modified_date').first()
             response = ''
             if ticker['strategy'] == strategy_2:
-                response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']} , tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}"
+                response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']} , tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']} \n"
                 ticker['accumulation']=0
             else:
-                response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']}"
+                response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']} \n"
             if analysis and analysis.modified_date >= (datetime.now() - timedelta(days=6 * 30)):
                 response +=f"Thông tin cổ phiếu {ticker['ticker']}:\n"
                 response += f"Ngày báo cáo {analysis.date}. P/E: {analysis.ticker.p_e}, P/B: {analysis.ticker.p_b}, Định giá {analysis.valuation}:\n"
