@@ -385,18 +385,18 @@ def filter_stock_daily(risk=0.03):
             cut_loss_price = round(price*(100-ticker['ratio_cutloss'])/100,2)
             take_profit_price = round(price*(1+ticker['ratio_cutloss']/100*2),2)
             # qty= math.floor(R/(price*ticker['ratio_cutloss']*1000))
-            analysis = FundamentalAnalysis.objects.filter(ticker__ticker=ticker['ticker']).order_by('-modified_date').first()
-            response = ''
-            if ticker['strategy'] == strategy_2:
-                response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']} , tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']} \n"
-                ticker['accumulation']=0
-            else:
-                response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']} \n"
-            if analysis and analysis.modified_date >= (datetime.now() - timedelta(days=6 * 30)):
-                response +=f"Thông tin cổ phiếu {ticker['ticker']}:\n"
-                response += f"Ngày báo cáo {analysis.date}. P/E: {analysis.ticker.p_e}, P/B: {analysis.ticker.p_b}, Định giá {analysis.valuation}:\n"
-                response += f"{analysis.info}.\n"
-                response += f"Nguồn {analysis.source}"
+            # analysis = FundamentalAnalysis.objects.filter(ticker__ticker=ticker['ticker']).order_by('-modified_date').first()
+            # response = ''
+            # if ticker['strategy'] == strategy_2:
+            #     response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']} , tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']} \n"
+            #     ticker['accumulation']=0
+            # else:
+            #     response +=f"Tín hiệu {ticker['signal']} cp {ticker['ticker']} theo chiến lược {ticker['strategy']}, tỷ lệ cắt lỗ tối ưu là {ticker['ratio_cutloss']}%,  điểm tổng hợp là {ticker['rating']}, điểm cơ bản là {ticker['fundamental']}, số ngày tích lũy trước tăng là {ticker['accumulation']} \n"
+            # if analysis and analysis.modified_date >= (datetime.now() - timedelta(days=6 * 30)):
+            #     response +=f"Thông tin cổ phiếu {ticker['ticker']}:\n"
+            #     response += f"Ngày báo cáo {analysis.date}. P/E: {analysis.ticker.p_e}, P/B: {analysis.ticker.p_b}, Định giá {analysis.valuation}:\n"
+            #     response += f"{analysis.info}.\n"
+            #     response += f"Nguồn {analysis.source}"
             try:
                 # created_transation = Transaction.objects.create(
                 #             account= account,
@@ -422,20 +422,20 @@ def filter_stock_daily(risk=0.03):
                         rating_fundamental = ticker['fundamental'] ,
                         accumulation = ticker['accumulation']
                     )
-                for group in external_room:
-                        bot = Bot(token=group.token.token)
-                        try:
-                            bot.send_message(
-                                chat_id=group.chat_id,
-                                text= response)    
-                        except:
-                            pass
+                # for group in external_room:
+                #         bot = Bot(token=group.token.token)
+                #         try:
+                #             bot.send_message(
+                #                 chat_id=group.chat_id,
+                #                 text= response)    
+                #         except:
+                #             pass
             except Exception as e:
                         # chat_id = account.bot.chat_id
                         bot = Bot(token=account.bot.token)
                         bot.send_message(
                         chat_id='-870288807', #room nội bộ
-                        text=f"Không gửi được tín hiệu {ticker['ticker']}, lỗi {e}   ")        
+                        text=f"Không lưu được tín hiệu {ticker['ticker']}, lỗi {e}   ")        
     detect_divergences(P=20, order=5, K=2)
     return 
 

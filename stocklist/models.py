@@ -46,7 +46,7 @@ class Signaldaily(models.Model):
     rating_fundamental= models.FloatField(default=0,verbose_name = 'Điểm cơ bản')
     exit_price =models.FloatField(null=True, blank=True,verbose_name = 'Giá đóng')
     accumulation = models.IntegerField(null=True, blank=True,verbose_name = 'Ngày tích lũy')
-    
+    is_noti =models.BooleanField(default=False, verbose_name='Có thông báo')
     class Meta:
         verbose_name = 'Tín hiệu giao dịch'
         verbose_name_plural = 'Tín hiệu giao dịch'
@@ -105,6 +105,36 @@ def create_cutloss_signal(sender, instance, created, **kwargs):
                     
                        
             
+@receiver(post_save,sender = Signaldaily)
+def sent_noti_telegram_signal(sender, instance, created, **kwargs):
+    if not created and instance.is_noti ==True and instance.date ==datetime.now().date():
+        # lated_signal = Signaldaily.objects.filter(ticker=instance.ticker).order_by('-date').first()
+        # if lated_signal.date + timedelta(days=3) > instance.date:
+            analysis = FundamentalAnalysis.objects.filter(ticker__ticker=instance.ticker).order_by('-modified_date').first()
+            external_room = ChatGroupTelegram.objects.filter(type = 'external',is_signal =True,rank ='1' )
+            mesage =f"Tín hiệu {instance.signal} cp {instance.ticker} theo chiến lược {instance.strategy} , tỷ lệ cắt lỗ tối ưu là {instance.ratio_cutloss}%, điểm tổng hợp là {instance.rating_total}, điểm cơ bản là {instance.rating_fundamental} "
+            if instance.accumulation and instance.accumulation > 0:
+                mesage += f", số ngày tích lũy trước tăng là {instance.accumulation} \n"
+            else:
+                mesage += f"\n"
+            if analysis and analysis.modified_date >= (datetime.now() - timedelta(days=6 * 30)):
+                    mesage +=f"Thông tin cổ phiếu {instance.signal}:\n"
+                    mesage += f"Ngày báo cáo {analysis.date}. P/E: {analysis.ticker.p_e}, P/B: {analysis.ticker.p_b}, Định giá {analysis.valuation}:\n"
+                    mesage += f"{analysis.info}.\n"
+                    mesage += f"Nguồn {analysis.source}"
+            # bot = Bot(token='5881451311:AAEJYKo0ttHU0_Ztv3oGuf-rfFrGgajjtEk')
+            # bot.send_message(
+            #         chat_id='-870288807', 
+            #         text=mesage)
+            for group in external_room:
+                bot = Bot(token=group.token.token)
+                try:
+                    bot.send_message(
+                        chat_id=group.chat_id, #room Khách hàng
+                        text=mesage)  
+                except:
+                    pass
+
 
 @receiver(post_save, sender=DividendManage)
 def adjust_dividend(sender, instance, created, **kwargs):
