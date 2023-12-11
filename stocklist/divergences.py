@@ -238,21 +238,3 @@ def RSIDivergenceStrategy(data , order=5, K=2,P=20):
     # signal = data.loc[data['signal']!='']
     return data
 
-from portfolio.models import *
-ticker ='PNJ'
-stock_prices = StockPrice.objects.filter(ticker=ticker).values()
-df = pd.DataFrame(stock_prices)
-data = df.drop(columns=['id','date_time','open','low','high','volume'])
-data =  data.sort_values('date').reset_index(drop=True)
-# date_end = datetime.today().date() -timedelta(days =100)
-# date_start = date_end -timedelta(days =300)
-# dataloc = data[(data['date']<date_end) & (data['date']> date_start) ]
-# dataloc =  dataloc.sort_values('date').reset_index(drop=True)
-# data = dataloc['close'].values
-
-
-# df = RSIDivergenceStrategy(data, P=20, order=5, K=2)
-# df.to_csv('HPG.csv', index=False)
-
-
-# phải trước đó là đỉnh hoặc đáy cùng loại

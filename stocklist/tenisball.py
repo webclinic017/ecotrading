@@ -36,10 +36,7 @@ def difine_stock_date_to_sell(buy_date):
 
 
     
-ticker ='PNJ'
-stock_prices = StockPrice.objects.filter(ticker=ticker).values()
-df = pd.DataFrame(stock_prices)
-data =  tenisball_strategy(df)
+
 
 
 
