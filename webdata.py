@@ -125,13 +125,5 @@ def save_data():
     df_monthy_usa.to_sql('tbusamonthlymarco', engine(0), if_exists='replace', index=False)
     df_monthy_china = marco_data_monthly()[1]
     df_monthy_china.to_sql('tbchinamonthlymarco', engine(0), if_exists='replace', index=False)
-
-
-
-
-
-
-
-
- 
+    return 
 
