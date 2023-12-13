@@ -355,23 +355,34 @@ def save_field_account(sender, instance, **kwargs):
             stock_transaction = transaction_items.filter(stock = instance.stock)
             sum_sell = sum(item.qty for item in stock_transaction if item.position =='sell')
             item_buy = stock_transaction.filter( position = 'buy')
+            item_sell = stock_transaction.filter( position = 'sell')
             if porfolio:
                 receiving_t2 =0
                 receiving_t1=0
                 on_hold =0
-                cash_t2 = 0
-                cash_t1 = 0
-                cash_t0= 0
+                
                 for item in item_buy:
-                        if difine_date_receive_stock_buy(item.date) == 0:
+                    if difine_date_receive_stock_buy(item.date) == 0:
                             receiving_t2 += item.qty
                             cash_t2 += item.net_total_value 
-                        elif difine_date_receive_stock_buy(item.date) == 1:
+                    elif difine_date_receive_stock_buy(item.date) == 1:
                             receiving_t1 += item.qty
                             cash_t1+= item.net_total_value 
-                        else:
+                    else:
                             on_hold += item.qty- sum_sell
                             cash_t0 += item.net_total_value 
+                
+                for item in item_sell:
+                    cash_t2 = 0
+                    cash_t1 = 0
+                    cash_t0= 0
+                    if difine_date_receive_stock_buy(item.date) == 0:
+                        cash_t2 += item.net_total_value 
+                    elif difine_date_receive_stock_buy(item.date) == 1:
+                        cash_t1+= item.net_total_value 
+                    else:
+                        cash_t0 += item.net_total_value 
+
                 porfolio.receiving_t2 = receiving_t2
                 porfolio.receiving_t1 = receiving_t1
                 porfolio.on_hold = on_hold
@@ -382,7 +393,7 @@ def save_field_account(sender, instance, **kwargs):
                 porfolio.percent_profit = round((porfolio.market_price/porfolio.avg_price-1)*100,2)
                 account.cash_t2 = cash_t2
                 account.cash_t1 = cash_t1
-                account.interest_cash_balance = cash_t0
+                account.interest_cash_balance += cash_t0  
                 porfolio.save()
             
 
@@ -416,6 +427,8 @@ def save_field_account(sender, instance, **kwargs):
             porfolio = port.filter(stock =instance.stock).first()
             if instance.position =='buy':
                 account.net_trading_value =  account.net_trading_value +instance.net_total_value
+                # tăng tiền số dư tính lãi
+                account.interest_cash_balance += instance.net_total_value
                 # tạo danh mục
                 if porfolio:
                     porfolio.avg_price=round((instance.qty*instance.price +porfolio.sum_stock*porfolio.avg_price)/(porfolio.sum_stock+instance.qty),0)  # Thay đổi giá trị nếu cần
@@ -434,8 +447,7 @@ def save_field_account(sender, instance, **kwargs):
                     sum_stock = instance.qty,
                     market_price = get_stock_market_price(instance.stock.stock),
                     )
-                # tăng tiền số dư tính lãi
-                account.interest_cash_balance = account.interest_cash_balance+ instance.net_total_value
+                
             else:
                 account.net_trading_value = instance.net_total_value + account.net_trading_value
                 # chuyển tiền bán vào tiền chờ về T2
@@ -511,7 +523,7 @@ def update_market_price_for_port():
 
 def morning_check():
     #kiểm tra vào tính lãi suất
-    account = Account.objects.filter(cash_balance__lt=0)
+    account = Account.objects.filter(interest_cash_balance__lt=0)
     if account:
         for instance in account:
             ExpenseStatement.objects.create(
