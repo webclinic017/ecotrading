@@ -3,9 +3,15 @@ from django.db.models.signals import post_save, post_delete,pre_save, pre_delete
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 from datetime import datetime, timedelta
-from portfolio.models import DateNotTrading
+
+import requests
+from bs4 import BeautifulSoup
+from portfolio.models import DateNotTrading, StockPriceFilter
 
 from django.utils import timezone
+
+
+
 
 # Create your models here.
 class Account (models.Model):
@@ -28,7 +34,9 @@ class Account (models.Model):
     excess_equity= models.FloatField(default=0,verbose_name= 'Dư kí quỹ')
     user_created = models.ForeignKey(User,on_delete=models.CASCADE,related_name='user',null=True, blank= True,verbose_name="Người tạo")
     user_modified = models.CharField(max_length=150, blank=True, null=True,verbose_name="Người chỉnh sửa")
-
+    cash_t1 = models.FloatField(default=0,verbose_name= 'Sơ dư tiền T1')
+    cash_t2= models.FloatField(default=0,verbose_name= 'Sơ dư tiền T2')
+    interest_cash_balance= models.FloatField(default=0,verbose_name= 'Sơ dư tiền tính lãi')
 
 
     class Meta:
@@ -140,7 +148,8 @@ class Transaction (models.Model):
     qty = models.IntegerField(verbose_name = 'Khối lượng')
     transaction_fee = models.FloatField( verbose_name= 'Phí giao dịch')
     tax = models.FloatField(default=0,verbose_name= 'Thuế')
-    net_total_value = models.FloatField(default=0, verbose_name= 'Giá trị giao dịch')
+    total_value= models.FloatField(default=0, verbose_name= 'Giá trị giao dịch')
+    net_total_value = models.FloatField(default=0, verbose_name= 'Giá trị giao dịch ròng')
     user_created = models.ForeignKey(User,on_delete=models.CASCADE,null=True, blank= True,                   verbose_name="Người tạo")
     user_modified = models.CharField(max_length=150, blank=True, null=True,
                              verbose_name="Người chỉnh sửa")
@@ -187,13 +196,15 @@ class Transaction (models.Model):
         
         
     def save(self, *args, **kwargs):
-        total_value = self.price*self.qty
-        self.transaction_fee = total_value*self.account.transaction_fee
+        self.total_value = self.price*self.qty
+        self.transaction_fee = self.total_value*self.account.transaction_fee
         if self.position == 'buy':
             self.tax =0
+            self.net_total_value = -self.total_value-self.transaction_fee-self.tax
         else:
-            self.tax = total_value*self.account.tax
-        self.net_total_value = total_value+self.transaction_fee+self.tax
+            self.tax = self.total_value*self.account.tax
+            self.net_total_value = self.total_value-self.transaction_fee-self.tax
+        
         super(Transaction, self).save(*args, **kwargs)
         
      
@@ -251,6 +262,7 @@ class Portfolio (models.Model):
     market_price = models.FloatField(default=0,null=True,blank=True,verbose_name = 'Giá thị trường')
     profit = models.FloatField(default=0,null=True,blank=True,verbose_name = 'Lợi nhuận')
     percent_profit = models.FloatField(default=0,null=True,blank=True,verbose_name = '%Lợi nhuận')
+    sum_stock =models.IntegerField(default=0,null=True,blank=True,verbose_name = 'Tổng cổ phiếu')
     class Meta:
          verbose_name = 'Danh mục '
          verbose_name_plural = 'Danh mục '
@@ -271,18 +283,67 @@ def difine_date_receive_stock_buy(check_date):
             t += 1
     return t
 
+def cal_avg_price(pk,stock):
+    item = Transaction.objects.filter(account_id=pk, stock__stock = stock ) 
+    total_buy = sum(i.qty for i in item if i.position =='buy' )
+    total_sell =sum(i.qty for i in item if i.position =='sell' )
+    total_value = sum(i.total_value for i in item if i.position =='buy' )
+    date_list =list(item.filter(position ='sell').values_list('date', flat=True).distinct()) 
+    avg_price = 0
+    date_find=None
+
+    #kiểm tra có bán hay không, trường hợp đã có bán
+    if total_sell >0:
+        date_list.sort(reverse=True) 
+        
+        # kiểm tra ngày gần nhất bán hết và mua lại
+        for date_check in date_list: 
+            new_item = item.filter(date__lte =date_check)
+            check_total_buy = 0
+            check_total_sell =0
+            for i in new_item:
+                if i.position == 'buy':
+                    check_total_buy += i.qty 
+                else:
+                    check_total_sell +=i.qty
+            if check_total_buy == check_total_sell:
+                date_find = i.date
+                break 
+        if date_find:
+            cal_item = item.filter(position='buy',date__gt= date_find )
+            for i in cal_item:
+                if i.position =='buy':
+                    total_buy += i.qty 
+                    total_value +=i.total_value
+                    avg_price = total_value/total_buy/1000
+                    
+        else:
+            avg_price = total_value/total_buy/1000
+    # Nếu có mua nhưng chưa bán lệnh nào
+    elif total_buy >0:
+        avg_price = total_value/total_buy/1000
+    return avg_price
+
+
+
+def get_stock_market_price(stock):
+    linkbase= 'https://www.cophieu68.vn/quote/summary.php?id=' + stock 
+    r =requests.get(linkbase)
+    soup = BeautifulSoup(r.text,'html.parser')
+    div_tag = soup.find('div', id='stockname_close')
+    return float(div_tag.text)*1000
 
 @receiver([post_save, post_delete], sender=Transaction)
 @receiver([post_save, post_delete], sender=CashTransfer)
 def save_field_account(sender, instance, **kwargs):
     created = kwargs.get('created', False)
     account = instance.account
+    port = Portfolio.objects.filter(account = instance.account, sum_stock__gt=0)
     if not created:
         if sender == Transaction:
             transaction_items = Transaction.objects.filter(account=account)
-            total_trading_buy = sum(item.net_total_value for item in transaction_items if item.position == 'buy')
-            total_trading_sell = sum(item.net_total_value for item in transaction_items if item.position == 'sell')
-            account.net_trading_value = total_trading_sell - total_trading_buy
+            account.net_trading_value = sum(item.net_total_value for item in transaction_items)
+             
             #sửa sao kê phí
             expense_transaction_fee = ExpenseStatement.objects.get(description=instance.pk,type = 'transaction_fee')
             expense_transaction_fee.account=instance.account
@@ -290,32 +351,51 @@ def save_field_account(sender, instance, **kwargs):
             expense_transaction_fee.amount = instance.transaction_fee
             expense_transaction_fee.save()
             #sửa danh mục
-            porfolio = Portfolio.objects.filter(account=instance.account, stock =instance.stock).first()
+            porfolio = port.filter(stock =instance.stock).first()
             stock_transaction = transaction_items.filter(stock = instance.stock)
             sum_sell = sum(item.qty for item in stock_transaction if item.position =='sell')
             item_buy = stock_transaction.filter( position = 'buy')
-            receiving_t2 =0
-            receiving_t1=0
-            on_hold =0
-            for item in item_buy:
-                    if difine_date_receive_stock_buy(item.date) == 0:
-                        receiving_t2 += item.qty
-                    elif difine_date_receive_stock_buy(item.date) == 1:
-                        receiving_t1 += item.qty
-                    else:
-                        on_hold += item.qty- sum_sell
-            porfolio.receiving_t2 = receiving_t2
-            porfolio.receiving_t1 = receiving_t1
-            porfolio.on_hold = on_hold
-            porfolio.save()
+            if porfolio:
+                receiving_t2 =0
+                receiving_t1=0
+                on_hold =0
+                cash_t2 = 0
+                cash_t1 = 0
+                cash_t0= 0
+                for item in item_buy:
+                        if difine_date_receive_stock_buy(item.date) == 0:
+                            receiving_t2 += item.qty
+                            cash_t2 += item.net_total_value 
+                        elif difine_date_receive_stock_buy(item.date) == 1:
+                            receiving_t1 += item.qty
+                            cash_t1+= item.net_total_value 
+                        else:
+                            on_hold += item.qty- sum_sell
+                            cash_t0 += item.net_total_value 
+                porfolio.receiving_t2 = receiving_t2
+                porfolio.receiving_t1 = receiving_t1
+                porfolio.on_hold = on_hold
+                porfolio.avg_price = cal_avg_price(instance.account.pk,instance.stock.stock)*1000
+                porfolio.sum_stock = receiving_t2+ receiving_t1+on_hold
+                porfolio.market_price = get_stock_market_price(instance.stock.stock)
+                porfolio.profit = (porfolio.market_price - porfolio.avg_price)*porfolio.sum_stock
+                porfolio.percent_profit = round((porfolio.market_price/porfolio.avg_price-1)*100,2)
+                account.cash_t2 = cash_t2
+                account.cash_t1 = cash_t1
+                account.interest_cash_balance = cash_t0
+                porfolio.save()
+            
+
+            
             # sửa sao kê thuế
-            if instance.position=='sell':
-                expense_tax = ExpenseStatement.objects.get(description=instance.pk,type = 'tax')
-                expense_tax.account=instance.account
-                expense_tax.date=instance.date
-                expense_tax.amount = instance.tax
-                expense_tax.save()
-                
+                if instance.position=='sell':
+                    expense_tax = ExpenseStatement.objects.get(description=instance.pk,type = 'tax')
+                    expense_tax.account=instance.account
+                    expense_tax.date=instance.date
+                    expense_tax.amount = instance.tax
+                    expense_tax.save()
+      
+                    
             
         
             
@@ -333,27 +413,33 @@ def save_field_account(sender, instance, **kwargs):
                 amount = instance.transaction_fee,
                 description = instance.pk
                 )
-            porfolio = Portfolio.objects.filter(account=instance.account, stock =instance.stock).first()
+            porfolio = port.filter(stock =instance.stock).first()
             if instance.position =='buy':
-                account.net_trading_value =  account.net_trading_value -instance.net_total_value
+                account.net_trading_value =  account.net_trading_value +instance.net_total_value
                 # tạo danh mục
                 if porfolio:
-                    sum_qty = porfolio.on_hold + porfolio.receiving_t2 + porfolio.receiving_t1 #+ porfolio.stock_divident
+                    porfolio.avg_price=round((instance.qty*instance.price +porfolio.sum_stock*porfolio.avg_price)/(porfolio.sum_stock+instance.qty),0)  # Thay đổi giá trị nếu cần
                     porfolio.receiving_t2 = porfolio.receiving_t2 + instance.qty 
-                    porfolio.avg_price=round((instance.qty*instance.price +sum_qty*porfolio.avg_price)/(sum_qty+instance.qty),0)  # Thay đổi giá trị nếu cần
-                    
-                    
+                    porfolio.sum_stock = porfolio.sum_stock + instance.qty #+ porfolio.stock_divident
+                    porfolio.market_price = get_stock_market_price(instance.stock.stock)
+                    porfolio.profit = (porfolio.market_price - porfolio.avg_price)*porfolio.sum_stock
+                    porfolio.percent_profit = round((porfolio.market_price/porfolio.avg_price-1)*100,2)
+                    porfolio.save()
                 else: 
                     Portfolio.objects.create(
                     stock=instance.stock,
                     account= instance.account,
                     receiving_t2 = instance.qty ,
                     avg_price = instance.price ,
-    
+                    sum_stock = instance.qty,
+                    market_price = get_stock_market_price(instance.stock.stock),
                     )
-                
+                # tăng tiền số dư tính lãi
+                account.interest_cash_balance = account.interest_cash_balance+ instance.net_total_value
             else:
                 account.net_trading_value = instance.net_total_value + account.net_trading_value
+                # chuyển tiền bán vào tiền chờ về T2
+                account.cash_t2 = account.cash_t2 + instance.net_total_value
                 # tạo sao kê thuế
                 ExpenseStatement.objects.create(
                 account=instance.account,
@@ -364,12 +450,29 @@ def save_field_account(sender, instance, **kwargs):
                 )
                 # điều chỉnh danh mục
                 porfolio.on_hold = porfolio.on_hold -instance.qty
-            porfolio.save()
+                porfolio.save()
 
         elif sender == CashTransfer:
             account.net_cash_flow = account.net_cash_flow + instance.amount
+    # tính hiện trạng tài khoản
     account.cash_balance = account.net_cash_flow + account.net_trading_value #- lãi vay 
     
+    
+    stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
+    sum_initial_margin = 0
+    market_value = 0
+    for item in port:
+        initial_margin = stock_mapping.get(item.stock, 0)*item.sum_stock*item.avg_price/100
+        sum_initial_margin +=initial_margin
+        value = item.sum_stock*item.market_price
+        market_value += value
+
+    if port:
+        account.market_value = market_value
+        account.nav = account.market_value + account.cash_balance
+        account.initial_margin_requirement = sum_initial_margin
+        account.margin_ratio = (account.nav/account.initial_margin_requirement)*100
+        account.excess_equity = account.nav - account.initial_margin_requirement
     account.save()
 
 
@@ -379,11 +482,60 @@ def delete_expense_statement(sender, instance, **kwargs):
     # porfolio = Portfolio.objects.filter(account=instance.account, stock =instance.stock).first()
     if expense:
         expense.delete()
-    # if porfolio:
-    #     if instance.date =
-    #     porfolio.receiving_t2
-    #     porfolio.receiving_t1
-    #     porfolio.on_hold
-    #     avg_price
+   
 
+@receiver (post_save, sender=StockPriceFilter)
+def update_market_price_port(sender, instance, created, **kwargs):
+    port = Portfolio.objects.filter(sum_stock__gt=0, stock =instance.stock)
+    for item in port:
+        if item.stock == instance.ticker:
+            item.market_price = instance.close*1000
+            item.profit = (item.market_price - item.avg_price)*item.sum_stock
+            item.percent_profit = round((item.market_price/item.avg_price-1)*100,2)
+            item.save()
+            
+
+    
+        
+
+
+
+#chạy 1 phút 1 lần
+def update_market_price_for_port():
+    port = Portfolio.objects.filter(sum_stock__gt=0)
+    for item in port:
+        item.market_price = get_stock_market_price(item.stock)
+        item.profit = (item.market_price - item.avg_price)*item.sum_stock
+        item.percent_profit = round((item.market_price/item.avg_price-1)*100,2)
+        item.save()
+
+def morning_check():
+    #kiểm tra vào tính lãi suất
+    account = Account.objects.filter(cash_balance__lt=0)
+    if account:
+        for instance in account:
+            ExpenseStatement.objects.create(
+                account=instance,
+                date=datetime.now().date(),
+                type = 'interest',
+                amount = instance.interest_fee * instance.interest_cash_balance/360,
+                description = instance.pk
+                )
+    # chuyển tiền dồn lên 1 ngày
+        account.interest_cash_balance += account.cash_t1
+        account.cash_t1= account.cash_t2
+        account.cash_t2 =0
+        account.save()
+
+def atternoon_check():
+    port = Portfolio.objects.filter(sum_stock__gt=0)
+    buy_today = Transaction.objects.filter(position ='buy',date = datetime.now().date())
+    qty_buy_today = sum(item.qty for item in buy_today )
+    if port:
+        port.on_hold += port.receiving_t1
+        port.receiving_t1 = port.receiving_t2
+        port.receiving_t2 = qty_buy_today
+        port.save()
+
+    
     
