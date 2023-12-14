@@ -572,10 +572,11 @@ def atternoon_check():
     buy_today = Transaction.objects.filter(position ='buy',date = datetime.now().date())
     qty_buy_today = sum(item.qty for item in buy_today )
     if port:
-        port.on_hold += port.receiving_t1
-        port.receiving_t1 = port.receiving_t2
-        port.receiving_t2 = qty_buy_today
-        port.save()
+        for item in port:
+            item.on_hold += item.receiving_t1
+            item.receiving_t1 = item.receiving_t2
+            item.receiving_t2 = qty_buy_today
+            item.save()
 
     
     
