@@ -296,10 +296,12 @@ class Portfolio (models.Model):
         self.profit =0
         self.percent_profit = 0
         if self.sum_stock >0:
-            self.profit = (self.market_price - self.avg_price)*self.sum_stock
+            self.market_price = round(get_stock_market_price(str(self.stock)),0)
+            self.avg_price = round(cal_avg_price(self.account.pk,self.stock)*1000,0)
+            self.profit = round((self.market_price - self.avg_price)*self.sum_stock,0)
             self.percent_profit = round((self.market_price/self.avg_price-1)*100,2)
-            self.avg_price = cal_avg_price(self.account.pk,self.stock)*1000
-            self.market_price = get_stock_market_price(self.stock)
+            
+            
         super(Portfolio, self).save(*args, **kwargs)
 
         
