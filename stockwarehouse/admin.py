@@ -5,8 +5,8 @@ from .models import *
 
 class AccountAdmin(admin.ModelAdmin):
     model= Account
-    list_display = ['name','cash_balance','interest_cash_balance','market_value','nav','margin_ratio','excess_equity','user_created']
-    readonly_fields=['cash_balance','market_value','nav','margin_ratio','excess_equity','user_created','initial_margin_requirement','net_cash_flow','net_trading_value']
+    list_display = ['name','cash_balance','interest_cash_balance','market_value','nav','margin_ratio','excess_equity','status']
+    readonly_fields=['cash_balance','market_value','nav','margin_ratio','excess_equity','user_created','initial_margin_requirement','net_cash_flow','net_trading_value','status']
     search_fields = ['name',]
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
@@ -38,7 +38,7 @@ class TransactionAdmin(admin.ModelAdmin):
     model= Transaction
     list_display_links = ['stock',]
     list_display = ['account','date','stock','position','price','qty','net_total_value','created_at','user_created','transaction_fee','tax']
-    readonly_fields = ['user_created','user_modified','transaction_fee','tax','net_total_value']
+    readonly_fields = ['user_created','user_modified','transaction_fee','tax','total_value','net_total_value']
     search_fields = ['account','stock',]
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới

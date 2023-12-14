@@ -46,6 +46,18 @@ class Account (models.Model):
     def __str__(self):
         return self.name
     
+    @property
+    def status(self):
+        check = self.margin_ratio
+        if check > 50:
+            status = ""
+        elif check <= 50 and check >30:
+            status = f"CẢNH BÁO "
+        else:
+            value_force = '{:,.0f}'.format(round((50 - self.margin_ratio)*self.initial_margin_requirement,0))
+            status = f"BÁN GIẢI CHẤP {value_force}"
+        return status
+    
     def save(self, *args, **kwargs):
         self.cash_balance = self.net_cash_flow + self.net_trading_value #- lãi vay 
         stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
@@ -64,61 +76,11 @@ class Account (models.Model):
         self.initial_margin_requirement = sum_initial_margin
         self.excess_equity = self.nav - self.initial_margin_requirement
         if sum_initial_margin >0:
-            self.margin_ratio = (self.nav/self.initial_margin_requirement)*100
+            self.margin_ratio = abs(round((self.nav/self.initial_margin_requirement)*100,2))
         super(Account, self).save(*args, **kwargs)
     
 
    
-    # @property
-    # def portfolio(self):
-    #     return qty_stock_on_account(self.pk)[0]
-    # @property
-    # def str_portfolio(self):
-    #     return qty_stock_on_account(self.pk)[1]
-
-    
-    # @property
-    # def net_cash_flow(self):
-    #     item = CashTrasfer.objects.filter(account_id =self.pk)
-    #     total = sum(i.amount for i in item )
-    #     return total
-
-    # @property
-    # def net_cash_available(self):
-    #     item = Transaction.objects.filter(account_id = self.pk)
-    #     total_trading = sum(i.total_value for i in item if i.status_raw == 'matched')
-    #     # cần cộng thêm giá trị deal mua đang chờ khớp
-    #     pending = sum(i.total_value for i in item if i.status_raw != 'matched' and i.position =='buy')
-    #     net_cash_available = self.net_cash_flow - total_trading -pending
-    #     return net_cash_available
-    
-    # @property
-    # def market_value(self):
-    #     port = self.portfolio
-    #     market_value = sum(item['qty_total']*item['market_price']*1000 for item in port)
-    #     return market_value
-    
-
-    # @property
-    # def total_profit(self):
-    #     order_list = Transaction.objects.filter(account_id = self.pk,status_raw = 'matched' )
-    #     total_trading = sum(i.total_value for i in order_list)
-    #     net_cash_available = self.net_cash_flow - total_trading
-    #     total = net_cash_available+ self.market_value -self.net_cash_flow 
-    #     return total
-    # @property
-    # def close_deal(self):
-    #     close_deal= cal_profit_deal_close(self.pk )
-    #     return close_deal
-    # @property
-    # def total_profit_close(self):
-    #     total_profit_close = sum(i['profit'] for i in self.close_deal[0])
-    #     return total_profit_close
-
-    # @property
-    # def total_profit_open(self):
-    #     total_profit_open = sum(i['profit'] for i in self.portfolio)
-    #     return total_profit_open
 
 class StockListMargin(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
@@ -398,19 +360,16 @@ def save_field_account(sender, instance, **kwargs):
                 on_hold =0
                 cash_t2 = 0
                 cash_t1 = 0
-                cash_t0= 0
+                cash_t0= sum(i.net_total_value for i in item_buy)
                 
                 for item in item_buy:
                     if difine_date_receive_stock_buy(item.date) == 0:
-                            receiving_t2 += item.qty
-                            cash_t2 += item.net_total_value 
+                        receiving_t2 += item.qty                           
                     elif difine_date_receive_stock_buy(item.date) == 1:
-                            receiving_t1 += item.qty
-                            cash_t1+= item.net_total_value 
+                        receiving_t1 += item.qty                             
                     else:
-                            on_hold += item.qty- sum_sell
-                            cash_t0 += item.net_total_value 
-                
+                        on_hold += item.qty- sum_sell
+                                           
                 for item in item_sell:
                     if difine_date_receive_stock_buy(item.date) == 0:
                         cash_t2 += item.net_total_value 
@@ -429,7 +388,7 @@ def save_field_account(sender, instance, **kwargs):
                 # porfolio.percent_profit = round((porfolio.market_price/porfolio.avg_price-1)*100,2)
                 account.cash_t2 = cash_t2
                 account.cash_t1 = cash_t1
-                account.interest_cash_balance += cash_t0  
+                account.interest_cash_balance = cash_t0  
                 porfolio.save()
             
 
