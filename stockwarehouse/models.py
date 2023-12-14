@@ -455,13 +455,12 @@ def delete_expense_statement(sender, instance, **kwargs):
 
 @receiver (post_save, sender=StockPriceFilter)
 def update_market_price_port(sender, instance, created, **kwargs):
-    port = Portfolio.objects.filter(sum_stock__gt=0, stock =instance.stock)
+    port = Portfolio.objects.filter(sum_stock__gt=0, stock =instance.ticker)
     for item in port:
-        if item.stock == instance.ticker:
-            item.market_price = instance.close*1000
+        item.market_price = instance.close*1000
             # item.profit = (item.market_price - item.avg_price)*item.sum_stock
             # item.percent_profit = round((item.market_price/item.avg_price-1)*100,2)
-            item.save()
+        item.save()
             
 # tách ha            
             
