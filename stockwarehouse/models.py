@@ -569,10 +569,10 @@ def morning_check():
 
 def atternoon_check():
     port = Portfolio.objects.filter(sum_stock__gt=0)
-    buy_today = Transaction.objects.filter(position ='buy',date = datetime.now().date())
-    qty_buy_today = sum(item.qty for item in buy_today )
     if port:
         for item in port:
+            buy_today = Transaction.objects.filter(account = item.account,position ='buy',date = datetime.now().date(),stock__stock = item.stock)
+            qty_buy_today = sum(item.qty for item in buy_today )
             item.on_hold += item.receiving_t1
             item.receiving_t1 = item.receiving_t2
             item.receiving_t2 = qty_buy_today
