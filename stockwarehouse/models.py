@@ -154,7 +154,7 @@ class Transaction (models.Model):
         ratio_requirement = self.stock.initial_margin_requirement/100
 
         if self.position == 'buy': 
-            max_qty = abs((account.cash_balance/ratio_requirement/0.65)/self.price)
+            max_qty = abs((account.nav/ratio_requirement/account.margin_ratio)/self.price)
             if self.qty > max_qty :
                 raise ValidationError({'qty': f'Không đủ sức mua, số lượng cổ phiếu tối đa  {max_qty:,.0f}'})
                    
