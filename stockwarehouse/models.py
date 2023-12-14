@@ -562,10 +562,10 @@ def morning_check():
                 description = instance.pk
                 )
     # chuyển tiền dồn lên 1 ngày
-            account.interest_cash_balance += account.cash_t1
-            account.cash_t1= account.cash_t2
-            account.cash_t2 =0
-            account.save()
+            instance.interest_cash_balance += instance.cash_t1
+            instance.cash_t1= instance.cash_t2
+            instance.cash_t2 =0
+            instance.save()
 
 def atternoon_check():
     port = Portfolio.objects.filter(sum_stock__gt=0)
