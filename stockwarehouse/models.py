@@ -150,15 +150,15 @@ class Transaction (models.Model):
         if self.price < 0: 
             raise ValidationError('Lỗi giá phải lớn hơn 0')
 
-        account = self.account
-        ratio_requirement = self.stock.initial_margin_requirement/100
+        # account = self.account
+        # ratio_requirement = self.stock.initial_margin_requirement/100
 
-        if self.position == 'buy': 
-            max_qty = abs((account.nav/(ratio_requirement*account.margin_ratio/100))/self.price)
-            if self.qty > max_qty :
-                raise ValidationError({'qty': f'Không đủ sức mua, số lượng cổ phiếu tối đa  {max_qty:,.0f}'})
+        # if self.position == 'buy': 
+        #     max_qty = abs((account.nav/(ratio_requirement*account.margin_ratio/100))/self.price)
+        #     if self.qty > max_qty :
+        #         raise ValidationError({'qty': f'Không đủ sức mua, số lượng cổ phiếu tối đa  {max_qty:,.0f}'})
                    
-        elif self.position == 'sell':
+        if self.position == 'sell':
             port = Portfolio.objects.filter(account = self.account, stock =self.stock).first()
             max_qty_sell = port.on_hold
             if self.qty > max_qty_sell:
