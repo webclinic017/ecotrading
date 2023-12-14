@@ -55,7 +55,7 @@ class Account (models.Model):
         elif check <= 50 and check >30:
             status = f"CẢNH BÁO "
         else:
-            value_force = '{:,.0f}'.format(round((50 - self.margin_ratio)*self.initial_margin_requirement,0))
+            value_force = '{:,.0f}'.format(round((50 - self.margin_ratio)*self.initial_margin_requirement/100,0))
             status = f"BÁN GIẢI CHẤP {value_force}"
         return status
     
