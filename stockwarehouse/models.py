@@ -3,6 +3,7 @@ from django.db.models.signals import post_save, post_delete,pre_save, pre_delete
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 from datetime import datetime, timedelta
+from django.forms import ValidationError
 
 import requests
 from bs4 import BeautifulSoup
@@ -145,37 +146,25 @@ class Transaction (models.Model):
     def __str__(self):
         return self.stock.stock
     
-    # def clean(self):
-    #     if not self.account:
-    #         raise ValidationError({'account': 'Vui lòng nhập tài khoản'})
-    #     if self.position:
-    #         if self.position == 'buy':
-    #             if self.qty:
-    #                 item = Transaction.objects.filter(account_id=self.account.pk).exclude(pk=self.pk)
-    #                 total_trading = sum(i.total_value for i in item if i.status_raw == 'matched')
-    #                 # cần cộng thêm giá trị deal mua đang chờ khớp
-    #                 pending = sum(i.total_value for i in item if i.status_raw != 'matched' and i.position =='buy')
-    #                 net_cash_available = self.account.net_cash_flow - total_trading -pending
-    #                 if self.total_value > net_cash_available :
-    #                     raise ValidationError({'qty': f'Không đủ sức mua, số lượng tối đa {net_cash_available:,.0f} cp'})
-    #             else:
-    #                 if not self.qty:
-    #                     raise ValidationError({'qty': 'Vui lòng nhập số lượng hoặc giá cắt lỗ'})      
-    #         elif self.position == 'sell':
-    #             if not self.qty:
-    #                 raise ValidationError({'qty': 'Vui lòng nhập số lượng'})
-    #             else:
-    #                 port = self.account.portfolio
-    #                 qty_sell_pending = Transaction.objects.filter(account_id=self.account.pk,
-    #                         status_raw = 'pending', position = 'sell').exclude(pk=self.pk).aggregate(Sum('qty'))['qty__sum'] or 0
-    #                 item = next((item for item in port if item['stock'] == self.stock), None)
-    #                 if not item:
-    #                     raise ValidationError({'qty': 'Không có cổ phiếu để bán'})
-    #                 max_sellable_qty = item['qty_sellable'] - qty_sell_pending
-    #                 if self.qty > max_sellable_qty:
-    #                     raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_sellable_qty}'})
-    #     else:
-    #             raise ValidationError({'position': 'Vui lòng chọn "mua" hoặc "bán"'})
+    def clean(self):
+        if self.price < 0: 
+            raise ValidationError('Lỗi giá phải lớn hơn 0')
+
+        account = self.account
+        ratio_requirement = self.stock.initial_margin_requirement
+
+        if self.position == 'buy': 
+            max_qty = (account.cash_balance/ratio_requirement/0.65)/self.price
+            if self.net_total_value > account.cash_balance :
+                raise ValidationError({'qty': f'Không đủ sức mua, số lượng cổ phiếu tối đa  {max_qty:,.0f}'})
+                   
+        elif self.position == 'sell':
+            port = Portfolio.objects.filter(account = self.account, stock =self.stock).first()
+            max_qty_sell = port.on_hold
+            if self.qty > max_qty_sell:
+                raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_qty_sell}'})
+        
+             
         
         
     def save(self, *args, **kwargs):
@@ -576,10 +565,10 @@ def morning_check():
                 description = instance.pk
                 )
     # chuyển tiền dồn lên 1 ngày
-        account.interest_cash_balance += account.cash_t1
-        account.cash_t1= account.cash_t2
-        account.cash_t2 =0
-        account.save()
+            account.interest_cash_balance += account.cash_t1
+            account.cash_t1= account.cash_t2
+            account.cash_t2 =0
+            account.save()
 
 def atternoon_check():
     port = Portfolio.objects.filter(sum_stock__gt=0)
