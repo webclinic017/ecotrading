@@ -54,6 +54,9 @@ class PortfolioAdmin(admin.ModelAdmin):
     model= Portfolio
     list_display = ['account','stock','market_price','avg_price','on_hold','receiving_t1','receiving_t2','profit','percent_profit']
     search_fields = ['stock',]
+    def get_queryset(self, request):
+        # Chỉ trả về các bản ghi có sum_stock > 0
+        return super().get_queryset(request).filter(sum_stock__gt=0)
 
 
 admin.site.register(Portfolio,PortfolioAdmin)

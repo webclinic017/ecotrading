@@ -113,7 +113,7 @@ DATABASES_LIST = [{
         'PORT': '5432',
     }
 }]
-DATABASES = DATABASES_LIST[1]
+DATABASES = DATABASES_LIST[0]
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

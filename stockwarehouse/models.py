@@ -38,13 +38,34 @@ class Account (models.Model):
     cash_t2= models.FloatField(default=0,verbose_name= 'Sơ dư tiền T2')
     interest_cash_balance= models.FloatField(default=0,verbose_name= 'Sơ dư tiền tính lãi')
 
-
+    
     class Meta:
          verbose_name = 'Tài khoản'
          verbose_name_plural = 'Tài khoản'
 
     def __str__(self):
         return self.name
+    
+    def save(self, *args, **kwargs):
+        self.cash_balance = self.net_cash_flow + self.net_trading_value #- lãi vay 
+        stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
+        port = Portfolio.objects.filter(account =self.pk)
+        sum_initial_margin = 0
+        self.margin_ratio = 0
+        market_value = 0
+        if port:
+            for item in port:
+                initial_margin = stock_mapping.get(item.stock, 0)*item.sum_stock*item.avg_price/100
+                sum_initial_margin +=initial_margin
+                value = item.sum_stock*item.market_price
+                market_value += value
+                self.market_value = market_value
+        self.nav = self.market_value + self.cash_balance
+        self.initial_margin_requirement = sum_initial_margin
+        self.excess_equity = self.nav - self.initial_margin_requirement
+        if sum_initial_margin >0:
+            self.margin_ratio = (self.nav/self.initial_margin_requirement)*100
+        super(Account, self).save(*args, **kwargs)
     
 
    
@@ -270,6 +291,19 @@ class Portfolio (models.Model):
     def __str__(self):
         return self.stock
     
+    def save(self, *args, **kwargs):
+        self.sum_stock = self.receiving_t2+ self.receiving_t1+self.on_hold
+        self.profit =0
+        self.percent_profit = 0
+        if self.sum_stock >0:
+            self.profit = (self.market_price - self.avg_price)*self.sum_stock
+            self.percent_profit = round((self.market_price/self.avg_price-1)*100,2)
+            self.avg_price = cal_avg_price(self.account.pk,self.stock)*1000
+            self.market_price = get_stock_market_price(self.stock)
+        super(Portfolio, self).save(*args, **kwargs)
+
+        
+    
 
 def difine_date_receive_stock_buy(check_date):
     t=0
@@ -343,7 +377,7 @@ def save_field_account(sender, instance, **kwargs):
         if sender == Transaction:
             transaction_items = Transaction.objects.filter(account=account)
             account.net_trading_value = sum(item.net_total_value for item in transaction_items)
-             
+            
             #sửa sao kê phí
             expense_transaction_fee = ExpenseStatement.objects.get(description=instance.pk,type = 'transaction_fee')
             expense_transaction_fee.account=instance.account
@@ -360,6 +394,9 @@ def save_field_account(sender, instance, **kwargs):
                 receiving_t2 =0
                 receiving_t1=0
                 on_hold =0
+                cash_t2 = 0
+                cash_t1 = 0
+                cash_t0= 0
                 
                 for item in item_buy:
                     if difine_date_receive_stock_buy(item.date) == 0:
@@ -373,9 +410,6 @@ def save_field_account(sender, instance, **kwargs):
                             cash_t0 += item.net_total_value 
                 
                 for item in item_sell:
-                    cash_t2 = 0
-                    cash_t1 = 0
-                    cash_t0= 0
                     if difine_date_receive_stock_buy(item.date) == 0:
                         cash_t2 += item.net_total_value 
                     elif difine_date_receive_stock_buy(item.date) == 1:
@@ -386,11 +420,11 @@ def save_field_account(sender, instance, **kwargs):
                 porfolio.receiving_t2 = receiving_t2
                 porfolio.receiving_t1 = receiving_t1
                 porfolio.on_hold = on_hold
-                porfolio.avg_price = cal_avg_price(instance.account.pk,instance.stock.stock)*1000
-                porfolio.sum_stock = receiving_t2+ receiving_t1+on_hold
-                porfolio.market_price = get_stock_market_price(instance.stock.stock)
-                porfolio.profit = (porfolio.market_price - porfolio.avg_price)*porfolio.sum_stock
-                porfolio.percent_profit = round((porfolio.market_price/porfolio.avg_price-1)*100,2)
+                # porfolio.avg_price = cal_avg_price(instance.account.pk,instance.stock.stock)*1000
+                # porfolio.sum_stock = receiving_t2+ receiving_t1+on_hold
+                # porfolio.market_price = get_stock_market_price(instance.stock.stock)
+                # porfolio.profit = (porfolio.market_price - porfolio.avg_price)*porfolio.sum_stock
+                # porfolio.percent_profit = round((porfolio.market_price/porfolio.avg_price-1)*100,2)
                 account.cash_t2 = cash_t2
                 account.cash_t1 = cash_t1
                 account.interest_cash_balance += cash_t0  
@@ -407,8 +441,7 @@ def save_field_account(sender, instance, **kwargs):
                     expense_tax.save()
       
                     
-            
-        
+    
             
         elif sender == CashTransfer:
             cash_items = CashTransfer.objects.filter(account=account)
@@ -431,12 +464,12 @@ def save_field_account(sender, instance, **kwargs):
                 account.interest_cash_balance += instance.net_total_value
                 # tạo danh mục
                 if porfolio:
-                    porfolio.avg_price=round((instance.qty*instance.price +porfolio.sum_stock*porfolio.avg_price)/(porfolio.sum_stock+instance.qty),0)  # Thay đổi giá trị nếu cần
+                    # porfolio.avg_price=round((instance.qty*instance.price +porfolio.sum_stock*porfolio.avg_price)/(porfolio.sum_stock+instance.qty),0)  # Thay đổi giá trị nếu cần
                     porfolio.receiving_t2 = porfolio.receiving_t2 + instance.qty 
-                    porfolio.sum_stock = porfolio.sum_stock + instance.qty #+ porfolio.stock_divident
-                    porfolio.market_price = get_stock_market_price(instance.stock.stock)
-                    porfolio.profit = (porfolio.market_price - porfolio.avg_price)*porfolio.sum_stock
-                    porfolio.percent_profit = round((porfolio.market_price/porfolio.avg_price-1)*100,2)
+                    # porfolio.sum_stock = porfolio.sum_stock + instance.qty #+ porfolio.stock_divident
+                    # porfolio.market_price = get_stock_market_price(instance.stock.stock)
+                    # porfolio.profit = (porfolio.market_price - porfolio.avg_price)*porfolio.sum_stock
+                    # porfolio.percent_profit = round((porfolio.market_price/porfolio.avg_price-1)*100,2)
                     porfolio.save()
                 else: 
                     Portfolio.objects.create(
@@ -449,9 +482,9 @@ def save_field_account(sender, instance, **kwargs):
                     )
                 
             else:
-                account.net_trading_value = instance.net_total_value + account.net_trading_value
+                account.net_trading_value += instance.net_total_value 
                 # chuyển tiền bán vào tiền chờ về T2
-                account.cash_t2 = account.cash_t2 + instance.net_total_value
+                account.cash_t2 +=  instance.net_total_value
                 # tạo sao kê thuế
                 ExpenseStatement.objects.create(
                 account=instance.account,
@@ -465,26 +498,26 @@ def save_field_account(sender, instance, **kwargs):
                 porfolio.save()
 
         elif sender == CashTransfer:
-            account.net_cash_flow = account.net_cash_flow + instance.amount
+            account.net_cash_flow += + instance.amount
     # tính hiện trạng tài khoản
-    account.cash_balance = account.net_cash_flow + account.net_trading_value #- lãi vay 
+    # account.cash_balance = account.net_cash_flow + account.net_trading_value #- lãi vay 
     
     
-    stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
-    sum_initial_margin = 0
-    market_value = 0
-    for item in port:
-        initial_margin = stock_mapping.get(item.stock, 0)*item.sum_stock*item.avg_price/100
-        sum_initial_margin +=initial_margin
-        value = item.sum_stock*item.market_price
-        market_value += value
+    # stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
+    # sum_initial_margin = 0
+    # market_value = 0
+    # for item in port:
+    #     initial_margin = stock_mapping.get(item.stock, 0)*item.sum_stock*item.avg_price/100
+    #     sum_initial_margin +=initial_margin
+    #     value = item.sum_stock*item.market_price
+    #     market_value += value
 
-    if port:
-        account.market_value = market_value
-        account.nav = account.market_value + account.cash_balance
-        account.initial_margin_requirement = sum_initial_margin
-        account.margin_ratio = (account.nav/account.initial_margin_requirement)*100
-        account.excess_equity = account.nav - account.initial_margin_requirement
+    # if port:
+    #     account.market_value = market_value
+    #     account.nav = account.market_value + account.cash_balance
+    #     account.initial_margin_requirement = sum_initial_margin
+    #     account.margin_ratio = (account.nav/account.initial_margin_requirement)*100
+    #     account.excess_equity = account.nav - account.initial_margin_requirement
     account.save()
 
 
@@ -502,9 +535,16 @@ def update_market_price_port(sender, instance, created, **kwargs):
     for item in port:
         if item.stock == instance.ticker:
             item.market_price = instance.close*1000
-            item.profit = (item.market_price - item.avg_price)*item.sum_stock
-            item.percent_profit = round((item.market_price/item.avg_price-1)*100,2)
+            # item.profit = (item.market_price - item.avg_price)*item.sum_stock
+            # item.percent_profit = round((item.market_price/item.avg_price-1)*100,2)
             item.save()
+            
+            
+            
+                
+
+           
+
             
 
     
@@ -517,8 +557,8 @@ def update_market_price_for_port():
     port = Portfolio.objects.filter(sum_stock__gt=0)
     for item in port:
         item.market_price = get_stock_market_price(item.stock)
-        item.profit = (item.market_price - item.avg_price)*item.sum_stock
-        item.percent_profit = round((item.market_price/item.avg_price-1)*100,2)
+        # item.profit = (item.market_price - item.avg_price)*item.sum_stock
+        # item.percent_profit = round((item.market_price/item.avg_price-1)*100,2)
         item.save()
 
 def morning_check():
