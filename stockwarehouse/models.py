@@ -353,14 +353,14 @@ def save_field_account(sender, instance, **kwargs):
             stock_transaction = transaction_items.filter(stock = instance.stock)
             sum_sell = sum(item.qty for item in stock_transaction if item.position =='sell')
             item_buy = stock_transaction.filter( position = 'buy')
-            item_sell = stock_transaction.filter( position = 'sell')
+            item_all_sell = transaction_items.filter( position = 'sell')
             if porfolio:
                 receiving_t2 =0
                 receiving_t1=0
                 on_hold =0
                 cash_t2 = 0
                 cash_t1 = 0
-                cash_t0= sum(i.net_total_value for i in item_buy)
+                cash_t0= sum(i.net_total_value for i in stock_transaction if i.position =='buy')
                 
                 for item in item_buy:
                     if difine_date_receive_stock_buy(item.date) == 0:
@@ -370,7 +370,7 @@ def save_field_account(sender, instance, **kwargs):
                     else:
                         on_hold += item.qty- sum_sell
                                            
-                for item in item_sell:
+                for item in item_all_sell:
                     if difine_date_receive_stock_buy(item.date) == 0:
                         cash_t2 += item.net_total_value 
                     elif difine_date_receive_stock_buy(item.date) == 1:
@@ -381,11 +381,7 @@ def save_field_account(sender, instance, **kwargs):
                 porfolio.receiving_t2 = receiving_t2
                 porfolio.receiving_t1 = receiving_t1
                 porfolio.on_hold = on_hold
-                # porfolio.avg_price = cal_avg_price(instance.account.pk,instance.stock.stock)*1000
-                # porfolio.sum_stock = receiving_t2+ receiving_t1+on_hold
-                # porfolio.market_price = get_stock_market_price(instance.stock.stock)
-                # porfolio.profit = (porfolio.market_price - porfolio.avg_price)*porfolio.sum_stock
-                # porfolio.percent_profit = round((porfolio.market_price/porfolio.avg_price-1)*100,2)
+                
                 account.cash_t2 = cash_t2
                 account.cash_t1 = cash_t1
                 account.interest_cash_balance = cash_t0  
@@ -425,21 +421,17 @@ def save_field_account(sender, instance, **kwargs):
                 account.interest_cash_balance += instance.net_total_value
                 # tạo danh mục
                 if porfolio:
-                    # porfolio.avg_price=round((instance.qty*instance.price +porfolio.sum_stock*porfolio.avg_price)/(porfolio.sum_stock+instance.qty),0)  # Thay đổi giá trị nếu cần
+                    
                     porfolio.receiving_t2 = porfolio.receiving_t2 + instance.qty 
-                    # porfolio.sum_stock = porfolio.sum_stock + instance.qty #+ porfolio.stock_divident
-                    # porfolio.market_price = get_stock_market_price(instance.stock.stock)
-                    # porfolio.profit = (porfolio.market_price - porfolio.avg_price)*porfolio.sum_stock
-                    # porfolio.percent_profit = round((porfolio.market_price/porfolio.avg_price-1)*100,2)
                     porfolio.save()
                 else: 
                     Portfolio.objects.create(
                     stock=instance.stock,
                     account= instance.account,
                     receiving_t2 = instance.qty ,
-                    avg_price = instance.price ,
-                    sum_stock = instance.qty,
-                    market_price = get_stock_market_price(instance.stock.stock),
+                    # avg_price = instance.price ,
+                    # sum_stock = instance.qty,
+                    # market_price = get_stock_market_price(instance.stock.stock),
                     )
                 
             else:
@@ -460,25 +452,7 @@ def save_field_account(sender, instance, **kwargs):
 
         elif sender == CashTransfer:
             account.net_cash_flow += + instance.amount
-    # tính hiện trạng tài khoản
-    # account.cash_balance = account.net_cash_flow + account.net_trading_value #- lãi vay 
-    
-    
-    # stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
-    # sum_initial_margin = 0
-    # market_value = 0
-    # for item in port:
-    #     initial_margin = stock_mapping.get(item.stock, 0)*item.sum_stock*item.avg_price/100
-    #     sum_initial_margin +=initial_margin
-    #     value = item.sum_stock*item.market_price
-    #     market_value += value
 
-    # if port:
-    #     account.market_value = market_value
-    #     account.nav = account.market_value + account.cash_balance
-    #     account.initial_margin_requirement = sum_initial_margin
-    #     account.margin_ratio = (account.nav/account.initial_margin_requirement)*100
-    #     account.excess_equity = account.nav - account.initial_margin_requirement
     account.save()
 
 
@@ -500,9 +474,76 @@ def update_market_price_port(sender, instance, created, **kwargs):
             # item.percent_profit = round((item.market_price/item.avg_price-1)*100,2)
             item.save()
             
+# tách ha            
             
-            
-                
+# def update_portfolio_for_buy_transaction(instance, portfolio, account):
+#     portfolio.receiving_t2 += instance.qty
+#     portfolio.save()
+#     account.net_trading_value += instance.net_total_value
+#     account.interest_cash_balance += instance.net_total_value
+
+
+# def update_portfolio_for_sell_transaction(instance, portfolio, account):
+#     portfolio.on_hold -= instance.qty
+#     portfolio.save()
+#     account.cash_t2 += instance.net_total_value
+
+
+# def update_expense_tax(instance, description_type):
+#     ExpenseStatement.objects.update_or_create(
+#         description=instance.pk,
+#         type=description_type,
+#         defaults={
+#             'account': instance.account,
+#             'date': instance.date,
+#             'amount': instance.tax if description_type == 'tax' else instance.transaction_fee,
+#         }
+#     )
+
+
+# @receiver([post_save, post_delete], sender=Transaction)
+# def handle_transaction_save(sender, instance, **kwargs):
+#     created = kwargs.get('created', False)
+#     account = instance.account
+#     portfolio = Portfolio.objects.filter(account=account, sum_stock__gt=0).first()
+
+#     if not created:
+#         transaction_items = Transaction.objects.filter(account=account)
+#         account.net_trading_value = sum(item.net_total_value for item in transaction_items)
+
+#         # Sửa sao kê phí
+#         update_expense_tax(instance, 'transaction_fee')
+
+#         if portfolio:
+#             if instance.position == 'buy':
+#                 update_portfolio_for_buy_transaction(instance, portfolio, account)
+#             elif instance.position == 'sell':
+#                 update_portfolio_for_sell_transaction(instance, portfolio, account)
+#     else:
+#         update_expense_tax(instance, 'transaction_fee')
+#         if instance.position == 'buy':
+#             account.net_trading_value += instance.net_total_value
+#             account.interest_cash_balance += instance.net_total_value
+#             if not portfolio:
+#                 Portfolio.objects.create(
+#                     stock=instance.stock,
+#                     account=instance.account,
+#                     receiving_t2=instance.qty,
+#                 )
+#         elif instance.position == 'sell':
+#             account.net_trading_value += instance.net_total_value
+#             account.cash_t2 += instance.net_total_value
+
+#     account.save()
+
+
+# @receiver([post_save, post_delete], sender=CashTransfer)
+# def handle_cash_transfer_save(sender, instance, **kwargs):
+#     account = instance.account
+#     cash_items = CashTransfer.objects.filter(account=account)
+#     account.net_cash_flow = sum(item.amount for item in cash_items)
+#     account.save()
+          
 
            
 
