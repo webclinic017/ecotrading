@@ -213,6 +213,7 @@ class ExpenseStatement(models.Model):
     type =models.CharField(max_length=50, choices=POSITION_CHOICES, null=False, blank=False,verbose_name = 'Loại phí')
     amount = models.FloatField (verbose_name='Số tiền')
     description = models.CharField(max_length=100,null=True, blank=True, verbose_name='Diễn giải')
+    interest_cash_balance = models.FloatField (verbose_name='Số dư tiền tính lãi')
     class Meta:
          verbose_name = 'Bảng kê chi phí '
          verbose_name_plural = 'Bảng kê chi phí '
@@ -342,7 +343,7 @@ def save_field_account(sender, instance, **kwargs):
             stock_transaction = transaction_items.filter(stock = instance.stock)
             sum_sell = sum(item.qty for item in stock_transaction if item.position =='sell')
             item_buy = stock_transaction.filter( position = 'buy')
-            
+
             item_all_buy =  transaction_items.filter( position = 'buy')
             item_all_sell = transaction_items.filter( position = 'sell')
             if porfolio:
@@ -558,10 +559,11 @@ def morning_check():
         for instance in account:
             ExpenseStatement.objects.create(
                 account=instance,
-                date=datetime.now().date(),
+                date=datetime.now().date()-timedelta(days=1),
                 type = 'interest',
                 amount = instance.interest_fee * instance.interest_cash_balance/360,
-                description = instance.pk
+                description = instance.pk,
+                interest_cash_balance = instance.interest_cash_balance
                 )
     # chuyển tiền dồn lên 1 ngày
             instance.interest_cash_balance += instance.cash_t1
