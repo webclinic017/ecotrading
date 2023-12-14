@@ -342,6 +342,8 @@ def save_field_account(sender, instance, **kwargs):
             stock_transaction = transaction_items.filter(stock = instance.stock)
             sum_sell = sum(item.qty for item in stock_transaction if item.position =='sell')
             item_buy = stock_transaction.filter( position = 'buy')
+            
+            item_all_buy =  transaction_items.filter( position = 'buy')
             item_all_sell = transaction_items.filter( position = 'sell')
             if porfolio:
                 receiving_t2 =0
@@ -349,7 +351,7 @@ def save_field_account(sender, instance, **kwargs):
                 on_hold =0
                 cash_t2 = 0
                 cash_t1 = 0
-                cash_t0= sum(i.net_total_value for i in stock_transaction if i.position =='buy')
+                cash_t0= sum(i.net_total_value for i in item_all_buy if i.position =='buy')
                 
                 for item in item_buy:
                     if difine_date_receive_stock_buy(item.date) == 0:
