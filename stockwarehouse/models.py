@@ -151,7 +151,7 @@ class Transaction (models.Model):
             raise ValidationError('Lỗi giá phải lớn hơn 0')
 
         account = self.account
-        ratio_requirement = self.stock.initial_margin_requirement
+        ratio_requirement = self.stock.initial_margin_requirement/100
 
         if self.position == 'buy': 
             max_qty = (account.cash_balance/ratio_requirement/0.65)/self.price
@@ -458,8 +458,6 @@ def update_market_price_port(sender, instance, created, **kwargs):
     port = Portfolio.objects.filter(sum_stock__gt=0, stock =instance.ticker)
     for item in port:
         item.market_price = instance.close*1000
-            # item.profit = (item.market_price - item.avg_price)*item.sum_stock
-            # item.percent_profit = round((item.market_price/item.avg_price-1)*100,2)
         item.save()
             
 # tách ha            
