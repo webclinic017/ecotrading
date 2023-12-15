@@ -213,7 +213,7 @@ class ExpenseStatement(models.Model):
     type =models.CharField(max_length=50, choices=POSITION_CHOICES, null=False, blank=False,verbose_name = 'Loại phí')
     amount = models.FloatField (verbose_name='Số tiền')
     description = models.CharField(max_length=100,null=True, blank=True, verbose_name='Diễn giải')
-    interest_cash_balance = models.FloatField (verbose_name='Số dư tiền tính lãi')
+    interest_cash_balance = models.FloatField (null = True,blank =True ,verbose_name='Số dư tiền tính lãi')
     class Meta:
          verbose_name = 'Bảng kê chi phí '
          verbose_name_plural = 'Bảng kê chi phí '
@@ -582,5 +582,3 @@ def atternoon_check():
             item.receiving_t2 = qty_buy_today
             item.save()
 
-    
-    
