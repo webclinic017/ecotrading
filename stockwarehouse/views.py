@@ -22,6 +22,7 @@ def warehouse(request):
             port = Portfolio.objects.filter(sum_stock__gt=0).order_by('stock').distinct('stock')
             for item in port:
                 item.market_price = get_stock_market_price(item.stock)
+                item.save()
 
         elif action == 'calculate_max_qty_buy':
             # Xử lý tính toán số lượng tối đa có thể mua
