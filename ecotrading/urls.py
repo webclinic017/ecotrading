@@ -23,7 +23,9 @@ import debug_toolbar
 urlpatterns = [
     path('admin', admin.site.urls),
     path('', include('portfolio.urls')), 
-    path('', include('stocklist.urls'))
+    path('', include('stocklist.urls')),
+    path('', include('stockwarehouse.urls'))
+
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
