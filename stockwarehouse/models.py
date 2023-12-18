@@ -27,7 +27,7 @@ class Account (models.Model):
     # bot = models.ForeignKey(BotTelegram,on_delete=models.CASCADE, verbose_name= 'Bot' )
     net_cash_flow= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
     net_trading_value= models.FloatField(default=0,verbose_name= 'Giao dịch ròng')
-    cash_balance  = models.FloatField(default=0,verbose_name= 'Sơ dư tiền')
+    cash_balance  = models.FloatField(default=0,verbose_name= 'Số dư tiền')
     market_value = models.FloatField(default=0,verbose_name= 'Giá trị thị trường')
     nav = models.FloatField(default=0,verbose_name= 'Tài sản ròng')
     initial_margin_requirement= models.FloatField(default=0,verbose_name= 'Kí quy ban đầu')
@@ -35,9 +35,9 @@ class Account (models.Model):
     excess_equity= models.FloatField(default=0,verbose_name= 'Dư kí quỹ')
     user_created = models.ForeignKey(User,on_delete=models.CASCADE,related_name='user',null=True, blank= True,verbose_name="Người tạo")
     user_modified = models.CharField(max_length=150, blank=True, null=True,verbose_name="Người chỉnh sửa")
-    cash_t1 = models.FloatField(default=0,verbose_name= 'Sơ dư tiền T1')
-    cash_t2= models.FloatField(default=0,verbose_name= 'Sơ dư tiền T2')
-    interest_cash_balance= models.FloatField(default=0,verbose_name= 'Sơ dư tiền tính lãi')
+    cash_t1 = models.FloatField(default=0,verbose_name= 'Số dư tiền T1')
+    cash_t2= models.FloatField(default=0,verbose_name= 'Số dư tiền T2')
+    interest_cash_balance= models.FloatField(default=0,verbose_name= 'Số dư tiền tính lãi')
 
     
     class Meta:
