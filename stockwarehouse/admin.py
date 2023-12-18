@@ -5,7 +5,7 @@ from .models import *
 
 class AccountAdmin(admin.ModelAdmin):
     model= Account
-    list_display = ['name','cash_balance','interest_cash_balance','market_value','nav','margin_ratio','excess_equity','status']
+    list_display = ['name','id','cash_balance','interest_cash_balance','market_value','nav','margin_ratio','excess_equity','status']
     readonly_fields=['cash_balance','market_value','nav','margin_ratio','excess_equity','user_created','initial_margin_requirement','net_cash_flow','net_trading_value','status']
     search_fields = ['name',]
     def save_model(self, request, obj, form, change):
