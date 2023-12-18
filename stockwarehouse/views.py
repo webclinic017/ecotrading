@@ -1,14 +1,10 @@
 import math
 from django.shortcuts import render
-
-from itertools import product
-import numpy as np
-import talib
-from datetime import datetime, timedelta
 from .models import *
 from django.shortcuts import render
 from statistics import mean
 from django.http import JsonResponse
+from portfolio.models import get_list_stock_price
 
 
 def warehouse(request):
@@ -19,10 +15,11 @@ def warehouse(request):
 
         if action == 'update_market_price':
             # Xử lý cập nhật giá thị trường cho các cổ phiếu trong danh sách
-            port = Portfolio.objects.filter(sum_stock__gt=0).order_by('stock').distinct('stock')
-            for item in port:
-                item.market_price = get_stock_market_price(item.stock)
-                item.save()
+            stock_list = Portfolio.objects.values_list('stock', flat=True).distinct()
+            stock_list_python = list(stock_list)
+            get_list_stock_price(stock_list_python)
+
+
 
         elif action == 'calculate_max_qty_buy':
             # Xử lý tính toán số lượng tối đa có thể mua
