@@ -170,18 +170,20 @@ JAZZMIN_UI_TWEAKS = JAZZMIN_UI_TWEAKS
 
 CRONTAB_TIMEZONE = 'Asia/Ho_Chi_Minh'
 
+
+
 CRONJOBS = [
-    ('40 8 * * 1-5', 'stocklist.logic.filter_stock_daily'), # Chạy lúc 14:59 từ thứ 2 đến thứ 6
-    ('30 8 * * 1-5', 'stocklist.auto_news.auto_news_daily'), # Chạy lúc 15:30 từ thứ 2 đến thứ 6
-    ('00 12 * * 1-5', 'stocklist.auto_news.auto_news_omo'), # Chạy lúc 17:00 từ thứ 2 đến thứ 6
-    ('30 15 * * 1-5', 'portfolio.models.get_all_info_stock_price'), # Chạy lúc 15:30 từ thứ 2 đến thứ 6
-    ('00 0 * * 1-5', 'stocklist.logic.check_dividend'),# chạy lúc 7 giờ sáng
-    ('00 0 * * 1-5', 'stocklist.check_update_analysis_and_send_notifications'),# chạy lúc 7 giờ sáng
-    ('00 0 * * 1-5', 'webdata.save_data'),# chạy lúc 7 giờ sáng
-    ('30 0 * * 1-5', 'stocklist.auto_news.auto_news_stock_worlds'),# chạy lúc 7h15 giờ sáng
+    ('00 0 * * 1-5', 'schedule.schedule_morning'),# chạy lúc 7 giờ sáng
     ('30 2 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 9h30 sáng
-    ('30 4 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 11h30 sáng
+    ('30 4 * * 1-5', 'schedule.schedule_mid_trading_date'),# chạy lúc 11h30 sáng
     ('00 7 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 14h00 trưa
     ('45 7 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 14h45 trưa
+    ('40 8 * * 1-5', 'schedule.schedule_after_trading_date'), # Chạy lúc 15:40 từ thứ 2 đến thứ 6
+    ('30 15 * * 1-5', 'portfolio.models.get_all_info_stock_price'), # Chạy lúc 21h từ thứ 2 đến thứ 6
+
+    
+    
+
+    
 
 ]
