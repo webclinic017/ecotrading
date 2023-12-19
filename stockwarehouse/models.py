@@ -53,13 +53,13 @@ class Account (models.Model):
     def status(self):
         check = self.margin_ratio
         value_force = '{:,.0f}'.format(round((maintenance_margin_ratio - self.margin_ratio)*self.market_value/100,0))
-        if check >maintenance_margin_ratio :
-            status = ""
-        elif check <= maintenance_margin_ratio and check >force_sell_margin_ratio:
-            status = f"CẢNH BÁO, số âm {value_force}"
-        else:
-            status = f"BÁN GIẢI CHẤP {value_force}"
-        return status
+        status = ""
+        if self.cash_balance <0:
+            if check <= maintenance_margin_ratio and check >force_sell_margin_ratio:
+                status = f"CẢNH BÁO, số âm {value_force}"
+            elif check <= force_sell_margin_ratio:
+                status = f"BÁN GIẢI CHẤP {value_force}"
+            return status
     
     def save(self, *args, **kwargs):
         self.cash_balance = self.net_cash_flow + self.net_trading_value #- lãi vay 
