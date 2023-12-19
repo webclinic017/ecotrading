@@ -12,6 +12,8 @@ from portfolio.models import DateNotTrading, StockPriceFilter
 from django.utils import timezone
 
 
+maintenance_margin_ratio = 17
+force_sell_margin_ratio = 13
 
 
 # Create your models here.
@@ -50,34 +52,34 @@ class Account (models.Model):
     @property
     def status(self):
         check = self.margin_ratio
-        if check > 50:
+        value_force = '{:,.0f}'.format(round((maintenance_margin_ratio - self.margin_ratio)*self.market_value/100,0))
+        if check >maintenance_margin_ratio :
             status = ""
-        elif check <= 50 and check >30:
-            status = f"CẢNH BÁO "
+        elif check <= maintenance_margin_ratio and check >force_sell_margin_ratio:
+            status = f"CẢNH BÁO, số âm {value_force}"
         else:
-            value_force = '{:,.0f}'.format(round((50 - self.margin_ratio)*self.initial_margin_requirement/100,0))
             status = f"BÁN GIẢI CHẤP {value_force}"
         return status
     
     def save(self, *args, **kwargs):
         self.cash_balance = self.net_cash_flow + self.net_trading_value #- lãi vay 
-        stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
+        # stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
         port = Portfolio.objects.filter(account =self.pk)
-        sum_initial_margin = 0
+        # sum_initial_margin = 0
         self.margin_ratio = 0
         market_value = 0
         if port:
             for item in port:
-                initial_margin = stock_mapping.get(item.stock, 0)*item.sum_stock*item.avg_price/100
-                sum_initial_margin +=initial_margin
+                # initial_margin = stock_mapping.get(item.stock, 0)*item.sum_stock*item.avg_price/100
+                # sum_initial_margin +=initial_margin
                 value = item.sum_stock*item.market_price
                 market_value += value
                 self.market_value = market_value
         self.nav = self.market_value + self.cash_balance
-        self.initial_margin_requirement = sum_initial_margin
-        self.excess_equity = self.nav - self.initial_margin_requirement
-        if sum_initial_margin >0:
-            self.margin_ratio = abs(round((self.nav/self.initial_margin_requirement)*100,2))
+        # self.initial_margin_requirement = sum_initial_margin
+        # self.excess_equity = self.nav - self.initial_margin_requirement
+        if self.cash_balance <0:
+            self.margin_ratio = abs(round((self.nav/self.market_value)*100,2))
         super(Account, self).save(*args, **kwargs)
     
 

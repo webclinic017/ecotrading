@@ -96,8 +96,8 @@ def get_info_stock_price_filter():
             delete = StockPriceFilter.objects.filter(date=mindate).delete()
     return f"Tạo mới tổng {count} cổ phiếu, và xóa {delete} cổ phiếu cũ " 
 
-def get_list_stock_price():
-    list_stock = list(Transaction.objects.values_list('stock', flat=True).distinct())
+def get_list_stock_price(list_stock):
+    # list_stock = list(Transaction.objects.values_list('stock', flat=True).distinct())
     number =len(list_stock)
     linkstockquote ='https://price.tpbs.com.vn/api/SymbolApi/getStockQuote'
     r = requests.post(linkstockquote,json = {"stocklist" : list_stock })
@@ -123,7 +123,7 @@ def get_list_stock_price():
             'volume': volume,
             'date_time':date_time
                         } )
-    return StockPriceFilter.objects.all().order_by('-date')[:10]
+    return StockPriceFilter.objects.all().order_by('-date')[:number]
 
 # tìm thời điểm mốc ban đầu, thời điểm mua lần đầu
 def avg_price(pk,stock,end_date):

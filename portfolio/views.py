@@ -34,7 +34,7 @@ def account(request,pk):
     total_profit_close = account.total_profit_close
     total_profit_open = account.total_profit_open
     if request.method == 'POST':
-        info = get_list_stock_price()# Hàm để lấy giá chứng khoán
+        info = get_list_stock_price(LIST_STOCK)# Hàm để lấy giá chứng khoán
         time_data = info.first().date_time
     context = {
         'time': time_data,
