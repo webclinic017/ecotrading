@@ -28,7 +28,7 @@ def warehouse(request):
             price = float(request.POST['price'])
             account = Account.objects.get(pk=account)
             initial_margin_ratio = StockListMargin.objects.get(stock=ticker).initial_margin_requirement
-            max_value = abs(account.cash_balance  / (1-initial_margin_ratio/100))
+            max_value = abs(account.excess_equity  / (1-initial_margin_ratio/100))
             qty = math.floor(int(max_value / price))
             return JsonResponse({'qty': '{:,.0f}'.format(qty)})
 
