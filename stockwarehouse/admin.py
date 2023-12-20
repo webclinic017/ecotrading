@@ -9,7 +9,7 @@ class AccountAdmin(admin.ModelAdmin):
     model= Account
     # list_display = ['name','id','formatted_cash_balance','interest_cash_balance','market_value','nav','margin_ratio','status']
     # readonly_fields=['cash_balance','market_value','nav','margin_ratio','excess_equity','user_created','initial_margin_requirement','net_cash_flow','net_trading_value','status']
-    list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','excess_equity','initial_margin_requirement', 'status']
+    list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity', 'status']
     readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'status','cash_t2','cash_t1','excess_equity', 'interest_cash_balance' ]
     search_fields = ['name',]
     def save_model(self, request, obj, form, change):
@@ -26,6 +26,8 @@ class AccountAdmin(admin.ModelAdmin):
 
     def formatted_cash_balance(self, obj):
         return self.formatted_number(obj.cash_balance)
+    def formatted_excess_equity(self, obj):
+        return self.formatted_number(obj.excess_equity)
 
     def formatted_interest_cash_balance(self, obj):
         return self.formatted_number(obj.interest_cash_balance)
@@ -47,6 +49,7 @@ class AccountAdmin(admin.ModelAdmin):
     formatted_market_value.short_description = 'Giá trị thị trường'
     formatted_nav.short_description = 'Tài sản ròng'
     formatted_margin_ratio.short_description = 'Tỷ lệ kí quỹ'
+    formatted_excess_equity.short_description = 'Dư kí quỹ'
 
 
 admin.site.register(Account,AccountAdmin)
