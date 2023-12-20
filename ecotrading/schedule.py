@@ -8,7 +8,7 @@ from portfolio.models import get_all_info_stock_price
 def schedule_morning():
     today = datetime.now().date()
     not_trading_dates = DateNotTrading.objects.filter(date=today)
-    check_update_analysis_and_send_notifications()
+    # check_update_analysis_and_send_notifications()
     save_data()
     auto_news_stock_worlds()
     morning_check()

@@ -103,15 +103,51 @@ class TransactionAdmin(admin.ModelAdmin):
 admin.site.register(Transaction,TransactionAdmin)
 
 class PortfolioAdmin(admin.ModelAdmin):
-    model= Portfolio
-    list_display = ['account','stock','market_price','avg_price','on_hold','receiving_t1','receiving_t2','profit','percent_profit','sum_stock']
+    model = Portfolio
+    list_display = ['account', 'stock', 'formatted_market_price', 'formatted_avg_price', 'formatted_on_hold', 'formatted_receiving_t1', 'formatted_receiving_t2', 'formatted_profit', 'formatted_percent_profit', 'formatted_sum_stock']
     readonly_fields = ['account','stock','market_price','avg_price','on_hold','receiving_t1','receiving_t2','profit','percent_profit', 'sum_stock']
     search_fields = ['stock','account__name']
     def get_queryset(self, request):
         # Chỉ trả về các bản ghi có sum_stock > 0
         return super().get_queryset(request).filter(sum_stock__gt=0)
 
+    def formatted_number(self, value):
+        # Format number with commas as thousand separators and no decimal places
+        return '{:,.0f}'.format(value)
 
+    def formatted_market_price(self, obj):
+        return self.formatted_number(obj.market_price)
+
+    def formatted_avg_price(self, obj):
+        return self.formatted_number(obj.avg_price)
+
+    def formatted_on_hold(self, obj):
+        return self.formatted_number(obj.on_hold)
+
+    def formatted_receiving_t1(self, obj):
+        return self.formatted_number(obj.receiving_t1)
+
+    def formatted_receiving_t2(self, obj):
+        return self.formatted_number(obj.receiving_t2)
+
+    def formatted_profit(self, obj):
+        return self.formatted_number(obj.profit)
+
+    def formatted_percent_profit(self, obj):
+        return '{:.2%}'.format(obj.percent_profit)
+
+    def formatted_sum_stock(self, obj):
+        return self.formatted_number(obj.sum_stock)
+
+    formatted_market_price.short_description = 'Giá trị thị trường'
+    formatted_avg_price.short_description = 'Giá TB'
+    formatted_on_hold.short_description = 'Khả dụng'
+    formatted_receiving_t1.short_description = 'Chờ về T+1'
+    formatted_receiving_t2.short_description = 'Chờ về T+2'
+    formatted_profit.short_description = 'Lợi nhuận'
+    formatted_percent_profit.short_description = '% lợi nhuận'
+    formatted_sum_stock.short_description = 'Tổng cổ phiếu'
+    
 admin.site.register(Portfolio,PortfolioAdmin)
 
 class ExpenseStatementAdmin(admin.ModelAdmin):
