@@ -183,24 +183,7 @@ class Transaction (models.Model):
         
      
 
-    # @property
-    # def str_total_value(self):
-    #     if self.position =='buy':
-    #         total = self.total_value
-    #     else:
-    #         total = -self.total_value
-    #     return '{:,.0f}'.format(total)
-    
-    
-
-    
-    # @property
-    # def date_stock_on_account(self):
-    #     if self.status_raw == 'matched':
-    #         time =self.time_received_stock
-    #     else:
-    #         time =None
-    #     return time
+ 
     
 class ExpenseStatement(models.Model):
     POSITION_CHOICES = [
@@ -330,7 +313,7 @@ def get_stock_market_price(stock):
 def save_field_account(sender, instance, **kwargs):
     created = kwargs.get('created', False)
     account = instance.account
-    port = Portfolio.objects.filter(account = instance.account, sum_stock__gt=0)
+    porfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
     if not created:
         if sender == Transaction:
             transaction_items = Transaction.objects.filter(account=account)
@@ -343,11 +326,9 @@ def save_field_account(sender, instance, **kwargs):
             expense_transaction_fee.amount = instance.transaction_fee
             expense_transaction_fee.save()
             #sửa danh mục
-            porfolio = port.filter(stock =instance.stock).first()
             stock_transaction = transaction_items.filter(stock = instance.stock)
             sum_sell = sum(item.qty for item in stock_transaction if item.position =='sell')
             item_buy = stock_transaction.filter( position = 'buy')
-
             item_all_buy =  transaction_items.filter( position = 'buy')
             item_all_sell = transaction_items.filter( position = 'sell')
             if porfolio:
@@ -410,7 +391,7 @@ def save_field_account(sender, instance, **kwargs):
                 amount = instance.transaction_fee,
                 description = instance.pk
                 )
-            porfolio = port.filter(stock =instance.stock).first()
+            
             if instance.position =='buy':
                 account.net_trading_value =  account.net_trading_value +instance.net_total_value
                 # tăng tiền số dư tính lãi

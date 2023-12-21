@@ -107,7 +107,7 @@ admin.site.register(Transaction,TransactionAdmin)
 
 class PortfolioAdmin(admin.ModelAdmin):
     model = Portfolio
-    list_display = ['account', 'stock', 'formatted_market_price', 'formatted_avg_price', 'formatted_on_hold', 'formatted_receiving_t1', 'formatted_receiving_t2', 'formatted_profit', 'formatted_percent_profit', 'formatted_sum_stock']
+    list_display = ['account', 'stock', 'formatted_market_price', 'formatted_avg_price', 'formatted_on_hold', 'formatted_receiving_t1', 'formatted_receiving_t2', 'formatted_profit', 'percent_profit', 'formatted_sum_stock']
     readonly_fields = ['account','stock','market_price','avg_price','on_hold','receiving_t1','receiving_t2','profit','percent_profit', 'sum_stock']
     search_fields = ['stock','account__name']
     def get_queryset(self, request):
@@ -136,8 +136,6 @@ class PortfolioAdmin(admin.ModelAdmin):
     def formatted_profit(self, obj):
         return self.formatted_number(obj.profit)
 
-    def formatted_percent_profit(self, obj):
-        return '{:.2%}'.format(obj.percent_profit)
 
     def formatted_sum_stock(self, obj):
         return self.formatted_number(obj.sum_stock)
@@ -148,7 +146,6 @@ class PortfolioAdmin(admin.ModelAdmin):
     formatted_receiving_t1.short_description = 'Chờ về T+1'
     formatted_receiving_t2.short_description = 'Chờ về T+2'
     formatted_profit.short_description = 'Lợi nhuận'
-    formatted_percent_profit.short_description = '% lợi nhuận'
     formatted_sum_stock.short_description = 'Tổng cổ phiếu'
     
 admin.site.register(Portfolio,PortfolioAdmin)
