@@ -24,14 +24,16 @@ def warehouse(request):
         elif action == 'calculate_max_qty_buy':
             # Xử lý tính toán số lượng tối đa có thể mua
             account = float(request.POST['account'])
-            ticker = request.POST['ticker']
+            ticker = request.POST['ticker'].upper()
+            print(ticker)
             price = float(request.POST['price'])
             account = Account.objects.get(pk=account)
-            initial_margin_ratio = StockListMargin.objects.get(stock=ticker).initial_margin_requirement
-            if account.excess_equity <=0:
-                max_value = 0
-            else:
-                max_value = abs(account.excess_equity  / (initial_margin_ratio/100))
+            margin = StockListMargin.objects.filter(stock=ticker).first()
+            max_value = 0
+            if account.excess_equity > 0 and margin:
+                max_value = abs(account.excess_equity  / (margin.initial_margin_ratio/100))
+            
+                
             qty = math.floor(int(max_value / price))
             return JsonResponse({'qty': '{:,.0f}'.format(qty)})
 
