@@ -25,7 +25,6 @@ def warehouse(request):
             # Xử lý tính toán số lượng tối đa có thể mua
             account = float(request.POST['account'])
             ticker = request.POST['ticker'].upper()
-            print(ticker)
             price = float(request.POST['price'])
             account = Account.objects.get(pk=account)
             margin = StockListMargin.objects.filter(stock=ticker).first()

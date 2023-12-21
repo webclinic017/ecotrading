@@ -308,131 +308,131 @@ def get_stock_market_price(stock):
     div_tag = soup.find('div', id='stockname_close')
     return float(div_tag.text)*1000
 
-@receiver([post_save, post_delete], sender=Transaction)
-@receiver([post_save, post_delete], sender=CashTransfer)
-def save_field_account(sender, instance, **kwargs):
-    created = kwargs.get('created', False)
-    account = instance.account
+# @receiver([post_save, post_delete], sender=Transaction)
+# @receiver([post_save, post_delete], sender=CashTransfer)
+# def save_field_account(sender, instance, **kwargs):
+#     created = kwargs.get('created', False)
+#     account = instance.account
     
-    if not created:
-        if sender == Transaction:
-            porfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
-            transaction_items = Transaction.objects.filter(account=account)
-            account.net_trading_value = sum(item.net_total_value for item in transaction_items)
+#     if not created:
+#         if sender == Transaction:
+#             porfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
+#             transaction_items = Transaction.objects.filter(account=account)
+#             account.net_trading_value = sum(item.net_total_value for item in transaction_items)
             
-            #sửa sao kê phí
-            expense_transaction_fee = ExpenseStatement.objects.get(description=instance.pk,type = 'transaction_fee')
-            expense_transaction_fee.account=instance.account
-            expense_transaction_fee.date=instance.date
-            expense_transaction_fee.amount = instance.transaction_fee
-            expense_transaction_fee.save()
-            #sửa danh mục
-            stock_transaction = transaction_items.filter(stock = instance.stock)
-            sum_sell = sum(item.qty for item in stock_transaction if item.position =='sell')
-            item_buy = stock_transaction.filter( position = 'buy')
-            item_all_buy =  transaction_items.filter( position = 'buy')
-            item_all_sell = transaction_items.filter( position = 'sell')
-            if porfolio:
-                receiving_t2 =0
-                receiving_t1=0
-                on_hold =0
-                cash_t2 = 0
-                cash_t1 = 0
-                cash_t0= sum(i.net_total_value for i in item_all_buy if i.position =='buy')
+#             #sửa sao kê phí
+#             expense_transaction_fee = ExpenseStatement.objects.get(description=instance.pk,type = 'transaction_fee')
+#             expense_transaction_fee.account=instance.account
+#             expense_transaction_fee.date=instance.date
+#             expense_transaction_fee.amount = instance.transaction_fee
+#             expense_transaction_fee.save()
+#             #sửa danh mục
+#             stock_transaction = transaction_items.filter(stock = instance.stock)
+#             sum_sell = sum(item.qty for item in stock_transaction if item.position =='sell')
+#             item_buy = stock_transaction.filter( position = 'buy')
+#             item_all_buy =  transaction_items.filter( position = 'buy')
+#             item_all_sell = transaction_items.filter( position = 'sell')
+#             if porfolio:
+#                 receiving_t2 =0
+#                 receiving_t1=0
+#                 on_hold =0
+#                 cash_t2 = 0
+#                 cash_t1 = 0
+#                 cash_t0= sum(i.net_total_value for i in item_all_buy if i.position =='buy')
                 
-                for item in item_buy:
-                    if difine_date_receive_stock_buy(item.date) == 0:
-                        receiving_t2 += item.qty                           
-                    elif difine_date_receive_stock_buy(item.date) == 1:
-                        receiving_t1 += item.qty                             
-                    else:
-                        on_hold += item.qty- sum_sell
+#                 for item in item_buy:
+#                     if difine_date_receive_stock_buy(item.date) == 0:
+#                         receiving_t2 += item.qty                           
+#                     elif difine_date_receive_stock_buy(item.date) == 1:
+#                         receiving_t1 += item.qty                             
+#                     else:
+#                         on_hold += item.qty- sum_sell
                                            
-                for item in item_all_sell:
-                    if difine_date_receive_stock_buy(item.date) == 0:
-                        cash_t2 += item.net_total_value 
-                    elif difine_date_receive_stock_buy(item.date) == 1:
-                        cash_t1+= item.net_total_value 
-                    else:
-                        cash_t0 += item.net_total_value 
+#                 for item in item_all_sell:
+#                     if difine_date_receive_stock_buy(item.date) == 0:
+#                         cash_t2 += item.net_total_value 
+#                     elif difine_date_receive_stock_buy(item.date) == 1:
+#                         cash_t1+= item.net_total_value 
+#                     else:
+#                         cash_t0 += item.net_total_value 
 
-                porfolio.receiving_t2 = receiving_t2
-                porfolio.receiving_t1 = receiving_t1
-                porfolio.on_hold = on_hold
+#                 porfolio.receiving_t2 = receiving_t2
+#                 porfolio.receiving_t1 = receiving_t1
+#                 porfolio.on_hold = on_hold
                 
-                account.cash_t2 = cash_t2
-                account.cash_t1 = cash_t1
-                account.interest_cash_balance = cash_t0  
-                porfolio.save()
+#                 account.cash_t2 = cash_t2
+#                 account.cash_t1 = cash_t1
+#                 account.interest_cash_balance = cash_t0  
+#                 porfolio.save()
             
 
             
-            # sửa sao kê thuế
-                if instance.position=='sell':
-                    expense_tax = ExpenseStatement.objects.get(description=instance.pk,type = 'tax')
-                    expense_tax.account=instance.account
-                    expense_tax.date=instance.date
-                    expense_tax.amount = instance.tax
-                    expense_tax.save()
+#             # sửa sao kê thuế
+#                 if instance.position=='sell':
+#                     expense_tax = ExpenseStatement.objects.get(description=instance.pk,type = 'tax')
+#                     expense_tax.account=instance.account
+#                     expense_tax.date=instance.date
+#                     expense_tax.amount = instance.tax
+#                     expense_tax.save()
       
                     
     
             
-        elif sender == CashTransfer:
-            cash_items = CashTransfer.objects.filter(account=account)
-            account.net_cash_flow = sum(item.amount for item in cash_items)
+#         elif sender == CashTransfer:
+#             cash_items = CashTransfer.objects.filter(account=account)
+#             account.net_cash_flow = sum(item.amount for item in cash_items)
             
-    else:
-        if sender == Transaction:
-            porfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
-            #tạo sao kê phí giao dịch
-            ExpenseStatement.objects.create(
-                account=instance.account,
-                date=instance.date,
-                type = 'transaction_fee',
-                amount = instance.transaction_fee,
-                description = instance.pk
-                )
+#     else:
+#         if sender == Transaction:
+#             porfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
+#             #tạo sao kê phí giao dịch
+#             ExpenseStatement.objects.create(
+#                 account=instance.account,
+#                 date=instance.date,
+#                 type = 'transaction_fee',
+#                 amount = instance.transaction_fee,
+#                 description = instance.pk
+#                 )
             
-            if instance.position =='buy':
-                account.net_trading_value =  account.net_trading_value +instance.net_total_value
-                # tăng tiền số dư tính lãi
-                account.interest_cash_balance += instance.net_total_value
-                # tạo danh mục
-                if porfolio:
+#             if instance.position =='buy':
+#                 account.net_trading_value =  account.net_trading_value +instance.net_total_value
+#                 # tăng tiền số dư tính lãi
+#                 account.interest_cash_balance += instance.net_total_value
+#                 # tạo danh mục
+#                 if porfolio:
                     
-                    porfolio.receiving_t2 = porfolio.receiving_t2 + instance.qty 
-                    porfolio.save()
-                else: 
-                    Portfolio.objects.create(
-                    stock=instance.stock,
-                    account= instance.account,
-                    receiving_t2 = instance.qty ,
-                    # avg_price = instance.price ,
-                    # sum_stock = instance.qty,
-                    # market_price = get_stock_market_price(instance.stock.stock),
-                    )
+#                     porfolio.receiving_t2 = porfolio.receiving_t2 + instance.qty 
+#                     porfolio.save()
+#                 else: 
+#                     Portfolio.objects.create(
+#                     stock=instance.stock,
+#                     account= instance.account,
+#                     receiving_t2 = instance.qty ,
+#                     # avg_price = instance.price ,
+#                     # sum_stock = instance.qty,
+#                     # market_price = get_stock_market_price(instance.stock.stock),
+#                     )
                 
-            else:
-                account.net_trading_value += instance.net_total_value 
-                # chuyển tiền bán vào tiền chờ về T2
-                account.cash_t2 +=  instance.net_total_value
-                # tạo sao kê thuế
-                ExpenseStatement.objects.create(
-                account=instance.account,
-                date=instance.date,
-                type = 'tax',
-                amount = instance.tax,
-                description = instance.pk
-                )
-                # điều chỉnh danh mục
-                porfolio.on_hold = porfolio.on_hold -instance.qty
-                porfolio.save()
+#             else:
+#                 account.net_trading_value += instance.net_total_value 
+#                 # chuyển tiền bán vào tiền chờ về T2
+#                 account.cash_t2 +=  instance.net_total_value
+#                 # tạo sao kê thuế
+#                 ExpenseStatement.objects.create(
+#                 account=instance.account,
+#                 date=instance.date,
+#                 type = 'tax',
+#                 amount = instance.tax,
+#                 description = instance.pk
+#                 )
+#                 # điều chỉnh danh mục
+#                 porfolio.on_hold = porfolio.on_hold -instance.qty
+#                 porfolio.save()
 
-        elif sender == CashTransfer:
-            account.net_cash_flow += + instance.amount
+#         elif sender == CashTransfer:
+#             account.net_cash_flow += + instance.amount
 
-    account.save()
+#     account.save()
 
 
 @receiver(post_delete, sender=Transaction)
@@ -450,75 +450,132 @@ def update_market_price_port(sender, instance, created, **kwargs):
         item.market_price = instance.close*1000
         item.save()
             
-# tách ha            
+# tách hàm
+
+def created_transaction(instance, portfolio, account):
+    if instance.position == 'buy':
+            #điều chỉnh account
+            account.net_trading_value += instance.net_total_value
+            account.interest_cash_balance += instance.net_total_value
+            if portfolio:
+                # điều chỉnh danh mục
+                    portfolio.receiving_t2 = portfolio.receiving_t2 + instance.qty 
+            else: 
+                #tạo danh mục mới
+                    Portfolio.objects.create(
+                    stock=instance.stock,
+                    account= instance.account,
+                    receiving_t2 = instance.qty ,)
+    elif instance.position == 'sell':
+        #điều chỉnh account
+        account.net_trading_value += instance.net_total_value
+        account.cash_t2 += instance.net_total_value 
+        # điều chỉnh danh mục
+        portfolio.on_hold = portfolio.on_hold -instance.qty
+          
+        # tạo sao kê thuế
+        ExpenseStatement.objects.create(
+                account=instance.account,
+                date=instance.date,
+                type = 'tax',
+                amount = instance.tax,
+                description = instance.pk
+                )
+                
+
             
-# def update_portfolio_for_buy_transaction(instance, portfolio, account):
-#     portfolio.receiving_t2 += instance.qty
-#     portfolio.save()
-#     account.net_trading_value += instance.net_total_value
-#     account.interest_cash_balance += instance.net_total_value
+def update_portfolio_transaction(instance, portfolio, account):
+    transaction_items = Transaction.objects.filter(account=account)
+    #sửa danh mục
+    stock_transaction = transaction_items.filter(stock = instance.stock)
+    sum_sell = sum(item.qty for item in stock_transaction if item.position =='sell')
+    item_buy = stock_transaction.filter( position = 'buy')
+    
+    if portfolio:
+        receiving_t2 =0
+        receiving_t1=0
+        on_hold =0
+               
+        for item in item_buy:
+                    if difine_date_receive_stock_buy(item.date) == 0:
+                        receiving_t2 += item.qty                           
+                    elif difine_date_receive_stock_buy(item.date) == 1:
+                        receiving_t1 += item.qty                             
+                    else:
+                        on_hold += item.qty- sum_sell
+                                           
+        portfolio.receiving_t2 = receiving_t2
+        portfolio.receiving_t1 = receiving_t1
+        portfolio.on_hold = on_hold
+        
+        
+
+def update_account_transaction( account, transaction_items):
+    item_all_sell = transaction_items.filter( position = 'sell')
+    cash_t2 = 0
+    cash_t1 = 0
+    cash_t0= sum(i.net_total_value for i in transaction_items if i.position =='buy')
+    for item in item_all_sell:
+        if difine_date_receive_stock_buy(item.date) == 0:
+            cash_t2 += item.net_total_value 
+        elif difine_date_receive_stock_buy(item.date) == 1:
+            cash_t1+= item.net_total_value 
+        else:
+            cash_t0 += item.net_total_value 
+    account.cash_t2 = cash_t2
+    account.cash_t1 = cash_t1
+    account.interest_cash_balance = cash_t0 
+    account.net_trading_value = sum(item.net_total_value for item in transaction_items)
+         
 
 
-# def update_portfolio_for_sell_transaction(instance, portfolio, account):
-#     portfolio.on_hold -= instance.qty
-#     portfolio.save()
-#     account.cash_t2 += instance.net_total_value
+
+def update_expense_transaction(instance, description_type):
+    ExpenseStatement.objects.update_or_create(
+        description=instance.pk,
+        type=description_type,
+        defaults={
+            'account': instance.account,
+            'date': instance.date,
+            'amount': instance.tax if description_type == 'tax' else instance.transaction_fee,
+        }
+    )
+
+@receiver([post_save, post_delete], sender=Transaction)
+@receiver([post_save, post_delete], sender=CashTransfer)
+def save_field_account(sender, instance, **kwargs):
+    created = kwargs.get('created', False)
+    account = instance.account
+    
+    if sender == CashTransfer:
+        if not created:
+            cash_items = CashTransfer.objects.filter(account=account)
+            account.net_cash_flow = sum(item.amount for item in cash_items)
+        else:
+            account.net_cash_flow += + instance.amount
+
+    elif sender == Transaction:
+        portfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
+        transaction_items = Transaction.objects.filter(account=account)
+        if not created:
+            # sửa sao kê phí và thuế
+            update_expense_transaction(instance,'transaction_fee' )
+            if instance.position =='sell':
+                update_expense_transaction(instance,'tax' )
+            # sửa sao kê lãi
+            # sửa danh mục
+            update_portfolio_transaction(instance, portfolio, account)     
+            # sửa account
+            update_account_transaction( account, transaction_items)
+      
+        else:
+            created_transaction(instance, portfolio, account)
+        
+        portfolio.save()
+        
+    account.save()
 
 
-# def update_expense_tax(instance, description_type):
-#     ExpenseStatement.objects.update_or_create(
-#         description=instance.pk,
-#         type=description_type,
-#         defaults={
-#             'account': instance.account,
-#             'date': instance.date,
-#             'amount': instance.tax if description_type == 'tax' else instance.transaction_fee,
-#         }
-#     )
-
-
-# @receiver([post_save, post_delete], sender=Transaction)
-# def handle_transaction_save(sender, instance, **kwargs):
-#     created = kwargs.get('created', False)
-#     account = instance.account
-#     portfolio = Portfolio.objects.filter(account=account, sum_stock__gt=0).first()
-
-#     if not created:
-#         transaction_items = Transaction.objects.filter(account=account)
-#         account.net_trading_value = sum(item.net_total_value for item in transaction_items)
-
-#         # Sửa sao kê phí
-#         update_expense_tax(instance, 'transaction_fee')
-
-#         if portfolio:
-#             if instance.position == 'buy':
-#                 update_portfolio_for_buy_transaction(instance, portfolio, account)
-#             elif instance.position == 'sell':
-#                 update_portfolio_for_sell_transaction(instance, portfolio, account)
-#     else:
-#         update_expense_tax(instance, 'transaction_fee')
-#         if instance.position == 'buy':
-#             account.net_trading_value += instance.net_total_value
-#             account.interest_cash_balance += instance.net_total_value
-#             if not portfolio:
-#                 Portfolio.objects.create(
-#                     stock=instance.stock,
-#                     account=instance.account,
-#                     receiving_t2=instance.qty,
-#                 )
-#         elif instance.position == 'sell':
-#             account.net_trading_value += instance.net_total_value
-#             account.cash_t2 += instance.net_total_value
-
-#     account.save()
-
-
-# @receiver([post_save, post_delete], sender=CashTransfer)
-# def handle_cash_transfer_save(sender, instance, **kwargs):
-#     account = instance.account
-#     cash_items = CashTransfer.objects.filter(account=account)
-#     account.net_cash_flow = sum(item.amount for item in cash_items)
-#     account.save()
           
 
            
