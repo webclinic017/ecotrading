@@ -313,9 +313,10 @@ def get_stock_market_price(stock):
 def save_field_account(sender, instance, **kwargs):
     created = kwargs.get('created', False)
     account = instance.account
-    porfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
+    
     if not created:
         if sender == Transaction:
+            porfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
             transaction_items = Transaction.objects.filter(account=account)
             account.net_trading_value = sum(item.net_total_value for item in transaction_items)
             
@@ -383,6 +384,7 @@ def save_field_account(sender, instance, **kwargs):
             
     else:
         if sender == Transaction:
+            porfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
             #tạo sao kê phí giao dịch
             ExpenseStatement.objects.create(
                 account=instance.account,
