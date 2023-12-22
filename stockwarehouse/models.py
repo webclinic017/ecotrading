@@ -567,11 +567,12 @@ def save_field_account(sender, instance, **kwargs):
             update_portfolio_transaction(instance, portfolio, account)     
             # sửa account
             update_account_transaction( account, transaction_items)
-      
+            
         else:
             created_transaction(instance, portfolio, account)
-        
-        portfolio.save()
+        if portfolio:
+            portfolio.save()
+            
         
     account.save()
 
