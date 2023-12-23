@@ -40,7 +40,7 @@ class Account (models.Model):
     cash_t1 = models.FloatField(default=0,verbose_name= 'Số dư tiền T1')
     cash_t2= models.FloatField(default=0,verbose_name= 'Số dư tiền T2')
     interest_cash_balance= models.FloatField(default=0,verbose_name= 'Số dư tiền tính lãi')
-
+    total_loan_interest= models.FloatField(default=0,verbose_name= 'Tổng lãi vay đã trả')
     
     class Meta:
          verbose_name = 'Tài khoản'
@@ -62,7 +62,7 @@ class Account (models.Model):
             return status
     
     def save(self, *args, **kwargs):
-        self.cash_balance = self.net_cash_flow + self.net_trading_value #- lãi vay 
+        self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_loan_interest
         stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
         port = Portfolio.objects.filter(account =self.pk)
         sum_initial_margin = 0
@@ -75,7 +75,7 @@ class Account (models.Model):
                 value = item.sum_stock*item.market_price
                 market_value += value
                 self.market_value = market_value
-        self.nav = self.market_value + self.cash_balance
+        self.nav = self.market_value + self.cash_balance 
         self.initial_margin_requirement = sum_initial_margin
         self.excess_equity = self.nav - self.initial_margin_requirement
         if self.cash_balance <0:
@@ -478,7 +478,7 @@ def created_transaction(instance, portfolio, account):
                 account=instance.account,
                 date=instance.date,
                 type = 'tax',
-                amount = instance.tax,
+                amount = instance.tax*-1,
                 description = instance.pk
                 )
                 
@@ -537,7 +537,7 @@ def update_expense_transaction(instance, description_type):
         defaults={
             'account': instance.account,
             'date': instance.date,
-            'amount': instance.tax if description_type == 'tax' else instance.transaction_fee,
+            'amount': instance.tax*-1 if description_type == 'tax' else instance.transaction_fee*-1,
         }
     )
 
@@ -578,8 +578,25 @@ def save_field_account(sender, instance, **kwargs):
 
 
           
+@receiver([post_save, post_delete], sender=ExpenseStatement)
+def save_field_account(sender, instance, **kwargs):
+    created = kwargs.get('created', False)
+    account = instance.account 
+    if not created:
+            interests = ExpenseStatement.objects.filter(account= account , type ='interest')
+            sum_interest =0
+            for item in interests:
+                sum_interest +=item.amount
+            account.total_loan_interest = sum_interest
+                
 
-           
+    else:
+            account.total_loan_interest+= instance.amount
+        
+    account.save()
+
+        
+
 
             
 
