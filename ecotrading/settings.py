@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 from .jazzmin import *
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime as dt
 
 
 
@@ -180,7 +180,7 @@ DBBACKUP_STORAGE_OPTIONS = {
 }
 
 def custom_backup_filename(databasename, servername, extension,datetime, content_type):
-    formatted_datetime = datetime.now().strftime('%Y-%m-%d') 
+    formatted_datetime = dt.now().strftime('%Y-%m-%d') 
     return f"{formatted_datetime}.{extension}"
 
 DBBACKUP_FILENAME_TEMPLATE = custom_backup_filename
