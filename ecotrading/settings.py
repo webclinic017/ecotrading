@@ -173,7 +173,7 @@ CRONTAB_TIMEZONE = 'Asia/Ho_Chi_Minh'
 
 
 CRONJOBS = [
-    ('00 0 * * 1-5', 'ecotrading.schedule.schedule_morning'),# chạy lúc 7 giờ sáng
+    ('* 0 * * *', 'ecotrading.schedule.schedule_morning'),# chạy lúc 7 giờ sáng
     ('30 2 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 9h30 sáng
     ('30 4 * * 1-5', 'ecotrading.schedule.schedule_mid_trading_date'),# chạy lúc 11h30 sáng
     ('00 7 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 14h00 trưa

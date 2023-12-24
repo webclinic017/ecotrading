@@ -19,12 +19,7 @@ def schedule_morning():
         save_data()
     except Exception as e_save_data:
         print(f"An error occurred while running save_data: {e_save_data}")
-
-    try:
-        auto_news_stock_worlds()
-    except Exception as e_auto_news:
-        print(f"An error occurred while running auto_news_stock_worlds: {e_auto_news}")
-
+        
     try:
         morning_check()
     except Exception as e_morning_check:
@@ -45,6 +40,11 @@ def schedule_morning():
             check_dividend()
         except Exception as e_check_dividend:
             print(f"An error occurred while running check_dividend: {e_check_dividend}")
+        
+        try:
+            auto_news_stock_worlds()
+        except Exception as e_auto_news:
+            print(f"An error occurred while running auto_news_stock_worlds: {e_auto_news}")
     else:
         pass
 

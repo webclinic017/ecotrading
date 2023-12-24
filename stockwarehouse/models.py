@@ -640,7 +640,7 @@ def atternoon_check():
             buy_today = Transaction.objects.filter(account = item.account,position ='buy',date = datetime.now().date(),stock__stock = item.stock)
             qty_buy_today = sum(item.qty for item in buy_today )
             item.on_hold += item.receiving_t1
-            item.receiving_t1 = item.receiving_t2
+            item.receiving_t1 = item.receiving_t2  - buy_today
             item.receiving_t2 = qty_buy_today
             item.save()
 
