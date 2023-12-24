@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 from .jazzmin import *
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 
 
@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'portfolio',
     'stocklist',
     'stockwarehouse',
+    'dbbackup',
   
     
 ]
@@ -170,7 +171,19 @@ JAZZMIN_UI_TWEAKS = JAZZMIN_UI_TWEAKS
 
 CRONTAB_TIMEZONE = 'Asia/Ho_Chi_Minh'
 
+# Ví dụ cấu hình cho việc sao lưu vào thư mục 'backups/'
+DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DBBACKUP_CLEANUP_KEEP = True
+DBBACKUP_CLEANUP_KEEP_NUMBER = 3  # Số lượng bản sao lưu giữ lại
+DBBACKUP_STORAGE_OPTIONS = {
+    'location': '/root/ecotrading/backup/',
+}
 
+def custom_backup_filename(databasename, servername, extension,datetime, content_type):
+    formatted_datetime = datetime.now().strftime('%Y-%m-%d') 
+    return f"{formatted_datetime}.{extension}"
+
+DBBACKUP_FILENAME_TEMPLATE = custom_backup_filename
 
 CRONJOBS = [
     ('* 0 * * *', 'ecotrading.schedule.schedule_morning'),# chạy lúc 7 giờ sáng
