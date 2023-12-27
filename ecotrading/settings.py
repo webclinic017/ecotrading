@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 from .jazzmin import *
 from datetime import timedelta, datetime as dt
@@ -92,6 +93,8 @@ WSGI_APPLICATION = 'ecotrading.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+
+
 DATABASES_LIST = [{
 #server
       'default': {
@@ -104,13 +107,16 @@ DATABASES_LIST = [{
      }
  }, 
 #localhost
+
+
+
 {
      'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'ecotrading',                      
         'USER': 'postgres',
-        'PASSWORD': 'Ecotr@ding2021',
-        'HOST': '',
+        'PASSWORD': 'Ecotrading2023',
+        'HOST': 'localhost',
         'PORT': '5432',
     }
 }]
@@ -173,11 +179,14 @@ CRONTAB_TIMEZONE = 'Asia/Ho_Chi_Minh'
 
 # Ví dụ cấu hình cho việc sao lưu vào thư mục 'backups/'
 DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
 DBBACKUP_CLEANUP_KEEP = True
 DBBACKUP_CLEANUP_KEEP_NUMBER = 3  # Số lượng bản sao lưu giữ lại
 DBBACKUP_STORAGE_OPTIONS = {
-    'location': '/root/ecotrading/backup/',
+    'location': '/root/ecotrading/backup/', 
 }
+
+
 
 def custom_backup_filename(databasename, servername, extension,datetime, content_type):
     formatted_datetime = dt.now().strftime('%Y-%m-%d') 
@@ -187,12 +196,12 @@ DBBACKUP_FILENAME_TEMPLATE = custom_backup_filename
 
 CRONJOBS = [
     ('* 0 * * *', 'ecotrading.schedule.schedule_morning'),# chạy lúc 7 giờ sáng
-    ('30 2 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 9h30 sáng
-    ('30 4 * * 1-5', 'ecotrading.schedule.schedule_mid_trading_date'),# chạy lúc 11h30 sáng
-    ('00 7 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 14h00 trưa
-    ('45 7 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 14h45 trưa
+    # ('30 2 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 9h30 sáng
+    # ('30 4 * * 1-5', 'ecotrading.schedule.schedule_mid_trading_date'),# chạy lúc 11h30 sáng
+    # ('00 7 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 14h00 trưa
+    ('00 8 * * 1-5', 'stocklist.logic.get_info_stock_price_filter'),# chạy lúc 14h45 trưa
     ('40 8 * * 1-5', 'ecotrading.schedule.schedule_after_trading_date'), # Chạy lúc 15:40 từ thứ 2 đến thứ 6
-    ('30 15 * * 1-5', 'portfolio.models.get_all_info_stock_price'), # Chạy lúc 21h từ thứ 2 đến thứ 6
+    # ('30 15 * * 1-5', 'portfolio.models.get_all_info_stock_price'), # Chạy lúc 21h từ thứ 2 đến thứ 6
 
     
     

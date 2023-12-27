@@ -52,7 +52,7 @@ class AccountAdmin(admin.ModelAdmin):
     formatted_excess_equity.short_description = 'Dư kí quỹ'
 
 
-admin.site.register(Account,AccountAdmin)
+# admin.site.register(Account,AccountAdmin)
 
 class StockListMarginAdmin(admin.ModelAdmin):
     model= StockListMargin
@@ -67,7 +67,7 @@ class StockListMarginAdmin(admin.ModelAdmin):
         obj.save()
 
 
-admin.site.register(StockListMargin,StockListMarginAdmin)
+# admin.site.register(StockListMargin,StockListMarginAdmin)
 
 class TransactionAdmin(admin.ModelAdmin):
     model= Transaction
@@ -109,7 +109,7 @@ class TransactionAdmin(admin.ModelAdmin):
     formatted_qty.short_description = 'Khối lượng'
     formatted_net_total_value.short_description = 'Giá trị giao dịch ròng'
 
-admin.site.register(Transaction,TransactionAdmin)
+# admin.site.register(Transaction,TransactionAdmin)
 
 class PortfolioAdmin(admin.ModelAdmin):
     model = Portfolio
@@ -154,7 +154,7 @@ class PortfolioAdmin(admin.ModelAdmin):
     formatted_profit.short_description = 'Lợi nhuận'
     formatted_sum_stock.short_description = 'Tổng cổ phiếu'
     
-admin.site.register(Portfolio,PortfolioAdmin)
+# admin.site.register(Portfolio,PortfolioAdmin)
 
 class ExpenseStatementAdmin(admin.ModelAdmin):
     model = ExpenseStatement
@@ -166,7 +166,7 @@ class ExpenseStatementAdmin(admin.ModelAdmin):
 
     formatted_amount.short_description = 'Số tiền'
 
-admin.site.register(ExpenseStatement, ExpenseStatementAdmin)
+# admin.site.register(ExpenseStatement, ExpenseStatementAdmin)
 
 class CashTransferAdmin(admin.ModelAdmin):
     model = CashTransfer
@@ -187,4 +187,4 @@ class CashTransferAdmin(admin.ModelAdmin):
             obj.user_modified = request.user.username
         obj.save()
 
-admin.site.register(CashTransfer,CashTransferAdmin)
+# admin.site.register(CashTransfer,CashTransferAdmin)

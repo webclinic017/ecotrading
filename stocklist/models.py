@@ -1,6 +1,7 @@
 from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import post_save
+from telegram import Bot
 from portfolio.models import *
 
 # Create your models here.

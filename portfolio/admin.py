@@ -99,11 +99,11 @@ class DividendManageAdmin(admin.ModelAdmin):
 
 # Register your models here.
 
-admin.site.register(DividendManage,DividendManageAdmin)
-admin.site.register(CashTrasfer,CashTrasferAdmin)
-admin.site.register(Transaction,TransactionAdmin)
-admin.site.register(Account,AccountAdmin)
-admin.site.register(DateNotTrading)
+# admin.site.register(DividendManage,DividendManageAdmin)
+# admin.site.register(CashTrasfer,CashTrasferAdmin)
+# admin.site.register(Transaction,TransactionAdmin)
+# admin.site.register(Account,AccountAdmin)
+# admin.site.register(DateNotTrading)
 admin.site.register(BotTelegram,BotTelegramAdmin)
 
-admin.site.register(SectorPrice,SectorPriceAdmin)
+# admin.site.register(SectorPrice,SectorPriceAdmin)
